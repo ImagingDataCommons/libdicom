@@ -82,23 +82,18 @@ END_TEST
 START_TEST(test_element_UI)
 {
     uint32_t tag;
-    uint32_t vm;
-    uint32_t i;
     char vr[3] = "UI";
     uint32_t expected_length;
     dcm_element_t *element = NULL;
-    char **values = NULL;
+    char *value = NULL;
     char *retrieved_value = NULL;
 
     tag = 0x00080018;
-    vm = 1;
-    i = 0;
-    values = malloc(vm * sizeof(char *));
-    values[0] = malloc(7);
-    strcpy(values[0], "2.25.1");
-    element = dcm_element_create_UI(tag, values, vm);
+    value = malloc(sizeof(char *));
+    strcpy(value, "2.25.1");
+    element = dcm_element_create_UI(tag, value);
 
-    expected_length = strlen(values[i]);
+    expected_length = strlen(value);
     if (expected_length % 2 != 0) {
         expected_length += 1;  // zero padding
     }
@@ -108,9 +103,9 @@ START_TEST(test_element_UI)
     ck_assert_int_eq(dcm_element_get_length(element), expected_length);
     ck_assert_int_eq(dcm_element_is_multivalued(element), false);
 
-    retrieved_value = malloc(strlen(values[i]));
-    dcm_element_copy_value_UI(element, i, retrieved_value);
-    ck_assert_str_eq(values[i], retrieved_value);
+    retrieved_value = malloc(strlen(value));
+    dcm_element_copy_value_UI(element, 0, retrieved_value);
+    ck_assert_str_eq(value, retrieved_value);
 
     free(retrieved_value);
     dcm_element_destroy(element);
@@ -122,22 +117,19 @@ START_TEST(test_element_IS)
 {
     uint32_t tag;
     uint32_t vm;
-    uint32_t i;
     char vr[3] = "IS";
     uint32_t expected_length;
     dcm_element_t *element = NULL;
-    char **values = NULL;
+    char *value = NULL;
     char *retrieved_value = NULL;
 
     tag = 0x00280008;
     vm = 1;
-    i = 0;
-    values = malloc(vm * sizeof(char *));
-    values[0] = malloc(3);
-    strcpy(values[0], "10");
-    element = dcm_element_create_IS(tag, values, vm);
+    value = malloc(sizeof(char *));
+    strcpy(value, "10");
+    element = dcm_element_create_IS(tag, value);
 
-    expected_length = strlen(values[i]);
+    expected_length = strlen(value);
     if (expected_length % 2 != 0) {
         expected_length += 1;  // zero padding
     }
@@ -147,9 +139,9 @@ START_TEST(test_element_IS)
     ck_assert_int_eq(dcm_element_get_length(element), expected_length);
     ck_assert_int_eq(dcm_element_is_multivalued(element), false);
 
-    retrieved_value = malloc(strlen(values[i]));
-    dcm_element_copy_value_IS(element, i, retrieved_value);
-    ck_assert_str_eq(values[i], retrieved_value);
+    retrieved_value = malloc(strlen(value));
+    dcm_element_copy_value_IS(element, 0, retrieved_value);
+    ck_assert_str_eq(value, retrieved_value);
 
     free(retrieved_value);
     dcm_element_destroy(element);
@@ -160,27 +152,21 @@ END_TEST
 START_TEST(test_element_US)
 {
     uint32_t tag;
-    uint32_t vm;
-    uint32_t i;
     char vr[3] = "US";
     dcm_element_t *element = NULL;
-    uint16_t *values = NULL;
-    uint16_t retrieved_value;
+    uint16_t value, retrieved_value;
 
     tag = 0x00280010;
-    vm = 1;
-    i = 0;
-    values = malloc(vm * sizeof(uint16_t));
-    values[0] = 512;
-    element = dcm_element_create_US(tag, values, vm);
+    value = 512;
+    element = dcm_element_create_US(tag, value);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
     ck_assert_int_eq(dcm_element_check_vr(element, vr), true);
     ck_assert_int_eq(dcm_element_get_length(element), sizeof(uint16_t));
     ck_assert_int_eq(dcm_element_is_multivalued(element), false);
 
-    dcm_element_copy_value_US(element, i, &retrieved_value);
-    ck_assert_int_eq(values[i], retrieved_value);
+    dcm_element_copy_value_US(element, 0, &retrieved_value);
+    ck_assert_int_eq(value, retrieved_value);
 
     dcm_element_destroy(element);
 }
@@ -210,7 +196,7 @@ START_TEST(test_element_CS_multivalue)
     strcpy(values[2], "VOLUME");
     values[3] = malloc(5);
     strcpy(values[3], "NONE");
-    element = dcm_element_create_CS(tag, values, vm);
+    element = dcm_element_create_CS_multi(tag, values, vm);
 
     expected_length = 3 * 2;  // separators between values
     for (i = 0; i < vm; i++) {
@@ -280,12 +266,11 @@ START_TEST(test_element_SQ)
     dcm_dataset_t *item = NULL;
     dcm_sequence_t *value = NULL;
     dcm_sequence_t *retrieved_value = NULL;
-    char **item_values = NULL;
+    char *item_value = NULL;
 
-    item_values = malloc(sizeof(char *));
-    item_values[0] = malloc(5);
-    strcpy(item_values[0], "0.01");
-    item_element = dcm_element_create_DS(0x00180050, item_values, 1);
+    item_value = malloc(5);
+    strcpy(item_value, "0.01");
+    item_element = dcm_element_create_DS(0x00180050, item_value);
 
     item = dcm_dataset_create();
     ck_assert_int_eq(dcm_dataset_insert(item, item_element), true);
@@ -336,7 +321,6 @@ END_TEST
 
 START_TEST(test_sequence)
 {
-    uint16_t *values = NULL;
     dcm_element_t *element = NULL;
     dcm_dataset_t *dataset = NULL, *same_dataset = NULL, *other_dataset = NULL;
     dcm_sequence_t *seq = NULL;
@@ -344,15 +328,11 @@ START_TEST(test_sequence)
     dataset = dcm_dataset_create();
     other_dataset = dcm_dataset_create();
 
-    values = malloc(sizeof(uint16_t));
-    values[0] = 256;
-    element = dcm_element_create_US(0x00280010, values, 1);
+    element = dcm_element_create_US(0x00280010, 256);
     dcm_dataset_insert(dataset, element);
     dcm_dataset_insert(other_dataset, dcm_element_clone(element));
 
-    values = malloc(sizeof(uint16_t));
-    values[0] = 512;
-    element = dcm_element_create_US(0x00280011, values, 1);
+    element = dcm_element_create_US(0x00280011, 512);
     dcm_dataset_insert(dataset, element);
     dcm_dataset_insert(other_dataset, dcm_element_clone(element));
 
@@ -381,20 +361,15 @@ END_TEST
 START_TEST(test_dataset)
 {
     uint32_t tag, other_tag;
-    uint16_t *values = NULL, *other_values = NULL;
     dcm_element_t *element = NULL, *same_element = NULL, *copied_element = NULL;
     dcm_element_t *other_element = NULL;
     dcm_dataset_t *dataset = NULL;
 
     tag = 0x00280010;
-    values = malloc(sizeof(uint16_t));
-    values[0] = 256;
-    element = dcm_element_create_US(tag, values, 1);
+    element = dcm_element_create_US(tag, 256);
 
     other_tag = 0x00280011;
-    other_values = malloc(sizeof(uint16_t));
-    other_values[0] = 512;
-    other_element = dcm_element_create_US(other_tag, other_values, 1);
+    other_element = dcm_element_create_US(other_tag, 512);
 
     dataset = dcm_dataset_create();
     ck_assert_int_eq(dcm_dataset_count(dataset), 0);
