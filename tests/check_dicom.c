@@ -399,6 +399,8 @@ START_TEST(test_dataset)
     dcm_dataset_remove(dataset, other_tag);
     ck_assert_int_eq(dcm_dataset_count(dataset), 0);
 
+    dcm_dataset_print(dataset, 0);
+
     dcm_element_destroy(copied_element);
     dcm_dataset_destroy(dataset);
 }
@@ -432,6 +434,8 @@ START_TEST(test_file_sm_image_file_meta)
     dcm_element_copy_value_UI(element, 0, value);
     ck_assert_str_eq(value, "1.2.840.10008.5.1.4.1.1.77.1.6");
 
+    dcm_dataset_print(file_meta, 0);
+
     dcm_dataset_destroy(file_meta);
     dcm_file_destroy(file);
 }
@@ -457,6 +461,8 @@ START_TEST(test_file_sm_image_metadata)
     value = malloc(DCM_CAPACITY_UI + 1);
     dcm_element_copy_value_UI(element, 0, value);
     ck_assert_str_eq(value, "1.2.840.10008.5.1.4.1.1.77.1.6");
+
+    dcm_dataset_print(metadata, 0);
 
     dcm_dataset_destroy(metadata);
     dcm_file_destroy(file);
