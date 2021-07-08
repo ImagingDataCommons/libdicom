@@ -219,9 +219,24 @@ static char **parse_character_string(char *string, uint32_t *vm)
 finish:
     n = utarray_len(array);
     parts = malloc(n * sizeof(char *));
+    if (parts == NULL) {
+        dcm_log_error("Failed to parse character string. "
+                      "Could not allocate memory for array of substrings.");
+        free(string);
+        return NULL;
+    }
     for (i = 0; i < n; i++) {
         token_ptr = utarray_eltptr(array, i);
         parts[i] = malloc(strlen(*token_ptr) + 1);
+        if (parts[i] == NULL) {
+            dcm_log_error("Failed to parse character string. "
+                          "Could not allocate memory for substring #%d.",
+                          i);
+            free(parts);
+            free(string);
+            utarray_free(array);
+            return NULL;
+        }
         strcpy(parts[i], *token_ptr);
     }
     *vm = n;
@@ -402,6 +417,12 @@ static dcm_element_t *read_element(FILE *fp,
             // This VM shall always have VM 1.
             length = eheader_get_length(header);
             char *str = malloc(length + 1);
+            if (str == NULL) {
+                dcm_log_error("Reading of Data Element failed. "
+                              "Could not allocate memory.");
+                free(strings);
+                return NULL;
+            }
             strcpy(str, strings[0]);
             str[length + 1] = '\0';
             free(strings);
@@ -595,6 +616,11 @@ static dcm_element_t *read_element(FILE *fp,
     } else if (eheader_check_vr(header, "FD")) {
         vm = length / sizeof(double);
         double *values = malloc(vm * sizeof(double));
+        if (values == NULL) {
+            dcm_log_error("Reading of Data Element failed. "
+                          "Could not allocate memory.");
+            return NULL;
+        }
         for (i = 0; i < vm; i++) {
             double val;
             *n += fread(&val, 1, sizeof(double), fp);
@@ -604,6 +630,11 @@ static dcm_element_t *read_element(FILE *fp,
     } else if (eheader_check_vr(header, "FL")) {
         vm = length / sizeof(float);
         float *values = malloc(vm * sizeof(float));
+        if (values == NULL) {
+            dcm_log_error("Reading of Data Element failed. "
+                          "Could not allocate memory.");
+            return NULL;
+        }
         for (i = 0; i < vm; i++) {
             float val;
             *n += fread(&val, 1, sizeof(float), fp);
@@ -613,6 +644,11 @@ static dcm_element_t *read_element(FILE *fp,
     } else if (eheader_check_vr(header, "SS")) {
         vm = length / sizeof(int16_t);
         int16_t *values = malloc(vm * sizeof(int16_t));
+        if (values == NULL) {
+            dcm_log_error("Reading of Data Element failed. "
+                          "Could not allocate memory.");
+            return NULL;
+        }
         for (i = 0; i < vm; i++) {
             int16_t val;
             *n += fread(&val, 1, sizeof(int16_t), fp);
@@ -622,6 +658,11 @@ static dcm_element_t *read_element(FILE *fp,
     } else if (eheader_check_vr(header, "SL")) {
         vm = length / sizeof(int32_t);
         int32_t *values = malloc(vm * sizeof(int32_t));
+        if (values == NULL) {
+            dcm_log_error("Reading of Data Element failed. "
+                          "Could not allocate memory.");
+            return NULL;
+        }
         for (i = 0; i < vm; i++) {
             int32_t val;
             *n += fread(&val, 1, sizeof(int32_t), fp);
@@ -631,6 +672,11 @@ static dcm_element_t *read_element(FILE *fp,
     } else if (eheader_check_vr(header, "SV")) {
         vm = length / sizeof(int64_t);
         int64_t *values = malloc(vm * sizeof(int64_t));
+        if (values == NULL) {
+            dcm_log_error("Reading of Data Element failed. "
+                          "Could not allocate memory.");
+            return NULL;
+        }
         for (i = 0; i < vm; i++) {
             int64_t val;
             *n += fread(&val, 1, sizeof(int64_t), fp);
@@ -640,6 +686,11 @@ static dcm_element_t *read_element(FILE *fp,
     } else if (eheader_check_vr(header, "UL")) {
         vm = length / sizeof(uint32_t);
         uint32_t *values = malloc(vm * sizeof(uint32_t));
+        if (values == NULL) {
+            dcm_log_error("Reading of Data Element failed. "
+                          "Could not allocate memory.");
+            return NULL;
+        }
         for (i = 0; i < vm; i++) {
             uint32_t val;
             *n += fread(&val, 1, sizeof(uint32_t), fp);
@@ -649,6 +700,11 @@ static dcm_element_t *read_element(FILE *fp,
     } else if (eheader_check_vr(header, "US")) {
         vm = length / sizeof(uint16_t);
         uint16_t *values = malloc(vm * sizeof(uint16_t));
+        if (values == NULL) {
+            dcm_log_error("Reading of Data Element failed. "
+                          "Could not allocate memory.");
+            return NULL;
+        }
         for (i = 0; i < vm; i++) {
             uint16_t val;
             *n += fread(&val, 1, sizeof(uint16_t), fp);
@@ -658,6 +714,11 @@ static dcm_element_t *read_element(FILE *fp,
     } else if (eheader_check_vr(header, "UV")) {
         vm = length / sizeof(uint64_t);
         uint64_t *values = malloc(vm * sizeof(uint64_t));
+        if (values == NULL) {
+            dcm_log_error("Reading of Data Element failed. "
+                          "Could not allocate memory.");
+            return NULL;
+        }
         for (i = 0; i < vm; i++) {
             uint64_t val;
             *n += fread(&val, 1, sizeof(uint64_t), fp);
@@ -857,6 +918,12 @@ dcm_dataset_t *dcm_file_read_file_meta(dcm_file_t *file)
 
     element = dcm_dataset_get(file_meta, 0x00020010);
     file->transfer_syntax_uid = malloc(DCM_CAPACITY_UI + 1);
+    if (file->transfer_syntax_uid == NULL) {
+        dcm_log_error("Reading of File Meta Information failed. "
+                      "Could not allocate memory for data element "
+                      "'Transfer Syntax UID'.");
+        return NULL;
+    }
     dcm_element_copy_value_UI(element, 0, file->transfer_syntax_uid);
     file->transfer_syntax_uid[DCM_CAPACITY_UI] = '\0';
 
