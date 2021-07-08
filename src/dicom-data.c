@@ -1741,9 +1741,13 @@ void dcm_element_print(dcm_element_t *element, uint8_t indentation)
         }
         printf("\n");
     } else {
-        printf(" | [\n");
         sequence = dcm_element_get_value_SQ(element);
         n_items = dcm_sequence_count(sequence);
+        if (n_items == 0) {
+            printf(" | [");
+        } else {
+            printf(" | [\n");
+        }
         for (i = 0; i < n_items; i++) {
             printf("%*.*s---Item #%d---\n",
                    num_indent_next,
@@ -1753,13 +1757,11 @@ void dcm_element_print(dcm_element_t *element, uint8_t indentation)
             dcm_dataset_t *item = dcm_sequence_get(sequence, i);
 
             dcm_dataset_print(item, indentation+1);
-            if (i == (n_items - 1)) {
-                printf("%*.*s]\n",
-                       num_indent,
-                       num_indent,
-                       "                                   ");
-            }
         }
+        printf("%*.*s]\n",
+               num_indent,
+               num_indent,
+               "                                   ");
     }
 }
 
