@@ -1,0 +1,30 @@
+
+.TH DCM-DUMP 1 2020-07-18 "dcm 0.1.0" "User Commands"
+
+.SH NAME
+dcm-dump \- print metadata content of DICOM PS3.10 file to standard output
+
+.SH SYNOPSIS
+.BR "dcm-dump " [ -v "]
+.IR file
+
+.SH DESCRIPTION
+Print metadata content of DICOM PS3.10 file to standard output.
+
+.SH OPTIONS
+.TP
+.B -h
+Display help message (usage summary) and exit.
+
+.TP
+.B -V
+Display version and exit.
+
+.TP
+.B -v
+Increase logging verbosity to INFO.
+
+.SH EXIT STATUS
+.B dcm-dump
+returns 0 on success, 1 if a file could not be read or 2 if the
+arguments are invalid.
