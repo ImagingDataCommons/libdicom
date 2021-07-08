@@ -439,10 +439,10 @@ static void assert_value_index(dcm_element_t *element, uint32_t index)
 
 // Data Elements with character string Value Representation
 
-static bool check_value_str(dcm_element_t *element,
-                            char **values,
-                            uint32_t vm,
-                            uint32_t capacity)
+static bool check_value_str_multi(dcm_element_t *element,
+                                  char **values,
+                                  uint32_t vm,
+                                  uint32_t capacity)
 {
     uint32_t i;
     size_t actual_length;
@@ -468,13 +468,13 @@ static bool check_value_str(dcm_element_t *element,
 }
 
 
-static bool set_value_str(dcm_element_t *element,
-                          char **values,
-                          uint32_t vm,
-                          uint32_t capacity) {
+static bool set_value_str_multi(dcm_element_t *element,
+                                char **values,
+                                uint32_t vm,
+                                uint32_t capacity) {
     assert(element);
     assert(values);
-    if (!check_value_str(element, values, vm, capacity)) {
+    if (!check_value_str_multi(element, values, vm, capacity)) {
         return false;
     }
     element->value.str_multi = values;
@@ -485,9 +485,41 @@ static bool set_value_str(dcm_element_t *element,
 
 static dcm_element_t *create_element_value_str(uint32_t tag,
                                                const char *vr,
-                                               char **values,
-                                               uint32_t vm,
+                                               char *value,
                                                uint32_t capacity)
+{
+    uint32_t vm = 1;
+    uint32_t length = 0;
+    dcm_element_t *element = NULL;
+    char **values = NULL;
+
+    values = malloc(sizeof(char *));
+    if (values == NULL) {
+        dcm_log_error("Creation of Data Element failed. "
+                      "Could not allocate memory.");
+        free(value);
+        return NULL;
+    }
+    values[0] = value;
+
+    length = strlen(value);
+    element = create_element(tag, vr, length);
+    if (element == NULL) {
+        free(values);
+        return NULL;
+    }
+    if (!set_value_str_multi(element, values, vm, capacity)) {
+        dcm_element_destroy(element);
+        return NULL;
+    }
+    return element;
+}
+
+static dcm_element_t *create_element_value_str_multi(uint32_t tag,
+                                                     const char *vr,
+                                                     char **values,
+                                                     uint32_t vm,
+                                                     uint32_t capacity)
 {
     uint32_t i;
     uint32_t length = 0;
@@ -507,7 +539,7 @@ static dcm_element_t *create_element_value_str(uint32_t tag,
         free(values);
         return NULL;
     }
-    if (!set_value_str(element, values, vm, capacity)) {
+    if (!set_value_str_multi(element, values, vm, capacity)) {
         dcm_element_destroy(element);
         return NULL;
     }
@@ -515,120 +547,187 @@ static dcm_element_t *create_element_value_str(uint32_t tag,
 }
 
 
-dcm_element_t *dcm_element_create_AE(uint32_t tag,
-                                     char **values,
-                                     uint32_t vm)
+dcm_element_t *dcm_element_create_AE(uint32_t tag, char *value)
 {
     const char vr[3] = "AE";
-    return create_element_value_str(tag, vr, values, vm, DCM_CAPACITY_AE);
+    return create_element_value_str(tag, vr, value, DCM_CAPACITY_AE);
 }
 
 
-dcm_element_t *dcm_element_create_AS(uint32_t tag,
-                                     char **values,
-                                     uint32_t vm)
+dcm_element_t *dcm_element_create_AE_multi(uint32_t tag,
+                                           char **values,
+                                           uint32_t vm)
+{
+    const char vr[3] = "AE";
+    return create_element_value_str_multi(tag, vr, values, vm, DCM_CAPACITY_AE);
+}
+
+
+dcm_element_t *dcm_element_create_AS(uint32_t tag, char *value)
 {
     const char vr[3] = "AS";
-    return create_element_value_str(tag, vr, values, vm, DCM_CAPACITY_AS);
+    return create_element_value_str(tag, vr, value, DCM_CAPACITY_AS);
 }
 
 
-dcm_element_t *dcm_element_create_AT(uint32_t tag,
-                                     char **values,
-                                     uint32_t vm)
+dcm_element_t *dcm_element_create_AS_multi(uint32_t tag,
+                                           char **values,
+                                           uint32_t vm)
+{
+    const char vr[3] = "AS";
+    return create_element_value_str_multi(tag, vr, values, vm, DCM_CAPACITY_AS);
+}
+
+
+dcm_element_t *dcm_element_create_AT(uint32_t tag, char *value)
 {
     const char vr[3] = "AT";
-    return create_element_value_str(tag, vr, values, vm, DCM_CAPACITY_AT);
+    return create_element_value_str(tag, vr, value, DCM_CAPACITY_AT);
 }
 
 
-dcm_element_t *dcm_element_create_CS(uint32_t tag,
-                                     char **values,
-                                     uint32_t vm)
+dcm_element_t *dcm_element_create_AT_multi(uint32_t tag,
+                                           char **values,
+                                           uint32_t vm)
+{
+    const char vr[3] = "AT";
+    return create_element_value_str_multi(tag, vr, values, vm, DCM_CAPACITY_AT);
+}
+
+
+dcm_element_t *dcm_element_create_CS(uint32_t tag, char *value)
 {
     const char vr[3] = "CS";
-    return create_element_value_str(tag, vr, values, vm, DCM_CAPACITY_CS);
+    return create_element_value_str(tag, vr, value, DCM_CAPACITY_CS);
 }
 
 
-dcm_element_t *dcm_element_create_DA(uint32_t tag,
-                                     char **values,
-                                     uint32_t vm)
+dcm_element_t *dcm_element_create_CS_multi(uint32_t tag,
+                                           char **values,
+                                           uint32_t vm)
+{
+    const char vr[3] = "CS";
+    return create_element_value_str_multi(tag, vr, values, vm, DCM_CAPACITY_CS);
+}
+
+
+dcm_element_t *dcm_element_create_DA(uint32_t tag, char *value)
 {
     const char vr[3] = "DA";
-    return create_element_value_str(tag, vr, values, vm, DCM_CAPACITY_DA);
+    return create_element_value_str(tag, vr, value, DCM_CAPACITY_DA);
 }
 
 
-dcm_element_t *dcm_element_create_DT(uint32_t tag,
-                                     char **values,
-                                     uint32_t vm)
+dcm_element_t *dcm_element_create_DA_multi(uint32_t tag,
+                                           char **values,
+                                           uint32_t vm)
+{
+    const char vr[3] = "DA";
+    return create_element_value_str_multi(tag, vr, values, vm, DCM_CAPACITY_DA);
+}
+
+
+dcm_element_t *dcm_element_create_DT(uint32_t tag, char *value)
 {
     const char vr[3] = "DT";
-    return create_element_value_str(tag, vr, values, vm, DCM_CAPACITY_DT);
+    return create_element_value_str(tag, vr, value, DCM_CAPACITY_DT);
 }
 
 
-dcm_element_t *dcm_element_create_LO(uint32_t tag,
-                                     char **values,
-                                     uint32_t vm)
+dcm_element_t *dcm_element_create_DT_multi(uint32_t tag,
+                                           char **values,
+                                           uint32_t vm)
+{
+    const char vr[3] = "DT";
+    return create_element_value_str_multi(tag, vr, values, vm, DCM_CAPACITY_DT);
+}
+
+
+dcm_element_t *dcm_element_create_LO(uint32_t tag, char *value)
 {
     const char vr[3] = "LO";
-    return create_element_value_str(tag, vr, values, vm, DCM_CAPACITY_LO);
+    return create_element_value_str(tag, vr, value, DCM_CAPACITY_LO);
 }
 
 
-dcm_element_t *dcm_element_create_PN(uint32_t tag,
-                                     char **values,
-                                     uint32_t vm)
+dcm_element_t *dcm_element_create_LO_multi(uint32_t tag,
+                                           char **values,
+                                           uint32_t vm)
+{
+    const char vr[3] = "LO";
+    return create_element_value_str_multi(tag, vr, values, vm, DCM_CAPACITY_LO);
+}
+
+
+dcm_element_t *dcm_element_create_PN(uint32_t tag, char *value)
 {
     const char vr[3] = "PN";
-    return create_element_value_str(tag, vr, values, vm, DCM_CAPACITY_PN);
+    return create_element_value_str(tag, vr, value, DCM_CAPACITY_PN);
 }
 
 
-dcm_element_t *dcm_element_create_SH(uint32_t tag,
-                                     char **values,
-                                     uint32_t vm)
+
+dcm_element_t *dcm_element_create_PN_multi(uint32_t tag,
+                                           char **values,
+                                           uint32_t vm)
+{
+    const char vr[3] = "PN";
+    return create_element_value_str_multi(tag, vr, values, vm, DCM_CAPACITY_PN);
+}
+
+
+dcm_element_t *dcm_element_create_SH(uint32_t tag, char *value)
 {
     const char vr[3] = "SH";
-    return create_element_value_str(tag, vr, values, vm, DCM_CAPACITY_SH);
+    return create_element_value_str(tag, vr, value, DCM_CAPACITY_SH);
 }
 
 
-dcm_element_t *dcm_element_create_UI(uint32_t tag,
-                                     char **values,
-                                     uint32_t vm)
+dcm_element_t *dcm_element_create_SH_multi(uint32_t tag,
+                                           char **values,
+                                           uint32_t vm)
 {
-    const char vr[3] = "UI";
-    return create_element_value_str(tag, vr, values, vm, DCM_CAPACITY_UI);
+    const char vr[3] = "SH";
+    return create_element_value_str_multi(tag, vr, values, vm, DCM_CAPACITY_SH);
 }
 
 
-dcm_element_t *dcm_element_create_TM(uint32_t tag,
-                                     char **values,
-                                     uint32_t vm)
+dcm_element_t *dcm_element_create_TM(uint32_t tag, char *value)
 {
     const char vr[3] = "TM";
-    return create_element_value_str(tag, vr, values, vm, DCM_CAPACITY_TM);
+    return create_element_value_str(tag, vr, value, DCM_CAPACITY_TM);
+}
+
+
+dcm_element_t *dcm_element_create_TM_multi(uint32_t tag,
+                                           char **values,
+                                           uint32_t vm)
+{
+    const char vr[3] = "TM";
+    return create_element_value_str_multi(tag, vr, values, vm, DCM_CAPACITY_TM);
 }
 
 
 dcm_element_t *dcm_element_create_ST(uint32_t tag, char *value)
 {
     const char vr[3] = "ST";
-    uint32_t vm = 1;
-    char **values = NULL;
+    return create_element_value_str(tag, vr, value, DCM_CAPACITY_ST);
+}
 
-    values = malloc(sizeof(char *));
-    if (values == NULL) {
-        dcm_log_error("Creation of Data Element failed. "
-                      "Could not allocate memory.");
-        free(value);
-        return NULL;
-    }
-    values[0] = value;
-    return create_element_value_str(tag, vr, values, vm, DCM_CAPACITY_ST);
+
+dcm_element_t *dcm_element_create_UI(uint32_t tag, char *value)
+{
+    const char vr[3] = "UI";
+    return create_element_value_str(tag, vr, value, DCM_CAPACITY_UI);
+}
+
+
+dcm_element_t *dcm_element_create_UI_multi(uint32_t tag,
+                                           char **values,
+                                           uint32_t vm)
+{
+    const char vr[3] = "UI";
+    return create_element_value_str_multi(tag, vr, values, vm, DCM_CAPACITY_UI);
 }
 
 
@@ -735,14 +834,22 @@ static void print_element_value_UI(dcm_element_t *element, uint32_t index)
 
 // Data Elements with numeric Value Representation
 
-dcm_element_t *dcm_element_create_FD(uint32_t tag,
-                                     double *values,
-                                     uint32_t vm)
+dcm_element_t *dcm_element_create_FD(uint32_t tag, double value)
 {
     const char vr[3] = "FD";
-    uint32_t length = vm * sizeof(double);
+    uint32_t vm = 1;
+    uint32_t length = sizeof(double);
+    double *values = malloc(sizeof(double));
+    if (values == NULL) {
+        dcm_log_error("Creation of Data Element failed. "
+                      "Could not allocate memory.");
+        return NULL;
+    }
+    values[0] = value;
     dcm_element_t *element = create_element(tag, vr, length);
     if (element == NULL) {
+        dcm_log_error("Creation of Data Element failed. "
+                      "Could not allocate memory.");
         free(values);
         return NULL;
     }
@@ -752,14 +859,41 @@ dcm_element_t *dcm_element_create_FD(uint32_t tag,
 }
 
 
-dcm_element_t *dcm_element_create_FL(uint32_t tag,
-                                     float *values,
-                                     uint32_t vm)
+dcm_element_t *dcm_element_create_FD_multi(uint32_t tag,
+                                           double *values,
+                                           uint32_t vm)
 {
-    const char vr[3] = "FL";
-    uint32_t length = vm * sizeof(float);
+    const char vr[3] = "FD";
+    uint32_t length = vm * sizeof(double);
     dcm_element_t *element = create_element(tag, vr, length);
     if (element == NULL) {
+        dcm_log_error("Creation of Data Element failed. "
+                      "Could not allocate memory.");
+        free(values);
+        return NULL;
+    }
+    element->value.fd_multi = values;
+    element->vm = vm;
+    return element;
+}
+
+
+dcm_element_t *dcm_element_create_FL(uint32_t tag, float value)
+{
+    const char vr[3] = "FL";
+    uint32_t vm = 1;
+    uint32_t length = sizeof(double);
+    float *values = malloc(sizeof(float));
+    if (values == NULL) {
+        dcm_log_error("Creation of Data Element failed. "
+                      "Could not allocate memory.");
+        return NULL;
+    }
+    values[0] = value;
+    dcm_element_t *element = create_element(tag, vr, length);
+    if (element == NULL) {
+        dcm_log_error("Creation of Data Element failed. "
+                      "Could not allocate memory.");
         free(values);
         return NULL;
     }
@@ -769,32 +903,73 @@ dcm_element_t *dcm_element_create_FL(uint32_t tag,
 }
 
 
-dcm_element_t *dcm_element_create_DS(uint32_t tag,
-                                     char **values,
-                                     uint32_t vm)
+dcm_element_t *dcm_element_create_FL_multi(uint32_t tag,
+                                           float *values,
+                                           uint32_t vm)
 {
-    const char vr[3] = "DS";
-    return create_element_value_str(tag, vr, values, vm, DCM_CAPACITY_DS);
-}
-
-
-dcm_element_t *dcm_element_create_IS(uint32_t tag,
-                                     char **values,
-                                     uint32_t vm)
-{
-    const char vr[3] = "IS";
-    return create_element_value_str(tag, vr, values, vm, DCM_CAPACITY_IS);
-}
-
-
-dcm_element_t *dcm_element_create_SS(uint32_t tag,
-                                     int16_t *values,
-                                     uint32_t vm)
-{
-    const char vr[3] = "SS";
-    uint32_t length = vm * sizeof(int16_t);
+    const char vr[3] = "FL";
+    uint32_t length = vm * sizeof(float);
     dcm_element_t *element = create_element(tag, vr, length);
     if (element == NULL) {
+        dcm_log_error("Creation of Data Element failed. "
+                      "Could not allocate memory.");
+        free(values);
+        return NULL;
+    }
+    element->value.fl_multi = values;
+    element->vm = vm;
+    return element;
+}
+
+
+dcm_element_t *dcm_element_create_DS(uint32_t tag, char *value)
+{
+    const char vr[3] = "DS";
+    return create_element_value_str(tag, vr, value, DCM_CAPACITY_DS);
+}
+
+
+dcm_element_t *dcm_element_create_DS_multi(uint32_t tag,
+                                           char **values,
+                                           uint32_t vm)
+{
+    const char vr[3] = "DS";
+    return create_element_value_str_multi(tag, vr, values, vm, DCM_CAPACITY_DS);
+}
+
+
+dcm_element_t *dcm_element_create_IS(uint32_t tag, char *value)
+{
+    const char vr[3] = "IS";
+    return create_element_value_str(tag, vr, value, DCM_CAPACITY_IS);
+}
+
+
+dcm_element_t *dcm_element_create_IS_multi(uint32_t tag,
+                                           char **values,
+                                           uint32_t vm)
+{
+    const char vr[3] = "IS";
+    return create_element_value_str_multi(tag, vr, values, vm, DCM_CAPACITY_IS);
+}
+
+
+dcm_element_t *dcm_element_create_SS(uint32_t tag, int16_t value)
+{
+    const char vr[3] = "SS";
+    uint32_t vm = 1;
+    uint32_t length = vm * sizeof(int16_t);
+    int16_t *values = malloc(vm * sizeof(int16_t));
+    if (values == NULL) {
+        dcm_log_error("Creation of Data Element failed. "
+                      "Could not allocate memory.");
+        return NULL;
+    }
+    values[0] = value;
+    dcm_element_t *element = create_element(tag, vr, length);
+    if (element == NULL) {
+        dcm_log_error("Creation of Data Element failed. "
+                      "Could not allocate memory.");
         free(values);
         return NULL;
     }
@@ -804,14 +979,41 @@ dcm_element_t *dcm_element_create_SS(uint32_t tag,
 }
 
 
-dcm_element_t *dcm_element_create_SL(uint32_t tag,
-                                     int32_t *values,
-                                     uint32_t vm)
+dcm_element_t *dcm_element_create_SS_multi(uint32_t tag,
+                                           int16_t *values,
+                                           uint32_t vm)
 {
-    const char vr[3] = "SL";
-    uint32_t length = vm * sizeof(int32_t);
+    const char vr[3] = "SS";
+    uint32_t length = vm * sizeof(int16_t);
     dcm_element_t *element = create_element(tag, vr, length);
     if (element == NULL) {
+        dcm_log_error("Creation of Data Element failed. "
+                      "Could not allocate memory.");
+        free(values);
+        return NULL;
+    }
+    element->value.ss_multi = values;
+    element->vm = vm;
+    return element;
+}
+
+
+dcm_element_t *dcm_element_create_SL(uint32_t tag, int32_t value)
+{
+    const char vr[3] = "SL";
+    uint32_t vm = 1;
+    uint32_t length = vm * sizeof(int32_t);
+    int32_t *values = malloc(vm * sizeof(int32_t));
+    if (values == NULL) {
+        dcm_log_error("Creation of Data Element failed. "
+                      "Could not allocate memory.");
+        return NULL;
+    }
+    values[0] = value;
+    dcm_element_t *element = create_element(tag, vr, length);
+    if (element == NULL) {
+        dcm_log_error("Creation of Data Element failed. "
+                      "Could not allocate memory.");
         free(values);
         return NULL;
     }
@@ -821,14 +1023,41 @@ dcm_element_t *dcm_element_create_SL(uint32_t tag,
 }
 
 
-dcm_element_t *dcm_element_create_SV(uint32_t tag,
-                                     int64_t *values,
-                                     uint32_t vm)
+dcm_element_t *dcm_element_create_SL_multi(uint32_t tag,
+                                           int32_t *values,
+                                           uint32_t vm)
 {
-    const char vr[3] = "SV";
-    uint32_t length = vm * sizeof(int64_t);
+    const char vr[3] = "SL";
+    uint32_t length = vm * sizeof(int32_t);
     dcm_element_t *element = create_element(tag, vr, length);
     if (element == NULL) {
+        dcm_log_error("Creation of Data Element failed. "
+                      "Could not allocate memory.");
+        free(values);
+        return NULL;
+    }
+    element->value.sl_multi = values;
+    element->vm = vm;
+    return element;
+}
+
+
+dcm_element_t *dcm_element_create_SV(uint32_t tag, int64_t value)
+{
+    const char vr[3] = "SV";
+    uint32_t vm = 1;
+    uint32_t length = vm * sizeof(int64_t);
+    int64_t *values = malloc(vm * sizeof(int64_t));
+    if (values == NULL) {
+        dcm_log_error("Creation of Data Element failed. "
+                      "Could not allocate memory.");
+        return NULL;
+    }
+    values[0] = value;
+    dcm_element_t *element = create_element(tag, vr, length);
+    if (element == NULL) {
+        dcm_log_error("Creation of Data Element failed. "
+                      "Could not allocate memory.");
         free(values);
         return NULL;
     }
@@ -838,14 +1067,41 @@ dcm_element_t *dcm_element_create_SV(uint32_t tag,
 }
 
 
-dcm_element_t *dcm_element_create_UL(uint32_t tag,
-                                     uint32_t *values,
-                                     uint32_t vm)
+dcm_element_t *dcm_element_create_SV_multi(uint32_t tag,
+                                           int64_t *values,
+                                           uint32_t vm)
 {
-    const char vr[3] = "UL";
-    uint32_t length = vm * sizeof(uint32_t);
+    const char vr[3] = "SV";
+    uint32_t length = vm * sizeof(int64_t);
     dcm_element_t *element = create_element(tag, vr, length);
     if (element == NULL) {
+        dcm_log_error("Creation of Data Element failed. "
+                      "Could not allocate memory.");
+        free(values);
+        return NULL;
+    }
+    element->value.sv_multi = values;
+    element->vm = vm;
+    return element;
+}
+
+
+dcm_element_t *dcm_element_create_UL(uint32_t tag, uint32_t value)
+{
+    const char vr[3] = "UL";
+    uint32_t vm = 1;
+    uint32_t length = vm * sizeof(uint32_t);
+    uint32_t *values = malloc(vm * sizeof(uint32_t));
+    if (values == NULL) {
+        dcm_log_error("Creation of Data Element failed. "
+                      "Could not allocate memory.");
+        return NULL;
+    }
+    values[0] = value;
+    dcm_element_t *element = create_element(tag, vr, length);
+    if (element == NULL) {
+        dcm_log_error("Creation of Data Element failed. "
+                      "Could not allocate memory.");
         free(values);
         return NULL;
     }
@@ -855,14 +1111,59 @@ dcm_element_t *dcm_element_create_UL(uint32_t tag,
 }
 
 
-dcm_element_t *dcm_element_create_US(uint32_t tag,
-                                     uint16_t *values,
-                                     uint32_t vm)
+dcm_element_t *dcm_element_create_UL_multi(uint32_t tag,
+                                           uint32_t *values,
+                                           uint32_t vm)
+{
+    const char vr[3] = "UL";
+    uint32_t length = vm * sizeof(uint32_t);
+    dcm_element_t *element = create_element(tag, vr, length);
+    if (element == NULL) {
+        dcm_log_error("Creation of Data Element failed. "
+                      "Could not allocate memory.");
+        free(values);
+        return NULL;
+    }
+    element->value.ul_multi = values;
+    element->vm = vm;
+    return element;
+}
+
+
+dcm_element_t *dcm_element_create_US(uint32_t tag, uint16_t value)
+{
+    const char vr[3] = "US";
+    uint32_t vm = 1;
+    uint32_t length = vm * sizeof(uint16_t);
+    uint16_t *values = malloc(vm * sizeof(uint16_t));
+    if (values == NULL) {
+        dcm_log_error("Creation of Data Element failed. "
+                      "Could not allocate memory.");
+        return NULL;
+    }
+    values[0] = value;
+    dcm_element_t *element = create_element(tag, vr, length);
+    if (element == NULL) {
+        dcm_log_error("Creation of Data Element failed. "
+                      "Could not allocate memory.");
+        free(values);
+        return NULL;
+    }
+    element->value.us_multi = values;
+    element->vm = vm;
+    return element;
+}
+
+dcm_element_t *dcm_element_create_US_multi(uint32_t tag,
+                                           uint16_t *values,
+                                           uint32_t vm)
 {
     const char vr[3] = "US";
     uint32_t length = vm * sizeof(uint16_t);
     dcm_element_t *element = create_element(tag, vr, length);
     if (element == NULL) {
+        dcm_log_error("Creation of Data Element failed. "
+                      "Could not allocate memory.");
         free(values);
         return NULL;
     }
@@ -872,9 +1173,34 @@ dcm_element_t *dcm_element_create_US(uint32_t tag,
 }
 
 
-dcm_element_t *dcm_element_create_UV(uint32_t tag,
-                                     uint64_t *values,
-                                     uint32_t vm)
+dcm_element_t *dcm_element_create_UV(uint32_t tag, uint64_t value)
+{
+    const char vr[3] = "UV";
+    uint32_t vm = 1;
+    uint32_t length = vm * sizeof(uint64_t);
+    uint64_t *values = malloc(vm * sizeof(uint64_t));
+    if (values == NULL) {
+        dcm_log_error("Creation of Data Element failed. "
+                      "Could not allocate memory.");
+        return NULL;
+    }
+    values[0] = value;
+    dcm_element_t *element = create_element(tag, vr, length);
+    if (element == NULL) {
+        dcm_log_error("Creation of Data Element failed. "
+                      "Could not allocate memory.");
+        free(values);
+        return NULL;
+    }
+    element->value.uv_multi = values;
+    element->vm = 1;
+    return element;
+}
+
+
+dcm_element_t *dcm_element_create_UV_multi(uint32_t tag,
+                                           uint64_t *values,
+                                           uint32_t vm)
 {
     const char vr[3] = "UV";
     uint32_t length = vm * sizeof(uint64_t);
@@ -1055,19 +1381,10 @@ static void set_value_bytes(dcm_element_t *element, char *value)
 }
 
 
-dcm_element_t *dcm_element_create_LT(uint32_t tag,
-                                     char *value,
-                                     uint32_t length)
+dcm_element_t *dcm_element_create_LT(uint32_t tag, char *value)
 {
     const char vr[3] = "LT";
-    dcm_element_t *element = create_element(tag, vr, length);
-    if (element == NULL) {
-        free(value);
-        return NULL;
-    }
-    set_value_bytes(element, value);
-    element->vm = 1;
-    return element;
+    return create_element_value_str(tag, vr, value, DCM_CAPACITY_LT);
 }
 
 
@@ -1183,35 +1500,17 @@ dcm_element_t *dcm_element_create_UN(uint32_t tag,
 }
 
 
-dcm_element_t *dcm_element_create_UR(uint32_t tag,
-                                     char *value,
-                                     uint32_t length)
+dcm_element_t *dcm_element_create_UR(uint32_t tag, char *value)
 {
     const char vr[3] = "UR";
-    dcm_element_t *element = create_element(tag, vr, length);
-    if (element == NULL) {
-        free(value);
-        return NULL;
-    }
-    set_value_bytes(element, value);
-    element->vm = 1;
-    return element;
+    return create_element_value_str(tag, vr, value, DCM_CAPACITY_UR);
 }
 
 
-dcm_element_t *dcm_element_create_UT(uint32_t tag,
-                                     char *value,
-                                     uint32_t length)
+dcm_element_t *dcm_element_create_UT(uint32_t tag, char *value)
 {
     const char vr[3] = "UT";
-    dcm_element_t *element = create_element(tag, vr, length);
-    if (element == NULL) {
-        free(value);
-        return NULL;
-    }
-    set_value_bytes(element, value);
-    element->vm = 1;
-    return element;
+    return create_element_value_str(tag, vr, value, DCM_CAPACITY_UT);
 }
 
 

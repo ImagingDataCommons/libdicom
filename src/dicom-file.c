@@ -346,11 +346,14 @@ static dcm_element_t *read_element(FILE *fp,
         eheader_check_vr(header, "DT") ||
         eheader_check_vr(header, "IS") ||  // Integer String
         eheader_check_vr(header, "LO") ||
+        eheader_check_vr(header, "LT") ||
         eheader_check_vr(header, "PN") ||
         eheader_check_vr(header, "SH") ||
         eheader_check_vr(header, "ST") ||
         eheader_check_vr(header, "TM") ||
-        eheader_check_vr(header, "UI")) {
+        eheader_check_vr(header, "UI") ||
+        eheader_check_vr(header, "UR") ||
+        eheader_check_vr(header, "UT")) {
         char *value = malloc(length + 1);
         if (value == NULL) {
             dcm_log_error("Reading of Data Element failed. "
@@ -374,27 +377,27 @@ static dcm_element_t *read_element(FILE *fp,
         free(value);
 
         if (eheader_check_vr(header, "AE")) {
-            return dcm_element_create_AE(tag, strings, vm);
+            return dcm_element_create_AE_multi(tag, strings, vm);
         } else if (eheader_check_vr(header, "AS")) {
-            return dcm_element_create_AS(tag, strings, vm);
+            return dcm_element_create_AS_multi(tag, strings, vm);
         } else if (eheader_check_vr(header, "AT")) {
-            return dcm_element_create_AT(tag, strings, vm);
+            return dcm_element_create_AT_multi(tag, strings, vm);
         } else if (eheader_check_vr(header, "CS")) {
-            return dcm_element_create_CS(tag, strings, vm);
+            return dcm_element_create_CS_multi(tag, strings, vm);
         } else if (eheader_check_vr(header, "DA")) {
-            return dcm_element_create_DA(tag, strings, vm);
+            return dcm_element_create_DA_multi(tag, strings, vm);
         } else if (eheader_check_vr(header, "DS")) {
-            return dcm_element_create_DS(tag, strings, vm);
+            return dcm_element_create_DS_multi(tag, strings, vm);
         } else if (eheader_check_vr(header, "DT")) {
-            return dcm_element_create_DT(tag, strings, vm);
+            return dcm_element_create_DT_multi(tag, strings, vm);
         } else if (eheader_check_vr(header, "IS")) {
-            return dcm_element_create_IS(tag, strings, vm);
+            return dcm_element_create_IS_multi(tag, strings, vm);
         } else if (eheader_check_vr(header, "LO")) {
-            return dcm_element_create_LO(tag, strings, vm);
+            return dcm_element_create_LO_multi(tag, strings, vm);
         } else if (eheader_check_vr(header, "PN")) {
-            return dcm_element_create_PN(tag, strings, vm);
+            return dcm_element_create_PN_multi(tag, strings, vm);
         } else if (eheader_check_vr(header, "SH")) {
-            return dcm_element_create_SH(tag, strings, vm);
+            return dcm_element_create_SH_multi(tag, strings, vm);
         } else if (eheader_check_vr(header, "ST")) {
             // This VM shall always have VM 1.
             length = eheader_get_length(header);
@@ -404,9 +407,51 @@ static dcm_element_t *read_element(FILE *fp,
             free(strings);
             return dcm_element_create_ST(tag, str);
         } else if (eheader_check_vr(header, "TM")) {
-            return dcm_element_create_TM(tag, strings, vm);
+            return dcm_element_create_TM_multi(tag, strings, vm);
         } else if (eheader_check_vr(header, "UI")) {
-            return dcm_element_create_UI(tag, strings, vm);
+            return dcm_element_create_UI_multi(tag, strings, vm);
+        } else if (eheader_check_vr(header, "LT")) {
+            // This VM shall always have VM 1.
+            length = eheader_get_length(header);
+            char *str = malloc(length + 1);
+            if (str == NULL) {
+                dcm_log_error("Reading of Data Element failed. "
+                              "Could not allocate memory.");
+                free(strings);
+                return NULL;
+            }
+            strcpy(str, strings[0]);
+            str[length + 1] = '\0';
+            free(strings);
+            return dcm_element_create_LT(tag, str);
+        } else if (eheader_check_vr(header, "UR")) {
+            // This VM shall always have VM 1.
+            length = eheader_get_length(header);
+            char *str = malloc(length + 1);
+            if (str == NULL) {
+                dcm_log_error("Reading of Data Element failed. "
+                              "Could not allocate memory.");
+                free(strings);
+                return NULL;
+            }
+            strcpy(str, strings[0]);
+            str[length + 1] = '\0';
+            free(strings);
+            return dcm_element_create_UR(tag, str);
+        } else if (eheader_check_vr(header, "UT")) {
+            // This VM shall always have VM 1.
+            length = eheader_get_length(header);
+            char *str = malloc(length + 1);
+            if (str == NULL) {
+                dcm_log_error("Reading of Data Element failed. "
+                              "Could not allocate memory.");
+                free(strings);
+                return NULL;
+            }
+            strcpy(str, strings[0]);
+            str[length + 1] = '\0';
+            free(strings);
+            return dcm_element_create_UT(tag, str);
         } else {
             dcm_log_error("Reading of Data Element failed. "
                           "Encountered unexpected Value Representation '%s' "
@@ -555,7 +600,7 @@ static dcm_element_t *read_element(FILE *fp,
             *n += fread(&val, 1, sizeof(double), fp);
             values[i] = val;
         }
-        return dcm_element_create_FD(tag, values, vm);
+        return dcm_element_create_FD_multi(tag, values, vm);
     } else if (eheader_check_vr(header, "FL")) {
         vm = length / sizeof(float);
         float *values = malloc(vm * sizeof(float));
@@ -564,7 +609,7 @@ static dcm_element_t *read_element(FILE *fp,
             *n += fread(&val, 1, sizeof(float), fp);
             values[i] = val;
         }
-        return dcm_element_create_FL(tag, values, vm);
+        return dcm_element_create_FL_multi(tag, values, vm);
     } else if (eheader_check_vr(header, "SS")) {
         vm = length / sizeof(int16_t);
         int16_t *values = malloc(vm * sizeof(int16_t));
@@ -573,7 +618,7 @@ static dcm_element_t *read_element(FILE *fp,
             *n += fread(&val, 1, sizeof(int16_t), fp);
             values[i] = val;
         }
-        return dcm_element_create_SS(tag, values, vm);
+        return dcm_element_create_SS_multi(tag, values, vm);
     } else if (eheader_check_vr(header, "SL")) {
         vm = length / sizeof(int32_t);
         int32_t *values = malloc(vm * sizeof(int32_t));
@@ -582,7 +627,7 @@ static dcm_element_t *read_element(FILE *fp,
             *n += fread(&val, 1, sizeof(int32_t), fp);
             values[i] = val;
         }
-        return dcm_element_create_SL(tag, values, vm);
+        return dcm_element_create_SL_multi(tag, values, vm);
     } else if (eheader_check_vr(header, "SV")) {
         vm = length / sizeof(int64_t);
         int64_t *values = malloc(vm * sizeof(int64_t));
@@ -591,7 +636,7 @@ static dcm_element_t *read_element(FILE *fp,
             *n += fread(&val, 1, sizeof(int64_t), fp);
             values[i] = val;
         }
-        return dcm_element_create_SV(tag, values, vm);
+        return dcm_element_create_SV_multi(tag, values, vm);
     } else if (eheader_check_vr(header, "UL")) {
         vm = length / sizeof(uint32_t);
         uint32_t *values = malloc(vm * sizeof(uint32_t));
@@ -600,7 +645,7 @@ static dcm_element_t *read_element(FILE *fp,
             *n += fread(&val, 1, sizeof(uint32_t), fp);
             values[i] = val;
         }
-        return dcm_element_create_UL(tag, values, vm);
+        return dcm_element_create_UL_multi(tag, values, vm);
     } else if (eheader_check_vr(header, "US")) {
         vm = length / sizeof(uint16_t);
         uint16_t *values = malloc(vm * sizeof(uint16_t));
@@ -609,7 +654,7 @@ static dcm_element_t *read_element(FILE *fp,
             *n += fread(&val, 1, sizeof(uint16_t), fp);
             values[i] = val;
         }
-        return dcm_element_create_US(tag, values, vm);
+        return dcm_element_create_US_multi(tag, values, vm);
     } else if (eheader_check_vr(header, "UV")) {
         vm = length / sizeof(uint64_t);
         uint64_t *values = malloc(vm * sizeof(uint64_t));
@@ -618,7 +663,7 @@ static dcm_element_t *read_element(FILE *fp,
             *n += fread(&val, 1, sizeof(uint64_t), fp);
             values[i] = val;
         }
-        return dcm_element_create_UV(tag, values, vm);
+        return dcm_element_create_UV_multi(tag, values, vm);
     } else {
         char *value = malloc(length);
         if (value == NULL) {
@@ -630,9 +675,7 @@ static dcm_element_t *read_element(FILE *fp,
         }
         *n += fread(value, 1, length, fp);
 
-        if (eheader_check_vr(header, "LT")) {
-            return dcm_element_create_LT(tag, value, length);
-        } else if (eheader_check_vr(header, "OB")) {
+        if (eheader_check_vr(header, "OB")) {
             return dcm_element_create_OB(tag, value, length);
         } else if (eheader_check_vr(header, "OD")) {
             return dcm_element_create_OD(tag, value, length);
@@ -646,10 +689,6 @@ static dcm_element_t *read_element(FILE *fp,
             return dcm_element_create_UC(tag, value, length);
         } else if (eheader_check_vr(header, "UN")) {
             return dcm_element_create_UN(tag, value, length);
-        } else if (eheader_check_vr(header, "UR")) {
-            return dcm_element_create_UR(tag, value, length);
-        } else if (eheader_check_vr(header, "UT")) {
-            return dcm_element_create_UT(tag, value, length);
         } else {
             tag = eheader_get_tag(header);
             dcm_log_error("Reading of Data Element failed. "
