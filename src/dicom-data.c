@@ -844,67 +844,78 @@ void dcm_element_copy_value_ST(dcm_element_t *element, char *value)
 }
 
 
-static void print_element_value_AE(dcm_element_t *element, uint32_t index)
+static inline void print_element_value_AE(dcm_element_t *element,
+                                          uint32_t index)
 {
     printf("%s", element->value.str_multi[index]);
 }
 
 
-static void print_element_value_AT(dcm_element_t *element, uint32_t index)
+static inline void print_element_value_AT(dcm_element_t *element,
+                                          uint32_t index)
 {
     printf("%s", element->value.str_multi[index]);
 }
 
 
-static void print_element_value_AS(dcm_element_t *element, uint32_t index)
+static inline void print_element_value_AS(dcm_element_t *element,
+                                          uint32_t index)
 {
     printf("%s", element->value.str_multi[index]);
 }
 
 
-static void print_element_value_CS(dcm_element_t *element, uint32_t index)
+static inline void print_element_value_CS(dcm_element_t *element,
+                                          uint32_t index)
 {
     printf("%s", element->value.str_multi[index]);
 }
 
 
-static void print_element_value_DA(dcm_element_t *element, uint32_t index)
+static inline void print_element_value_DA(dcm_element_t *element,
+                                          uint32_t index)
 {
     printf("%s", element->value.str_multi[index]);
 }
 
 
-static void print_element_value_DT(dcm_element_t *element, uint32_t index)
+static inline void print_element_value_DT(dcm_element_t *element,
+                                          uint32_t index)
 {
     printf("%s", element->value.str_multi[index]);
 }
 
 
-static void print_element_value_LO(dcm_element_t *element, uint32_t index)
+static inline void print_element_value_LO(dcm_element_t *element,
+                                          uint32_t index)
 {
     printf("%s", element->value.str_multi[index]);
 }
 
 
-static void print_element_value_PN(dcm_element_t *element, uint32_t index)
+static inline void print_element_value_PN(dcm_element_t *element,
+                                          uint32_t index)
 {
     printf("%s", element->value.str_multi[index]);
 }
 
 
-static void print_element_value_SH(dcm_element_t *element, uint32_t index)
+static inline void print_element_value_SH(dcm_element_t *element,
+                                          uint32_t index)
 {
     printf("%s", element->value.str_multi[index]);
 }
 
 
-static void print_element_value_TM(dcm_element_t *element, uint32_t index)
+static inline void print_element_value_TM(dcm_element_t *element,
+                                          uint32_t index)
 {
     printf("%s", element->value.str_multi[index]);
 }
 
 
-static void print_element_value_UI(dcm_element_t *element, uint32_t index)
+static inline void print_element_value_UI(dcm_element_t *element,
+                                          uint32_t index)
 {
     printf("%s", element->value.str_multi[index]);
 }
