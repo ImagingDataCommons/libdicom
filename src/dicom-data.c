@@ -278,7 +278,6 @@ uint32_t dcm_element_get_vm(dcm_element_t *element)
 
 dcm_element_t *dcm_element_clone(dcm_element_t *element)
 {
-    // FIXME: handle malloc failures!
     assert(element);
     uint32_t i;
     dcm_element_t *clone = NULL;
@@ -332,10 +331,26 @@ dcm_element_t *dcm_element_clone(dcm_element_t *element)
         // Character Strings
         if (element->value.str_multi != NULL) {
             clone->value.str_multi = malloc(element->vm * sizeof(char *));
+            if (clone->value.str_multi == NULL) {
+                dcm_log_error("Cloning of Data Element failed."
+                              "Could not allocate memory for value of clone "
+                              "clone of Data Element '%08X'.",
+                              element->tag);
+                free(clone);
+                return NULL;
+            }
             for (i = 0; i < element->vm; i++) {
                 clone->value.str_multi[i] = malloc(
                     strlen(element->value.str_multi[i]) + 1
                 );
+                if (clone->value.str_multi[i] == NULL) {
+                    dcm_log_error("Cloning of Data Element failed."
+                                  "Could not allocate memory for value of clone "
+                                  "clone of Data Element '%08X'.",
+                                  element->tag);
+                    free(clone);
+                    return NULL;
+                }
                 strcpy(clone->value.str_multi[i],
                        element->value.str_multi[i]);
             }
@@ -352,6 +367,14 @@ dcm_element_t *dcm_element_clone(dcm_element_t *element)
         // Bytes
         if (element->value.bytes != NULL) {
             clone->value.bytes = malloc(element->length);
+            if (clone->value.bytes == NULL) {
+                dcm_log_error("Cloning of Data Element failed."
+                              "Could not allocate memory for value of clone "
+                              "clone of Data Element '%08X'.",
+                              element->tag);
+                free(clone);
+                return NULL;
+            }
             memcpy(clone->value.bytes,
                    element->value.bytes,
                    element->length);
@@ -359,6 +382,14 @@ dcm_element_t *dcm_element_clone(dcm_element_t *element)
     } else if (strcmp(element->vr, "FD") == 0) {
         if (element->value.fd_multi != NULL) {
             clone->value.fd_multi = malloc(element->vm * sizeof(double));
+            if (clone->value.fd_multi == NULL) {
+                dcm_log_error("Cloning of Data Element failed."
+                              "Could not allocate memory for value of clone "
+                              "clone of Data Element '%08X'.",
+                              element->tag);
+                free(clone);
+                return NULL;
+            }
             for (i = 0; i < element->vm; i++) {
                 clone->value.fd_multi[i] = element->value.fd_multi[i];
             }
@@ -366,6 +397,14 @@ dcm_element_t *dcm_element_clone(dcm_element_t *element)
     } else if (strcmp(element->vr, "FL") == 0) {
         if (element->value.fl_multi != NULL) {
             clone->value.fl_multi = malloc(element->vm * sizeof(float));
+            if (clone->value.fl_multi == NULL) {
+                dcm_log_error("Cloning of Data Element failed."
+                              "Could not allocate memory for value of clone "
+                              "clone of Data Element '%08X'.",
+                              element->tag);
+                free(clone);
+                return NULL;
+            }
             for (i = 0; i < element->vm; i++) {
                 clone->value.fl_multi[i] = element->value.fl_multi[i];
             }
@@ -373,6 +412,14 @@ dcm_element_t *dcm_element_clone(dcm_element_t *element)
     } else if (strcmp(element->vr, "SS") == 0) {
         if (element->value.ss_multi != NULL) {
             clone->value.ss_multi = malloc(element->vm * sizeof(int16_t));
+            if (clone->value.ss_multi == NULL) {
+                dcm_log_error("Cloning of Data Element failed."
+                              "Could not allocate memory for value of clone "
+                              "clone of Data Element '%08X'.",
+                              element->tag);
+                free(clone);
+                return NULL;
+            }
             for (i = 0; i < element->vm; i++) {
                 clone->value.ss_multi[i] = element->value.ss_multi[i];
             }
@@ -380,6 +427,14 @@ dcm_element_t *dcm_element_clone(dcm_element_t *element)
     } else if (strcmp(element->vr, "SV") == 0) {
         if (element->value.sv_multi != NULL) {
             clone->value.sv_multi = malloc(element->vm * sizeof(int64_t));
+            if (clone->value.sv_multi == NULL) {
+                dcm_log_error("Cloning of Data Element failed."
+                              "Could not allocate memory for value of clone "
+                              "clone of Data Element '%08X'.",
+                              element->tag);
+                free(clone);
+                return NULL;
+            }
             for (i = 0; i < element->vm; i++) {
                 clone->value.sv_multi[i] = element->value.sv_multi[i];
             }
@@ -387,6 +442,14 @@ dcm_element_t *dcm_element_clone(dcm_element_t *element)
     } else if (strcmp(element->vr, "US") == 0) {
         if (element->value.us_multi != NULL) {
             clone->value.us_multi = malloc(element->vm * sizeof(uint16_t));
+            if (clone->value.us_multi == NULL) {
+                dcm_log_error("Cloning of Data Element failed."
+                              "Could not allocate memory for value of clone "
+                              "clone of Data Element '%08X'.",
+                              element->tag);
+                free(clone);
+                return NULL;
+            }
             for (i = 0; i < element->vm; i++) {
                 clone->value.us_multi[i] = element->value.us_multi[i];
             }
@@ -394,6 +457,14 @@ dcm_element_t *dcm_element_clone(dcm_element_t *element)
     } else if (strcmp(element->vr, "UL") == 0) {
         if (element->value.ul_multi != NULL) {
             clone->value.ul_multi = malloc(element->vm * sizeof(uint32_t));
+            if (clone->value.ul_multi == NULL) {
+                dcm_log_error("Cloning of Data Element failed."
+                              "Could not allocate memory for value of clone "
+                              "clone of Data Element '%08X'.",
+                              element->tag);
+                free(clone);
+                return NULL;
+            }
             for (i = 0; i < element->vm; i++) {
                 clone->value.ul_multi[i] = element->value.ul_multi[i];
             }
@@ -401,6 +472,14 @@ dcm_element_t *dcm_element_clone(dcm_element_t *element)
     } else if (strcmp(element->vr, "UV") == 0) {
         if (element->value.uv_multi != NULL) {
             clone->value.uv_multi = malloc(element->vm * sizeof(uint64_t));
+            if (clone->value.uv_multi == NULL) {
+                dcm_log_error("Cloning of Data Element failed."
+                              "Could not allocate memory for value of clone "
+                              "clone of Data Element '%08X'.",
+                              element->tag);
+                free(clone);
+                return NULL;
+            }
             for (i = 0; i < element->vm; i++) {
                 clone->value.uv_multi[i] = element->value.uv_multi[i];
             }
