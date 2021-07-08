@@ -55,7 +55,7 @@ Data Elements are immutable and cannot be modified after creation.
 Data Sets are generally mutable (i.e., Data Elements can be inserted or removed), but they can be locked to prevent subsequent modification via :c:func:`dcm_dataset_lock()`.
 A Data Set is automatically locked when retrieved from a Sequence via :c:func:`dcm_sequence_get()` or read from a File via :c:func:`dcm_file_read_metadata()`.
 Sequences are also mutable (i.e., Data Sets can be appended or removed), but they can be locked to prevent subsequent modification via :c:func:`dcm_sequence_lock()`.
-A Sequence is automatically locked when used a value in a Data Element with Value Representation SQ (Sequence of Items).
+A Sequence is automatically locked when used as a value in a Data Element with Value Representation SQ (Sequence of Items).
 
 Error handling
 ++++++++++++++
@@ -69,6 +69,39 @@ The library differentiates between two different kinds of errors, which are hand
 
 - **Runtime errors** should not occur and reflect incorrect usage of the library's API by the programmer, i.e., a bug in the application code.
   An application will not be able to recover from these kinds of errors.
-  Functions generally check for known runtime errors and, in case an error condition is encountered, stop execution and exit the application.
+  Functions generally check for known runtime errors using the ``assert`` macro and, in case an error condition is encountered, stop execution and exit the application.
+  These checks can be turned off by building with the ``NDEBUG`` flag.
 
 In either case, functions log an error message to the standard error stream when the log level (:c:var:`dcm_log_level`) is set to :c:enumerator:`DCM_LOG_ERROR` or higher.
+
+
+Getting started
++++++++++++++++
+
+Below is an example for reading metadata from a DICOM Part10 file and printing it to standard output:
+
+.. code:: c
+
+    #include <stdlib.h>
+    #include <dicom.h>
+
+    main() {
+        const char *file_path = "/path/to/file.dcm";
+
+        dcm_file_t *file = dcm_file_create(file_path, 'r');
+        if (file == NULL) {
+            return 1;
+        }
+
+        dcm_dataset_t *metadata = dcm_file_read_metadata(file);
+        if (metadata == NULL) {
+            dcm_file_destroy(file);
+            return 1;
+        }
+        dcm_dataset_print(metadata, 0);
+
+        dcm_file_destroy(file);
+        dcm_dataset_destroy(metadata);
+
+        return 0;
+    }
