@@ -21,6 +21,12 @@ autoconf, automake, libtool, and pkg-config and then run
 
 This will create the ``configure`` script required for building library and executable tools.
 
+* For macOS, one option is to first install  `homebrew <https://brew.sh/>`_ and then run the following before running `autoreconf`
+
+.. code:: bash
+
+    brew install autoconf automake libtool check
+
 
 Build configuration
 +++++++++++++++++++
