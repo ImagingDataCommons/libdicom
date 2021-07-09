@@ -276,6 +276,13 @@ static eheader_t *read_element_header(FILE *fp, size_t *n, bool implicit)
         // Value Representation
         *n += fread(&vr, 1, 2, fp);
         vr[2] = '\0';
+        if (strcmp(vr, "")) {
+            dcm_log_warning("Value Representation was not provided for "
+                            "Data Element %08X and had to be looked up.",
+                            tag);
+            const char *tmp = dcm_dict_lookup_vr(tag);
+            strcpy(vr, tmp);
+        }
 
         // Value Length
         if (strcmp(vr, "AE") == 0 ||
@@ -568,9 +575,7 @@ static dcm_element_t *read_element(FILE *fp,
                     n_item -= 4;
                 }
 
-                item_eheader = read_element_header(fp,
-                                                       n_item_ptr,
-                                                       implicit);
+                item_eheader = read_element_header(fp, n_item_ptr, implicit);
                 if (item_eheader == NULL) {
                     dcm_log_error("Reading of Data Element failed. "
                                   "Could not read header of Item #%d "
