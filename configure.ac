@@ -13,9 +13,9 @@ AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 
 # Checks for programs.
+AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CC_C99
-AC_PROG_CC
 
 # Checks for header files.
 AC_CHECK_HEADERS([stdint.h stdlib.h string.h])
