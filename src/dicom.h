@@ -5,6 +5,12 @@
 #ifndef DCM_INCLUDED
 #define DCM_INCLUDED
 
+#ifndef NDEBUG
+#  define DEBUG_ONLY( ... ) __VA_ARGS__
+#else
+#  define DEBUG_ONLY( ... )
+#endif
+
 /**
  * Maximum number of characters in values with Value Representation AE.
  */

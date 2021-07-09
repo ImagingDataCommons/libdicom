@@ -504,15 +504,23 @@ uint32_t dcm_element_get_length(dcm_element_t *element)
 }
 
 
-static void assert_vr(dcm_element_t *element, const char *vr)
+static inline void assert_vr(dcm_element_t *element, const char *vr)
 {
-    assert(dcm_element_check_vr(element, vr));
+    DEBUG_ONLY(bool success =) dcm_element_check_vr(element, vr);
+    assert(success);
 }
 
 
-static void assert_value_index(dcm_element_t *element, uint32_t index)
+static inline bool check_value_index(dcm_element_t *element, uint32_t index)
 {
-    assert(index <= (element->vm - 1));
+    return index <= (element->vm - 1);
+}
+
+
+static inline void assert_value_index(dcm_element_t *element, uint32_t index)
+{
+    DEBUG_ONLY(bool success =) check_value_index(element, index);
+    assert(success);
 }
 
 
