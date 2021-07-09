@@ -2,9 +2,8 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([dicom], [0.1.0], [hackermd@protonmail.com], [dicom], [https://github.com/hackermd/cdicom])
+AC_INIT([dicom], [0.1.0], [hackermd@protonmail.com], [dicom], [https://github.com/hackermd/libdicom])
 AC_CONFIG_SRCDIR([src])
-AC_CONFIG_HEADER([config.h])
 
 AM_INIT_AUTOMAKE([foreign subdir-objects 1.11.1 dist-xz])
 
@@ -15,7 +14,6 @@ AC_CANONICAL_HOST
 # Checks for programs.
 AC_PROG_CC
 AM_PROG_CC_C_O
-AC_PROG_CC_C99
 
 # Checks for header files.
 AC_CHECK_HEADERS([stdint.h stdlib.h string.h])
@@ -79,6 +77,7 @@ AC_SUBST([WARN_CFLAGS])
 
 AC_SUBST(FEATURE_FLAGS)
 
+AC_CONFIG_MACRO_DIRS([m4])
 AC_CONFIG_FILES([
 Makefile
 tools/dcm-dump.1
