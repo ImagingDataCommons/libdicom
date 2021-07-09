@@ -331,8 +331,8 @@ static dcm_element_t *read_element(FILE *fp,
     uint32_t tag;
     const char *vr = NULL;
     uint32_t length;
-    uint32_t vm;
     uint32_t i;
+    uint32_t vm = 1;
     uint32_t item_index = 0;
     uint32_t item_tag;
     uint32_t item_length;
