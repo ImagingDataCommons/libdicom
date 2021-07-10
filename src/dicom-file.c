@@ -276,13 +276,6 @@ static eheader_t *read_element_header(FILE *fp, size_t *n, bool implicit)
         // Value Representation
         *n += fread(&vr, 1, 2, fp);
         vr[2] = '\0';
-        if (strcmp(vr, "")) {
-            dcm_log_warning("Value Representation was not provided for "
-                            "Data Element %08X and had to be looked up.",
-                            tag);
-            const char *tmp = dcm_dict_lookup_vr(tag);
-            strcpy(vr, tmp);
-        }
 
         // Value Length
         if (strcmp(vr, "AE") == 0 ||
