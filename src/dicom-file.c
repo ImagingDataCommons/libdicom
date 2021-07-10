@@ -951,6 +951,7 @@ dcm_dataset_t *dcm_file_read_metadata(dcm_file_t *file)
     size_t *n = &size;
     uint32_t n_elem = 0;
     bool implicit = false;
+    char tmp[1];
     dcm_element_t *element = NULL;
     eheader_t *header = NULL;
     dcm_dataset_t *file_meta = NULL;
@@ -980,6 +981,12 @@ dcm_dataset_t *dcm_file_read_metadata(dcm_file_t *file)
     }
 
     while (!feof(file->fp)) {
+        if (fread(tmp, 1, 1, file->fp) == 0) {
+            dcm_log_info("Stop reading Data Set. Reached end of file.");
+            break;
+        }
+        fseek(file->fp, -1L, SEEK_CUR);
+
         header = read_element_header(file->fp, n, implicit);
         if (header == NULL) {
             dcm_log_error("Reading of Data Set failed. "
@@ -990,12 +997,6 @@ dcm_dataset_t *dcm_file_read_metadata(dcm_file_t *file)
             return NULL;
         }
 
-        if (feof(file->fp)) {
-            // This should not happen, but safety first.
-            dcm_log_warning("Stop reading Data Set. Reached end of file.");
-            break;
-        }
-
         tag = eheader_get_tag(header);
         group_number = eheader_get_group_number(header);
         if (tag == TAG_TRAILING_PADDING) {
@@ -1003,10 +1004,9 @@ dcm_dataset_t *dcm_file_read_metadata(dcm_file_t *file)
                           "Encountered Data Set Trailing Tag.");
             eheader_destroy(header);
             break;
-        }
-        if (tag == TAG_PIXEL_DATA ||
-            tag == TAG_FLOAT_PIXEL_DATA ||
-            tag == TAG_DOUBLE_PIXEL_DATA) {
+        } else if (tag == TAG_PIXEL_DATA ||
+                   tag == TAG_FLOAT_PIXEL_DATA ||
+                   tag == TAG_DOUBLE_PIXEL_DATA) {
             // Set file pointer to the first byte of the pixel data element
             if (implicit) {
                 // Tag: 4 bytes, Value Length: 4 bytes
