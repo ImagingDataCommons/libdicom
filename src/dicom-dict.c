@@ -9865,6 +9865,9 @@ bool dcm_is_private_tag(uint32_t tag)
 
 bool dcm_is_valid_tag(uint32_t tag)
 {
+    if (tag == 0x00000000) {
+        return false;
+    }
     bool is_public_tag = dcm_is_public_tag(tag);
     bool is_private_tag = dcm_is_private_tag(tag);
     if (is_public_tag || is_private_tag) {
