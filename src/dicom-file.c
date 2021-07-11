@@ -424,7 +424,7 @@ static dcm_element_t *read_element(FILE *fp,
                 return NULL;
             }
             strcpy(str, strings[0]);
-            str[length + 1] = '\0';
+            str[length] = '\0';
             free(strings);
             return dcm_element_create_ST(tag, str);
         } else if (eheader_check_vr(header, "TM")) {
@@ -442,7 +442,7 @@ static dcm_element_t *read_element(FILE *fp,
                 return NULL;
             }
             strcpy(str, strings[0]);
-            str[length + 1] = '\0';
+            str[length] = '\0';
             free(strings);
             return dcm_element_create_LT(tag, str);
         } else if (eheader_check_vr(header, "UR")) {
@@ -456,7 +456,7 @@ static dcm_element_t *read_element(FILE *fp,
                 return NULL;
             }
             strcpy(str, strings[0]);
-            str[length + 1] = '\0';
+            str[length] = '\0';
             free(strings);
             return dcm_element_create_UR(tag, str);
         } else if (eheader_check_vr(header, "UT")) {
@@ -470,7 +470,7 @@ static dcm_element_t *read_element(FILE *fp,
                 return NULL;
             }
             strcpy(str, strings[0]);
-            str[length + 1] = '\0';
+            str[length] = '\0';
             free(strings);
             return dcm_element_create_UT(tag, str);
         } else {
