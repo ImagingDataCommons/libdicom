@@ -120,6 +120,7 @@ static eheader_t *eheader_create(uint32_t tag, const char *vr, uint64_t length)
         dcm_log_error("Constructing header of Data Element failed. "
                       "Encountered invalid Value Representation: '%s'.",
                       vr);
+        free(header);
         return NULL;
     }
     strcpy(header->vr, vr);
@@ -223,6 +224,7 @@ finish:
         dcm_log_error("Failed to parse character string. "
                       "Could not allocate memory for array of substrings.");
         free(string);
+        utarray_free(array);
         return NULL;
     }
     for (i = 0; i < n; i++) {
@@ -241,6 +243,7 @@ finish:
     }
     *vm = n;
     utarray_free(array);
+    free(string);
     return parts;
 }
 
@@ -389,7 +392,6 @@ static dcm_element_t *read_element(FILE *fp,
 
         // Parse value and create array of strings
         char **strings = parse_character_string(value, &vm);
-        free(value);
 
         if (eheader_check_vr(header, "AE")) {
             return dcm_element_create_AE_multi(tag, strings, vm);
@@ -415,16 +417,18 @@ static dcm_element_t *read_element(FILE *fp,
             return dcm_element_create_SH_multi(tag, strings, vm);
         } else if (eheader_check_vr(header, "ST")) {
             // This VM shall always have VM 1.
-            length = eheader_get_length(header);
-            char *str = malloc(length + 1);
-            if (str == NULL) {
+            if (vm > 1) {
                 dcm_log_error("Reading of Data Element failed. "
-                              "Could not allocate memory.");
+                              "Encountered unexpected Value Multiplicity %d "
+                              "for Data Element '%08X'.",
+                              vm, tag);
+                for (i = 0; i < vm; i++) {
+                    free(strings[i]);
+                }
                 free(strings);
                 return NULL;
             }
-            strcpy(str, strings[0]);
-            str[length] = '\0';
+            char *str = strings[0];
             free(strings);
             return dcm_element_create_ST(tag, str);
         } else if (eheader_check_vr(header, "TM")) {
@@ -433,44 +437,50 @@ static dcm_element_t *read_element(FILE *fp,
             return dcm_element_create_UI_multi(tag, strings, vm);
         } else if (eheader_check_vr(header, "LT")) {
             // This VM shall always have VM 1.
-            length = eheader_get_length(header);
-            char *str = malloc(length + 1);
-            if (str == NULL) {
+            if (vm > 1) {
                 dcm_log_error("Reading of Data Element failed. "
-                              "Could not allocate memory.");
+                              "Encountered unexpected Value Multiplicity %d "
+                              "for Data Element '%08X'.",
+                              vm, tag);
+                for (i = 0; i < vm; i++) {
+                    free(strings[i]);
+                }
                 free(strings);
                 return NULL;
             }
-            strcpy(str, strings[0]);
-            str[length] = '\0';
+            char *str = strings[0];
             free(strings);
             return dcm_element_create_LT(tag, str);
         } else if (eheader_check_vr(header, "UR")) {
             // This VM shall always have VM 1.
-            length = eheader_get_length(header);
-            char *str = malloc(length + 1);
-            if (str == NULL) {
+            if (vm > 1) {
                 dcm_log_error("Reading of Data Element failed. "
-                              "Could not allocate memory.");
+                              "Encountered unexpected Value Multiplicity %d "
+                              "for Data Element '%08X'.",
+                              vm, tag);
+                for (i = 0; i < vm; i++) {
+                    free(strings[i]);
+                }
                 free(strings);
                 return NULL;
             }
-            strcpy(str, strings[0]);
-            str[length] = '\0';
+            char *str = strings[0];
             free(strings);
             return dcm_element_create_UR(tag, str);
         } else if (eheader_check_vr(header, "UT")) {
             // This VM shall always have VM 1.
-            length = eheader_get_length(header);
-            char *str = malloc(length + 1);
-            if (str == NULL) {
+            if (vm > 1) {
                 dcm_log_error("Reading of Data Element failed. "
-                              "Could not allocate memory.");
+                              "Encountered unexpected Value Multiplicity %d "
+                              "for Data Element '%08X'.",
+                              vm, tag);
+                for (i = 0; i < vm; i++) {
+                    free(strings[i]);
+                }
                 free(strings);
                 return NULL;
             }
-            strcpy(str, strings[0]);
-            str[length] = '\0';
+            char *str = strings[0];
             free(strings);
             return dcm_element_create_UT(tag, str);
         } else {
@@ -478,6 +488,9 @@ static dcm_element_t *read_element(FILE *fp,
                           "Encountered unexpected Value Representation '%s' "
                           "for Data Element '%08X'.",
                           vr, tag);
+            for (i = 0; i < vm; i++) {
+                free(strings[i]);
+            }
             free(strings);
             return NULL;
         }
@@ -581,9 +594,9 @@ static dcm_element_t *read_element(FILE *fp,
                 }
 
                 item_element = read_element(fp,
-                                                item_eheader,
-                                                n_item_ptr,
-                                                implicit);
+                                            item_eheader,
+                                            n_item_ptr,
+                                            implicit);
                 if (item_element == NULL) {
                     dcm_log_error("Reading of Data Element failed. "
                                   "Could not read value of Item #%d of "
@@ -854,6 +867,7 @@ dcm_dataset_t *dcm_file_read_file_meta(dcm_file_t *file)
     dcm_element_copy_value_UL(element, 0, &group_length);
     dcm_element_destroy(element);
     eheader_destroy(header);
+    dcm_element_destroy(element);
 
     // File Meta Information Version
     header = read_element_header(file->fp, n, implicit);
@@ -873,14 +887,16 @@ dcm_dataset_t *dcm_file_read_file_meta(dcm_file_t *file)
         dcm_dataset_destroy(file_meta);
         return NULL;
     }
-    dcm_element_destroy(element);
     eheader_destroy(header);
+    dcm_element_destroy(element);
+
     while(true) {
         header = read_element_header(file->fp, n, implicit);
         if (header == NULL) {
             dcm_log_error("Reading of File Meta Information failed. "
                           "Could not read header of Data Element #%d.",
                           n_elem);
+            dcm_element_destroy(element);
             dcm_dataset_destroy(file_meta);
             return NULL;
         }
@@ -888,7 +904,6 @@ dcm_dataset_t *dcm_file_read_file_meta(dcm_file_t *file)
         group_number = eheader_get_group_number(header);
         if (group_number != 0x0002) {
             eheader_destroy(header);
-            dcm_dataset_destroy(file_meta);
             break;
         }
 
@@ -896,6 +911,7 @@ dcm_dataset_t *dcm_file_read_file_meta(dcm_file_t *file)
         if (element == NULL) {
             dcm_log_error("Reading File Meta Information failed. "
                           "Could not read value of Data Element '%08X'.", tag);
+            eheader_destroy(header);
             dcm_dataset_destroy(file_meta);
             return NULL;
         }
@@ -904,6 +920,8 @@ dcm_dataset_t *dcm_file_read_file_meta(dcm_file_t *file)
             dcm_log_error("Reading File Meta Information failed. "
                           "Could not insert Data Element '%08X' into "
                           "Data Set.", tag);
+            eheader_destroy(header);
+            dcm_dataset_destroy(file_meta);
             return NULL;
         }
 
@@ -923,6 +941,7 @@ dcm_dataset_t *dcm_file_read_file_meta(dcm_file_t *file)
         dcm_log_error("Reading of File Meta Information failed. "
                       "Could not allocate memory for data element "
                       "'Transfer Syntax UID'.");
+        dcm_dataset_destroy(file_meta);
         return NULL;
     }
     dcm_element_copy_value_UI(element, 0, file->transfer_syntax_uid);
@@ -995,7 +1014,6 @@ dcm_dataset_t *dcm_file_read_metadata(dcm_file_t *file)
             dcm_log_error("Reading of Data Set failed. "
                           "Could not read header of Data Element #%d.",
                           n_elem);
-            eheader_destroy(header);
             dcm_dataset_destroy(dataset);
             return NULL;
         }
@@ -1044,6 +1062,8 @@ dcm_dataset_t *dcm_file_read_metadata(dcm_file_t *file)
         if (!dcm_dataset_insert(dataset, element)) {
             dcm_log_error("Inserting Data Element '%08X' into Data Set "
                           "failed.", tag);
+            eheader_destroy(header);
+            dcm_dataset_destroy(dataset);
             return NULL;
         }
         eheader_destroy(header);
