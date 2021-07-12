@@ -561,7 +561,17 @@ static bool set_value_str_multi(dcm_element_t *element,
                                 uint32_t capacity) {
     assert(element);
     assert(values);
+    uint32_t i;
+
     if (!check_value_str_multi(element, values, vm, capacity)) {
+        if (values != NULL) {
+            for (i = 0; i < vm; i++) {
+                if (values[i] != NULL) {
+                    free(values[i]);
+                }
+            }
+            free(values);
+        }
         return false;
     }
     element->value.str_multi = values;
@@ -592,10 +602,13 @@ static dcm_element_t *create_element_value_str(uint32_t tag,
     length = strlen(value);
     element = create_element(tag, vr, length);
     if (element == NULL) {
+        free(value);
+        free(values[0]);
         free(values);
         return NULL;
     }
     if (!set_value_str_multi(element, values, vm, capacity)) {
+        free(value);
         dcm_element_destroy(element);
         return NULL;
     }
@@ -623,6 +636,9 @@ static dcm_element_t *create_element_value_str_multi(uint32_t tag,
     }
     element = create_element(tag, vr, length);
     if (element == NULL) {
+        for (i = 0; i < vm; i++) {
+            free(values[i]);
+        }
         free(values);
         return NULL;
     }
