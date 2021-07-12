@@ -178,13 +178,14 @@ void dcm_element_destroy(dcm_element_t *element)
                  strcmp(element->vr, "DA") == 0 ||
                  strcmp(element->vr, "DS") == 0 ||
                  strcmp(element->vr, "DT") == 0 ||
-                 strcmp(element->vr, "LO") == 0 ||
                  strcmp(element->vr, "IS") == 0 ||
+                 strcmp(element->vr, "LO") == 0 ||
                  strcmp(element->vr, "PN") == 0 ||
                  strcmp(element->vr, "SH") == 0 ||
                  strcmp(element->vr, "ST") == 0 ||
                  strcmp(element->vr, "TM") == 0 ||
-                 strcmp(element->vr, "UI") == 0) {
+                 strcmp(element->vr, "UI") == 0 ||
+                 strcmp(element->vr, "UT") == 0) {
             if (element->value.str_multi != NULL) {
                 for (i = 0; i < element->vm; i++) {
                     free(element->value.str_multi[i]);
@@ -198,8 +199,7 @@ void dcm_element_destroy(dcm_element_t *element)
                  strcmp(element->vr, "OV") == 0 ||
                  strcmp(element->vr, "UC") == 0 ||
                  strcmp(element->vr, "UN") == 0 ||
-                 strcmp(element->vr, "UR") == 0 ||
-                 strcmp(element->vr, "UT") == 0) {
+                 strcmp(element->vr, "UR") == 0) {
             if (element->value.bytes != NULL) {
                 free(element->value.bytes);
             }
