@@ -97,7 +97,6 @@ Makefile.in
 
 # GNU Autoconf
 autom4te.cache
-/autogen.sh
 /autoscan.log
 /autoscan-*.log
 /aclocal.m4

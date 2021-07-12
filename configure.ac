@@ -3,6 +3,7 @@
 
 AC_PREREQ([2.69])
 AC_INIT([dicom], [0.1.0], [hackermd@protonmail.com], [dicom], [https://github.com/hackermd/libdicom])
+AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_SRCDIR([src])
 
 AM_INIT_AUTOMAKE([foreign subdir-objects 1.11.1 dist-xz])

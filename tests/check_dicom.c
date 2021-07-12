@@ -116,7 +116,6 @@ END_TEST
 START_TEST(test_element_IS)
 {
     uint32_t tag;
-    uint32_t vm;
     char vr[3] = "IS";
     uint32_t expected_length;
     dcm_element_t *element = NULL;
@@ -124,7 +123,6 @@ START_TEST(test_element_IS)
     char *retrieved_value = NULL;
 
     tag = 0x00280008;
-    vm = 1;
     value = malloc(sizeof(char *));
     strcpy(value, "10");
     element = dcm_element_create_IS(tag, value);
