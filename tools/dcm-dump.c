@@ -7,23 +7,19 @@
 #include <dicom.h>
 
 
+static const char usage[] = "usage: dcm-dump [-v] [-V] [-h] FILE_PATH\n";
+
+
 int main(int argc, char *argv[]) {
 
     int i;
-    char usage[100];
-    size_t usage_length;
     const char *file_path = NULL;
-    const char *program_name = NULL;
     dcm_dataset_t *metadata = NULL;
     dcm_dataset_t *file_meta = NULL;
     dcm_file_t *file = NULL;
 
     dcm_log_level = DCM_LOG_ERROR;
 
-    program_name = argv[0];
-    usage_length = strlen(program_name) + 18;
-    snprintf(usage, usage_length, "Usage: %s FILE_PATH\n", program_name);
-    usage[usage_length] = '\0';
 
     for (i = 1; i < argc && argv[i][0] == '-'; i++) {
         switch (argv[i][1]) {
