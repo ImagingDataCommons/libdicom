@@ -346,7 +346,7 @@ static dcm_element_t *read_element(FILE *fp,
     size_t n_item = 0;
     size_t *n_item_ptr = &n_item;
 
-    tag =  eheader_get_tag(header);
+    tag = eheader_get_tag(header);
     length = eheader_get_length(header);
 
     dcm_log_debug("Read Data Element '%08X' with VR '%s'", tag, vr);
@@ -852,6 +852,7 @@ dcm_dataset_t *dcm_file_read_file_meta(dcm_file_t *file)
         return NULL;
     }
     dcm_element_copy_value_UL(element, 0, &group_length);
+    dcm_element_destroy(element);
     eheader_destroy(header);
 
     // File Meta Information Version
@@ -872,6 +873,8 @@ dcm_dataset_t *dcm_file_read_file_meta(dcm_file_t *file)
         dcm_dataset_destroy(file_meta);
         return NULL;
     }
+    dcm_element_destroy(element);
+    eheader_destroy(header);
     while(true) {
         header = read_element_header(file->fp, n, implicit);
         if (header == NULL) {
@@ -1043,8 +1046,9 @@ dcm_dataset_t *dcm_file_read_metadata(dcm_file_t *file)
                           "failed.", tag);
             return NULL;
         }
+        eheader_destroy(header);
 
-        n_elem += 0;
+        n_elem += 1;
     }
     dcm_dataset_lock(dataset);
     return dataset;
