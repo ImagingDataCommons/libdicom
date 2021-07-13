@@ -75,54 +75,23 @@ struct dcm_BOT {
 };
 
 
-struct SequenceItem {
-    dcm_dataset_t *dataset;
-};
-
-
-static struct SequenceItem *create_sequence_item(dcm_dataset_t *dataset)
-{
-    assert(dataset);
-
-    struct SequenceItem *item = NULL;
-
-    item = malloc(sizeof(struct SequenceItem));
-    if (item == NULL) {
-        dcm_log_error("Creation of Sequence Item failed."
-                      "Could not allocate memory.");
-        return NULL;
-    }
-    item->dataset = dataset;
-    item->dataset->is_locked = true;
-    return item;
-}
-
-
-static void copy_sequence_item_icd(void *_dst_item, const void *_src_item)
-{
-    struct SequenceItem *dst_item = (struct SequenceItem *) _dst_item;
-    struct SequenceItem *src_item = (struct SequenceItem *) _src_item;
-    dst_item->dataset = src_item->dataset;
-}
-
-
-static void destroy_sequence_item_icd(void *_item)
+static void destroy_dataset_icd(void *_item)
 {
     if (_item != NULL) {
-        struct SequenceItem *item = (struct SequenceItem *) _item;
-        if (item != NULL) {
-            dcm_dataset_destroy(item->dataset);
-            item->dataset = NULL;
+        dcm_dataset_t **item = (dcm_dataset_t **) _item;
+        if (*item != NULL) {
+            dcm_dataset_destroy(*item);
+            *item = NULL;
         }
     }
 }
 
 
-static UT_icd sequence_item_icd = {
-    sizeof(struct SequenceItem *),
+static UT_icd dataset_icd = {
+    sizeof(dcm_dataset_t *),
     NULL,
-    copy_sequence_item_icd,
-    destroy_sequence_item_icd
+    NULL,
+    destroy_dataset_icd
 };
 
 
@@ -2002,7 +1971,7 @@ dcm_sequence_t *dcm_sequence_create(void)
                       "Could not allocate memory.");
         return NULL;
     }
-    utarray_new(items, &sequence_item_icd);
+    utarray_new(items, &dataset_icd);
     if (items == NULL) {
         dcm_log_error("Creation of Sequence failed. "
                       "Could not allocate memory.");
@@ -2028,8 +1997,8 @@ bool dcm_sequence_append(dcm_sequence_t *seq, dcm_dataset_t *item)
         return false;
     }
 
-    struct SequenceItem *item_handle = create_sequence_item(item);
-    utarray_push_back(seq->items, item_handle);
+    item->is_locked = true;
+    utarray_push_back(seq->items, &item);
 
     return true;
 }
@@ -2039,7 +2008,7 @@ dcm_dataset_t *dcm_sequence_get(dcm_sequence_t *seq, uint32_t index)
 {
     assert(seq);
     uint32_t length;
-    struct SequenceItem *item_handle = NULL;
+    dcm_dataset_t **item = NULL;
 
     dcm_log_debug("Get item #%i of Sequence.", index);
     length = utarray_len(seq->items);
@@ -2049,9 +2018,9 @@ dcm_dataset_t *dcm_sequence_get(dcm_sequence_t *seq, uint32_t index)
                       index, length);
         exit(1);
     }
-    item_handle = utarray_eltptr(seq->items, index);
-    item_handle->dataset->is_locked = true;
-    return item_handle->dataset;
+    item = utarray_eltptr(seq->items, index);
+    (*item)->is_locked = true;
+    return *item;
 }
 
 
@@ -2061,13 +2030,12 @@ void dcm_sequence_foreach(dcm_sequence_t *seq,
     assert(seq);
     uint32_t i;
     uint32_t length;
-    struct SequenceItem *item_handle = NULL;
 
     length = utarray_len(seq->items);
     for (i = 0; i < length; i++) {
-        item_handle = utarray_eltptr(seq->items, i);
-        item_handle->dataset->is_locked = true;
-        fn(item_handle->dataset);
+        dcm_dataset_t **item = utarray_eltptr(seq->items, i);
+        (*item)->is_locked = true;
+        fn(*item);
     }
 }
 
