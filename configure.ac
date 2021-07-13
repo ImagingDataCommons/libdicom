@@ -56,7 +56,9 @@ AC_DEFINE_UNQUOTED([SUFFIXED_VERSION], ["$SUFFIXED_VERSION"],
                    [Define to the package version string including any suffix.])
 AC_SUBST([SUFFIXED_VERSION])
 
-PKG_CHECK_MODULES([CHECK], [check >= 0.9.6])
+PKG_CHECK_MODULES([CHECK], [check >= 0.9.6], [
+  AC_DEFINE([HAVE_CHECK], [1], [Define if Check headers are present.])
+], [:])
 
 # Mac OS X proc_pidfdinfo()
 AC_MSG_CHECKING([for proc_pidfdinfo])
