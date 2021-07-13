@@ -64,16 +64,34 @@ Install Python requirments::
     pip install -r doc/requirements.txt
 
 
-Documentation files are located under ``/doc`` and can be build using ``make`` (in the root directory)::
+Documentation files are located under the ``doc/source`` directory of the repository and can be build using ``make`` (in the root directory)::
 
     make docs
 
+The generated documentation files will then be located under the ``doc/build`` directory.
+The ``doc/build/html/index.html`` HTML document can be rendered in the web browser.
 
-Tests
-+++++
+
+Testing
++++++++
 
 Unit test cases are defined and run using `check <https://github.com/libcheck/check>`_.
 
-Test files are located under ``/tests`` and can be build and run using ``make`` (in the root directory)::
+Test files are located under ``/tests`` and can be build and run using ``make`` (in the root repository)::
 
     make check
+
+Dynamic analysis
+++++++++++++++++
+
+The source code can be analysed using `valgrind <https://www.valgrind.org/>`_.
+
+For example::
+
+    valgrind --leak-check=full dcm-dump data/test_files/sm_image.dcm
+
+
+Unit testing and dynamic analysis can also be performed using the provided `Dockerfile` (located in the root of the repository)::
+
+    docker build -t dcm-testing .
+    docker run dcm-testing
