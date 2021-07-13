@@ -36,7 +36,7 @@ CMD make check; cat test-suite.log && \
         --leak-check=full \
         --suppressions=supp/set_default_local.supp \
         --track-origins=yes \
-        ./check_dicom && \
+        ./check_dicom > /dev/null && \
     valgrind \
         --leak-check=full \
-        dcm-dump ./data/test_files/sm_image.dcm
+        dcm-dump ./data/test_files/sm_image.dcm > /dev/null
