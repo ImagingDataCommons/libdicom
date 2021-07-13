@@ -865,7 +865,6 @@ dcm_dataset_t *dcm_file_read_file_meta(dcm_file_t *file)
         return NULL;
     }
     dcm_element_copy_value_UL(element, 0, &group_length);
-    dcm_element_destroy(element);
     eheader_destroy(header);
     dcm_element_destroy(element);
 
