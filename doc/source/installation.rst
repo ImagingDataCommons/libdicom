@@ -9,23 +9,49 @@ Build the library and executables using `GNU Autotools <https://www.gnu.org/soft
     make
     make install
 
+Optional dependencies
++++++++++++++++++++++
+
+This package uses [check](https://libcheck.github.io/check/) for unit testing.
+
+On Ubuntu:
+
+.. code:: bash
+
+    sudo apt install check
+
+On Mac OSX:
+
+.. code:: bash
+
+    brew install check
+
 Build dependencies
 ++++++++++++++++++
 
 When building directly from the source code in the git repository, first install
-autoconf, automake, libtool, and pkg-config and then run
+autoconf, automake, libtool, and pkg-config.
+
+On Mac OSX:
 
 .. code:: bash
 
-    autoreconf -i
+    brew install autoconf automake libtool
 
-This will create the ``configure`` script required for building library and executable tools.
-
-* For macOS, one option is to first install  `homebrew <https://brew.sh/>`_ and then run the following before running `autoreconf`
+On Debian-based Linux:
 
 .. code:: bash
 
-    brew install autoconf automake libtool check
+    sudo apt install autogen dh-autoreconf build-essential libtool pkg-config
+
+
+Then run
+
+.. code:: bash
+
+    ./autogen.sh
+    make
+    make install
 
 
 Build configuration
@@ -35,10 +61,10 @@ Build for development and debugging:
 
 .. code:: bash
 
-    ./configure CFLAGS="-O0 -DDEBUG"
+    CFLAGS="-O0 -DDEBUG" ./autogen.sh --prefix=/usr/local
 
 Build for production release (the ``NDEBUG`` flag disables ``assert`` macros):
 
 .. code:: bash
 
-    ./configure CFLAGS="-O3 -DNDEBUG"
+    CFLAGS="-O3 -DNDEBUG" ./autogen.sh
