@@ -2,19 +2,14 @@
 
 C library and executable tools for reading DICOM files.
 
-# Dependencies
+## Documentation
 
-This package uses `check` for unit tests. On Ubuntu:
+Documenation is located at `./doc`.
 
-```
-sudo apt install check
-```
+## Build from git
 
-# Build from git
-
-```
-CFLAGS="-g -Wall" ./autogen.sh --prefix=xxx
-make V=0
+```none
+./autogen.sh
+make
 make install
 ```
-
