@@ -200,7 +200,6 @@ static char **parse_character_string(char *string, uint32_t *vm)
     char *token = NULL;
     char **token_ptr = NULL;
     UT_array *array = NULL;
-    const char delim[2] = "\\";
     char **parts = NULL;
 
     utarray_new(array, &ut_str_icd);
@@ -210,10 +209,10 @@ static char **parse_character_string(char *string, uint32_t *vm)
         utarray_push_back(array, &token);
         goto finish;
     }
-    token = strtok(string, delim);
+    token = strtok(string, "\\");
     while(token != NULL) {
         utarray_push_back(array, &token);
-        token = strtok(NULL, delim);
+        token = strtok(NULL, "\\");
     }
     goto finish;
 
