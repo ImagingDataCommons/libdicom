@@ -14,9 +14,9 @@ int main(int argc, char *argv[]) {
 
     int i;
     const char *file_path = NULL;
-    dcm_dataset_t *metadata = NULL;
-    dcm_dataset_t *file_meta = NULL;
-    dcm_file_t *file = NULL;
+    DcmDataSet *metadata = NULL;
+    DcmDataSet *file_meta = NULL;
+    DcmFile *file = NULL;
 
     dcm_log_level = DCM_LOG_ERROR;
 

@@ -84,7 +84,7 @@ START_TEST(test_element_UI)
     uint32_t tag;
     char vr[3] = "UI";
     uint32_t expected_length;
-    dcm_element_t *element = NULL;
+    DcmElement *element = NULL;
     char *value = NULL;
     char *retrieved_value = NULL;
 
@@ -118,7 +118,7 @@ START_TEST(test_element_IS)
     uint32_t tag;
     char vr[3] = "IS";
     uint32_t expected_length;
-    dcm_element_t *element = NULL;
+    DcmElement *element = NULL;
     char *value = NULL;
     char *retrieved_value = NULL;
 
@@ -151,7 +151,7 @@ START_TEST(test_element_US)
 {
     uint32_t tag;
     char vr[3] = "US";
-    dcm_element_t *element = NULL;
+    DcmElement *element = NULL;
     uint16_t value, retrieved_value;
 
     tag = 0x00280010;
@@ -177,14 +177,13 @@ START_TEST(test_element_CS_multivalue)
     uint32_t vm;
     uint32_t i;
     char vr[3] = "CS";
-    dcm_element_t *element = NULL;
+    DcmElement *element = NULL;
     char **values = NULL;
     char *retrieved_value = NULL;
     uint32_t expected_length;
 
     tag = 0x00080008;
     vm = 4;
-    i = 0;
     values = malloc(vm * sizeof(char *));
     values[0] = malloc(9);
     strcpy(values[0], "ORIGINAL");
@@ -226,7 +225,7 @@ START_TEST(test_element_ST)
     uint32_t tag;
     char vr[3] = "ST";
     uint32_t expected_length;
-    dcm_element_t *element = NULL;
+    DcmElement *element = NULL;
     char *value = NULL;
     char *retrieved_value = NULL;
 
@@ -259,11 +258,11 @@ START_TEST(test_element_SQ)
 {
     uint32_t tag;
     char vr[3] = "SQ";
-    dcm_element_t *element = NULL;
-    dcm_element_t *item_element = NULL;
-    dcm_dataset_t *item = NULL;
-    dcm_sequence_t *value = NULL;
-    dcm_sequence_t *retrieved_value = NULL;
+    DcmElement *element = NULL;
+    DcmElement *item_element = NULL;
+    DcmDataSet *item = NULL;
+    DcmSequence *value = NULL;
+    DcmSequence *retrieved_value = NULL;
     char *item_value = NULL;
 
     item_value = malloc(5);
@@ -296,9 +295,9 @@ START_TEST(test_element_SQ_empty)
 {
     uint32_t tag;
     char vr[3] = "SQ";
-    dcm_element_t *element = NULL;
-    dcm_sequence_t *value = NULL;
-    dcm_sequence_t *retrieved_value = NULL;
+    DcmElement *element = NULL;
+    DcmSequence *value = NULL;
+    DcmSequence *retrieved_value = NULL;
 
     tag = 0x00400555;
     value = dcm_sequence_create();
@@ -319,9 +318,9 @@ END_TEST
 
 START_TEST(test_sequence)
 {
-    dcm_element_t *element = NULL;
-    dcm_dataset_t *dataset = NULL, *same_dataset = NULL, *other_dataset = NULL;
-    dcm_sequence_t *seq = NULL;
+    DcmElement *element = NULL;
+    DcmDataSet *dataset = NULL, *same_dataset = NULL, *other_dataset = NULL;
+    DcmSequence *seq = NULL;
 
     dataset = dcm_dataset_create();
     other_dataset = dcm_dataset_create();
@@ -359,9 +358,9 @@ END_TEST
 START_TEST(test_dataset)
 {
     uint32_t tag, other_tag;
-    dcm_element_t *element = NULL, *same_element = NULL, *copied_element = NULL;
-    dcm_element_t *other_element = NULL;
-    dcm_dataset_t *dataset = NULL;
+    DcmElement *element = NULL, *same_element = NULL, *copied_element = NULL;
+    DcmElement *other_element = NULL;
+    DcmDataSet *dataset = NULL;
 
     tag = 0x00280010;
     element = dcm_element_create_US(tag, 256);
@@ -410,9 +409,9 @@ START_TEST(test_file_sm_image_file_meta)
     uint32_t tag;
     const char *file_path = "./data/test_files/sm_image.dcm";
     char *value = NULL;
-    dcm_file_t *file = NULL;
-    dcm_dataset_t *file_meta = NULL;
-    dcm_element_t *element = NULL;
+    DcmFile *file = NULL;
+    DcmDataSet *file_meta = NULL;
+    DcmElement *element = NULL;
 
     file = dcm_file_create(file_path, 'r');
 
@@ -445,9 +444,9 @@ START_TEST(test_file_sm_image_metadata)
     uint32_t tag;
     const char *file_path = "./data/test_files/sm_image.dcm";
     char *value = NULL;
-    dcm_file_t *file = NULL;
-    dcm_dataset_t *metadata = NULL;
-    dcm_element_t *element = NULL;
+    DcmFile *file = NULL;
+    DcmDataSet *metadata = NULL;
+    DcmElement *element = NULL;
 
     file = dcm_file_create(file_path, 'r');
 
@@ -472,10 +471,10 @@ START_TEST(test_file_sm_image_frame)
 {
     uint32_t frame_number = 1;
     const char *file_path = "./data/test_files/sm_image.dcm";
-    dcm_file_t *file = NULL;
-    dcm_dataset_t *metadata = NULL;
-    dcm_frame_t *frame = NULL;
-    dcm_bot_t *bot = NULL;
+    DcmFile *file = NULL;
+    DcmDataSet *metadata = NULL;
+    DcmFrame *frame = NULL;
+    DcmBOT *bot = NULL;
 
     file = dcm_file_create(file_path, 'r');
 
