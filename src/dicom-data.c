@@ -108,9 +108,9 @@ static void copy_sequence_item_icd(void *_dst_item, const void *_src_item)
 
 static void destroy_sequence_item_icd(void *_item)
 {
-    if (_item != NULL) {
+    if (_item) {
         struct SequenceItem *item = (struct SequenceItem *) _item;
-        if (item != NULL) {
+        if (item) {
             dcm_dataset_destroy(item->dataset);
             item->dataset = NULL;
         }
@@ -163,10 +163,10 @@ void dcm_element_destroy(DcmElement *element)
 {
     uint32_t i;
 
-    if (element != NULL) {
+    if (element) {
         dcm_log_debug("Destroy Data Element '%08X'.", element->tag);
         if (strcmp(element->vr, "SQ") == 0) {
-            if (element->value.sq != NULL) {
+            if (element->value.sq) {
                 dcm_sequence_destroy(element->value.sq);
             }
         } else if (strcmp(element->vr, "AE") == 0 ||
@@ -183,7 +183,7 @@ void dcm_element_destroy(DcmElement *element)
                  strcmp(element->vr, "ST") == 0 ||
                  strcmp(element->vr, "TM") == 0 ||
                  strcmp(element->vr, "UI") == 0) {
-            if (element->value.str_multi != NULL) {
+            if (element->value.str_multi) {
                 for (i = 0; i < element->vm; i++) {
                     free(element->value.str_multi[i]);
                 }
@@ -198,35 +198,35 @@ void dcm_element_destroy(DcmElement *element)
                  strcmp(element->vr, "UN") == 0 ||
                  strcmp(element->vr, "UR") == 0 ||
                  strcmp(element->vr, "UT") == 0) {
-            if (element->value.bytes != NULL) {
+            if (element->value.bytes) {
                 free(element->value.bytes);
             }
         } else if (strcmp(element->vr, "FD") == 0) {
-            if (element->value.fd_multi != NULL) {
+            if (element->value.fd_multi) {
                 free(element->value.fd_multi);
             }
         } else if (strcmp(element->vr, "FL") == 0) {
-            if (element->value.fl_multi != NULL) {
+            if (element->value.fl_multi) {
                 free(element->value.fl_multi);
             }
         } else if (strcmp(element->vr, "SS") == 0) {
-            if (element->value.ss_multi != NULL) {
+            if (element->value.ss_multi) {
                 free(element->value.ss_multi);
             }
         } else if (strcmp(element->vr, "SV") == 0) {
-            if (element->value.sv_multi != NULL) {
+            if (element->value.sv_multi) {
                 free(element->value.sv_multi);
             }
         } else if (strcmp(element->vr, "US") == 0) {
-            if (element->value.us_multi != NULL) {
+            if (element->value.us_multi) {
                 free(element->value.us_multi);
             }
         } else if (strcmp(element->vr, "UL") == 0) {
-            if (element->value.ul_multi != NULL) {
+            if (element->value.ul_multi) {
                 free(element->value.ul_multi);
             }
         } else if (strcmp(element->vr, "UV") == 0) {
-            if (element->value.uv_multi != NULL) {
+            if (element->value.uv_multi) {
                 free(element->value.uv_multi);
             }
         }
@@ -296,7 +296,7 @@ DcmElement *dcm_element_clone(DcmElement *element)
 
     if (strcmp(element->vr, "SQ") == 0) {
         // Sequences
-        if (element->value.sq != NULL) {
+        if (element->value.sq) {
             DcmSequence *seq = NULL;
             DcmDataSet *ds = NULL;
             DcmDataSet *item = NULL;
@@ -307,7 +307,7 @@ DcmElement *dcm_element_clone(DcmElement *element)
             for (i = 0; i < dcm_sequence_count(element->value.sq); i++) {
                 item = dcm_sequence_get(element->value.sq, i);
                 // Copy each element in data set
-                for(elem = item->elements; elem != NULL; elem = elem->hh.next) {
+                for(elem = item->elements; elem; elem = elem->hh.next) {
                     dcm_dataset_insert(ds, dcm_element_clone(elem));
                 }
                 dcm_sequence_append(seq, ds);
@@ -327,7 +327,7 @@ DcmElement *dcm_element_clone(DcmElement *element)
                strcmp(element->vr, "TM") == 0 ||
                strcmp(element->vr, "UI") == 0) {
         // Character Strings
-        if (element->value.str_multi != NULL) {
+        if (element->value.str_multi) {
             clone->value.str_multi = malloc(element->vm * sizeof(char *));
             if (clone->value.str_multi == NULL) {
                 dcm_log_error("Cloning of Data Element failed."
@@ -363,7 +363,7 @@ DcmElement *dcm_element_clone(DcmElement *element)
                strcmp(element->vr, "UR") == 0 ||
                strcmp(element->vr, "UT") == 0) {
         // Bytes
-        if (element->value.bytes != NULL) {
+        if (element->value.bytes) {
             clone->value.bytes = malloc(element->length);
             if (clone->value.bytes == NULL) {
                 dcm_log_error("Cloning of Data Element failed."
@@ -378,7 +378,7 @@ DcmElement *dcm_element_clone(DcmElement *element)
                    element->length);
         }
     } else if (strcmp(element->vr, "FD") == 0) {
-        if (element->value.fd_multi != NULL) {
+        if (element->value.fd_multi) {
             clone->value.fd_multi = malloc(element->vm * sizeof(double));
             if (clone->value.fd_multi == NULL) {
                 dcm_log_error("Cloning of Data Element failed."
@@ -393,7 +393,7 @@ DcmElement *dcm_element_clone(DcmElement *element)
             }
         }
     } else if (strcmp(element->vr, "FL") == 0) {
-        if (element->value.fl_multi != NULL) {
+        if (element->value.fl_multi) {
             clone->value.fl_multi = malloc(element->vm * sizeof(float));
             if (clone->value.fl_multi == NULL) {
                 dcm_log_error("Cloning of Data Element failed."
@@ -408,7 +408,7 @@ DcmElement *dcm_element_clone(DcmElement *element)
             }
         }
     } else if (strcmp(element->vr, "SS") == 0) {
-        if (element->value.ss_multi != NULL) {
+        if (element->value.ss_multi) {
             clone->value.ss_multi = malloc(element->vm * sizeof(int16_t));
             if (clone->value.ss_multi == NULL) {
                 dcm_log_error("Cloning of Data Element failed."
@@ -423,7 +423,7 @@ DcmElement *dcm_element_clone(DcmElement *element)
             }
         }
     } else if (strcmp(element->vr, "SV") == 0) {
-        if (element->value.sv_multi != NULL) {
+        if (element->value.sv_multi) {
             clone->value.sv_multi = malloc(element->vm * sizeof(int64_t));
             if (clone->value.sv_multi == NULL) {
                 dcm_log_error("Cloning of Data Element failed."
@@ -438,7 +438,7 @@ DcmElement *dcm_element_clone(DcmElement *element)
             }
         }
     } else if (strcmp(element->vr, "US") == 0) {
-        if (element->value.us_multi != NULL) {
+        if (element->value.us_multi) {
             clone->value.us_multi = malloc(element->vm * sizeof(uint16_t));
             if (clone->value.us_multi == NULL) {
                 dcm_log_error("Cloning of Data Element failed."
@@ -453,7 +453,7 @@ DcmElement *dcm_element_clone(DcmElement *element)
             }
         }
     } else if (strcmp(element->vr, "UL") == 0) {
-        if (element->value.ul_multi != NULL) {
+        if (element->value.ul_multi) {
             clone->value.ul_multi = malloc(element->vm * sizeof(uint32_t));
             if (clone->value.ul_multi == NULL) {
                 dcm_log_error("Cloning of Data Element failed."
@@ -468,7 +468,7 @@ DcmElement *dcm_element_clone(DcmElement *element)
             }
         }
     } else if (strcmp(element->vr, "UV") == 0) {
-        if (element->value.uv_multi != NULL) {
+        if (element->value.uv_multi) {
             clone->value.uv_multi = malloc(element->vm * sizeof(uint64_t));
             if (clone->value.uv_multi == NULL) {
                 dcm_log_error("Cloning of Data Element failed."
@@ -562,9 +562,9 @@ static bool set_value_str_multi(DcmElement *element,
     uint32_t i;
 
     if (!check_value_str_multi(element, values, vm, capacity)) {
-        if (values != NULL) {
+        if (values) {
             for (i = 0; i < vm; i++) {
-                if (values[i] != NULL) {
+                if (values[i]) {
                     free(values[i]);
                 }
             }
@@ -601,7 +601,7 @@ static DcmElement *create_element_str(uint32_t tag,
     element = create_element(tag, vr, length);
     if (element == NULL) {
         free(value);
-        if (values[0] != NULL) {
+        if (values[0]) {
             free(values[0]);
         }
         free(values);
@@ -1576,7 +1576,7 @@ DcmElement *dcm_element_create_SQ(uint32_t tag, DcmSequence *value)
     seq_length = dcm_sequence_count(value);
     for (i = 0; i < seq_length; i++) {
         item = dcm_sequence_get(value, i);
-        for (e = item->elements; e != NULL; e = e->hh.next) {
+        for (e = item->elements; e; e = e->hh.next) {
             length += e->length;
         }
     }
@@ -1748,7 +1748,7 @@ bool dcm_dataset_insert(DcmDataSet *dataset, DcmElement *element)
     }
 
     HASH_FIND_INT(dataset->elements, &element->tag, matched_element);
-    if (matched_element != NULL) {
+    if (matched_element) {
         dcm_log_warning("Inserting Data Element '%08X' into Data Set failed. "
                         "Element already exists.",
                         element->tag);
@@ -1830,7 +1830,7 @@ void dcm_dataset_foreach(DcmDataSet *dataset,
     DcmElement *e = NULL;
 
     HASH_SORT(dataset->elements, compare_tags);
-    for(e = dataset->elements; e != NULL; e = e->hh.next) {
+    for(e = dataset->elements; e; e = e->hh.next) {
         fn(e);
     }
 }
@@ -1866,7 +1866,7 @@ void dcm_dataset_copy_tags(DcmDataSet *dataset, uint32_t *tags)
     DcmElement *e = NULL;
 
     HASH_SORT(dataset->elements, compare_tags);
-    for(e = dataset->elements; e != NULL; e = e->hh.next) {
+    for(e = dataset->elements; e; e = e->hh.next) {
         tags[i] = e->tag;
         i += 1;
     }
@@ -1880,7 +1880,7 @@ void dcm_dataset_print(DcmDataSet *dataset, uint8_t indentation)
     DcmElement *e = NULL;
 
     HASH_SORT(dataset->elements, compare_tags);
-    for(e = dataset->elements; e != NULL; e = e->hh.next) {
+    for(e = dataset->elements; e; e = e->hh.next) {
         dcm_element_print(e, indentation);
     }
 }
@@ -1902,7 +1902,7 @@ void dcm_dataset_destroy(DcmDataSet *dataset)
 {
     DcmElement *current_element = NULL, *tmp = NULL;
 
-    if (dataset != NULL) {
+    if (dataset) {
         HASH_ITER(hh, dataset->elements, current_element, tmp) {
             HASH_DEL(dataset->elements, current_element);
             dcm_element_destroy(current_element);
@@ -2037,7 +2037,7 @@ bool dcm_sequence_is_locked(DcmSequence *seq)
 
 void dcm_sequence_destroy(DcmSequence *seq)
 {
-    if (seq != NULL) {
+    if (seq) {
         utarray_free(seq->items);
         seq->items = NULL;
         free(seq);
@@ -2219,14 +2219,14 @@ const char *dcm_frame_get_value(DcmFrame *frame)
 
 void dcm_frame_destroy(DcmFrame *frame)
 {
-    if (frame != NULL) {
-        if (frame->data != NULL) {
+    if (frame) {
+        if (frame->data) {
             free((char*)frame->data);
         }
-        if (frame->photometric_interpretation != NULL) {
+        if (frame->photometric_interpretation) {
             free(frame->photometric_interpretation);
         }
-        if (frame->transfer_syntax_uid != NULL) {
+        if (frame->transfer_syntax_uid) {
             free(frame->transfer_syntax_uid);
         }
         free(frame);
@@ -2299,8 +2299,8 @@ ssize_t dcm_bot_get_frame_offset(DcmBOT *bot, uint32_t number)
 
 void dcm_bot_destroy(DcmBOT *bot)
 {
-    if (bot != NULL) {
-        if (bot->offsets != NULL) {
+    if (bot) {
+        if (bot->offsets) {
             free(bot->offsets);
         }
         free(bot);

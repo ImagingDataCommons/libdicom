@@ -90,7 +90,7 @@ static uint64_t iheader_get_length(iheader_t *item)
 
 static void iheader_destroy(iheader_t *item)
 {
-    if (item != NULL) {
+    if (item) {
         free(item);
         item = NULL;
     }
@@ -165,7 +165,7 @@ static uint64_t eheader_get_length(eheader_t *header)
 
 static void eheader_destroy(eheader_t *header)
 {
-    if (header != NULL) {
+    if (header) {
         free(header);
         header = NULL;
     }
@@ -210,7 +210,7 @@ static char **parse_character_string(char *string, uint32_t *vm)
         goto finish;
     }
     token = strtok(string, "\\");
-    while(token != NULL) {
+    while(token) {
         utarray_push_back(array, &token);
         token = strtok(NULL, "\\");
     }
@@ -952,8 +952,8 @@ DcmDataSet *dcm_file_read_file_meta(DcmFile *file)
 
 void dcm_file_destroy(DcmFile *file)
 {
-    if (file != NULL) {
-        if (file->transfer_syntax_uid != NULL) {
+    if (file) {
+        if (file->transfer_syntax_uid) {
             free(file->transfer_syntax_uid);
         }
         fclose(file->fp);
@@ -987,7 +987,7 @@ DcmDataSet *dcm_file_read_metadata(DcmFile *file)
     }
     fseek(file->fp, file->offset, SEEK_SET);
 
-    if (file->transfer_syntax_uid != NULL) {
+    if (file->transfer_syntax_uid) {
         if (strcmp(file->transfer_syntax_uid, "1.2.840.10008.1.2") == 0) {
             implicit = true;
         }
