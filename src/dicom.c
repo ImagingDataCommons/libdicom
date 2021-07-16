@@ -17,7 +17,7 @@ const char *dcm_get_version(void)
 }
 
 
-dcm_log_level_t dcm_log_level = DCM_LOG_NOTSET;
+DcmLogLevel dcm_log_level = DCM_LOG_NOTSET;
 
 
 static void dcm_logf(const char *level, const char *format, va_list args)

@@ -173,9 +173,9 @@ static void eheader_destroy(eheader_t *header)
 
 
 
-struct dcm_File {
+struct _DcmFile {
     FILE *fp;
-    dcm_dataset_t *meta;
+    DcmDataSet *meta;
     size_t offset;
     char *transfer_syntax_uid;
     size_t pixel_data_offset;
@@ -325,10 +325,10 @@ static eheader_t *read_element_header(FILE *fp, size_t *n, bool implicit)
 }
 
 
-static dcm_element_t *read_element(FILE *fp,
-                                   eheader_t *header,
-                                   size_t *n,
-                                   bool implicit)
+static DcmElement *read_element(FILE *fp,
+                                eheader_t *header,
+                                size_t *n,
+                                bool implicit)
 {
     assert(header);
     uint32_t tag;
@@ -339,11 +339,11 @@ static dcm_element_t *read_element(FILE *fp,
     uint32_t item_index = 0;
     uint32_t item_tag;
     uint32_t item_length;
-    dcm_element_t *element = NULL;
+    DcmElement *element = NULL;
     iheader_t *item_iheader = NULL;
-    dcm_dataset_t *item_dataset = NULL;
+    DcmDataSet *item_dataset = NULL;
     eheader_t *item_eheader = NULL;
-    dcm_element_t *item_element = NULL;
+    DcmElement *item_element = NULL;
     size_t n_seq = 0;
     size_t *n_seq_ptr = &n_seq;
     size_t n_item = 0;
@@ -495,7 +495,7 @@ static dcm_element_t *read_element(FILE *fp,
             return NULL;
         }
     } else if (eheader_check_vr(header, "SQ")) {
-        dcm_sequence_t *value = dcm_sequence_create();
+        DcmSequence *value = dcm_sequence_create();
         if (value == NULL) {
             dcm_log_error("Reading of Data Element failed. "
                           "Could not construct Sequence for "
@@ -773,9 +773,9 @@ static dcm_element_t *read_element(FILE *fp,
 }
 
 
-dcm_file_t *dcm_file_create(const char *file_path, char mode)
+DcmFile *dcm_file_create(const char *file_path, char mode)
 {
-    dcm_file_t *file = NULL;
+    DcmFile *file = NULL;
     char file_mode[3];
 
     if (mode != 'r' && mode != 'w') {
@@ -784,7 +784,7 @@ dcm_file_t *dcm_file_create(const char *file_path, char mode)
         exit(1);
     }
 
-    file = malloc(sizeof(struct dcm_File));
+    file = malloc(sizeof(struct _DcmFile));
     if (file == NULL) {
         dcm_log_error("Creation of file failed. "
                       "Could not allocate memory for file.");
@@ -808,7 +808,7 @@ dcm_file_t *dcm_file_create(const char *file_path, char mode)
 }
 
 
-dcm_dataset_t *dcm_file_read_file_meta(dcm_file_t *file)
+DcmDataSet *dcm_file_read_file_meta(DcmFile *file)
 {
     size_t size = 0;
     size_t *n = &size;
@@ -818,9 +818,9 @@ dcm_dataset_t *dcm_file_read_file_meta(dcm_file_t *file)
     uint32_t tag;
     uint16_t group_number;
     uint32_t group_length;
-    dcm_dataset_t *file_meta = NULL;
+    DcmDataSet *file_meta = NULL;
     eheader_t *header = NULL;
-    dcm_element_t *element = NULL;
+    DcmElement *element = NULL;
     uint8_t n_elem = 0;
 
     file_meta = dcm_dataset_create();
@@ -951,7 +951,7 @@ dcm_dataset_t *dcm_file_read_file_meta(dcm_file_t *file)
 }
 
 
-void dcm_file_destroy(dcm_file_t *file)
+void dcm_file_destroy(DcmFile *file)
 {
     if (file != NULL) {
         if (file->transfer_syntax_uid != NULL) {
@@ -964,7 +964,7 @@ void dcm_file_destroy(dcm_file_t *file)
 }
 
 
-dcm_dataset_t *dcm_file_read_metadata(dcm_file_t *file)
+DcmDataSet *dcm_file_read_metadata(DcmFile *file)
 {
     uint32_t tag;
     uint16_t group_number;
@@ -973,10 +973,10 @@ dcm_dataset_t *dcm_file_read_metadata(dcm_file_t *file)
     uint32_t n_elem = 0;
     bool implicit = false;
     char tmp[1];
-    dcm_element_t *element = NULL;
+    DcmElement *element = NULL;
     eheader_t *header = NULL;
-    dcm_dataset_t *file_meta = NULL;
-    dcm_dataset_t *dataset = NULL;
+    DcmDataSet *file_meta = NULL;
+    DcmDataSet *dataset = NULL;
 
     if (file->offset == 0) {
         file_meta = dcm_file_read_file_meta(file);
@@ -1074,10 +1074,10 @@ dcm_dataset_t *dcm_file_read_metadata(dcm_file_t *file)
 }
 
 
-static bool get_num_frames(dcm_dataset_t *metadata, uint32_t *num_frames)
+static bool get_num_frames(DcmDataSet *metadata, uint32_t *num_frames)
 {
     uint32_t number_of_frames_tag = 0x00280008;
-    dcm_element_t *number_of_frames_element = NULL;
+    DcmElement *number_of_frames_element = NULL;
     char *number_of_frames = NULL;
 
     number_of_frames_element = dcm_dataset_get(metadata, number_of_frames_tag);
@@ -1101,7 +1101,7 @@ static bool get_num_frames(dcm_dataset_t *metadata, uint32_t *num_frames)
 }
 
 
-dcm_bot_t *dcm_file_read_bot(dcm_file_t *file, dcm_dataset_t *metadata)
+DcmBOT *dcm_file_read_bot(DcmFile *file, DcmDataSet *metadata)
 {
     uint32_t item_tag;
     uint32_t eheader_tag;
@@ -1139,7 +1139,7 @@ dcm_bot_t *dcm_file_read_bot(dcm_file_t *file, dcm_dataset_t *metadata)
 
     if (file->pixel_data_offset == 0) {
         // Only done to determine the offset of the Pixel Data element.
-        dcm_dataset_t *metadata = dcm_file_read_metadata(file);
+        DcmDataSet *metadata = dcm_file_read_metadata(file);
         dcm_dataset_destroy(metadata);
     }
     fseek(file->fp, file->pixel_data_offset, SEEK_SET);
@@ -1208,9 +1208,9 @@ dcm_bot_t *dcm_file_read_bot(dcm_file_t *file, dcm_dataset_t *metadata)
 }
 
 
-static struct PixelDescription *get_pixel_description(dcm_dataset_t *metadata)
+static struct PixelDescription *get_pixel_description(DcmDataSet *metadata)
 {
-    dcm_element_t *element = NULL;
+    DcmElement *element = NULL;
     struct PixelDescription *desc = NULL;
 
     desc = malloc(sizeof(struct PixelDescription));
@@ -1304,7 +1304,7 @@ static struct PixelDescription *get_pixel_description(dcm_dataset_t *metadata)
 }
 
 
-dcm_bot_t *dcm_file_build_bot(dcm_file_t *file, dcm_dataset_t *metadata)
+DcmBOT *dcm_file_build_bot(DcmFile *file, DcmDataSet *metadata)
 {
     uint32_t item_tag;
     uint32_t eheader_tag;
@@ -1335,7 +1335,7 @@ dcm_bot_t *dcm_file_build_bot(dcm_file_t *file, dcm_dataset_t *metadata)
 
     if (file->pixel_data_offset == 0) {
         // Only done to determine the offset of the Pixel Data element.
-        dcm_dataset_t *metadata = dcm_file_read_metadata(file);
+        DcmDataSet *metadata = dcm_file_read_metadata(file);
         dcm_dataset_destroy(metadata);
     }
     fseek(file->fp, file->pixel_data_offset, SEEK_SET);
@@ -1436,10 +1436,10 @@ dcm_bot_t *dcm_file_build_bot(dcm_file_t *file, dcm_dataset_t *metadata)
 }
 
 
-dcm_frame_t *dcm_file_read_frame(dcm_file_t *file,
-                                 dcm_dataset_t *metadata,
-                                 dcm_bot_t *bot,
-                                 uint32_t number)
+DcmFrame *dcm_file_read_frame(DcmFile *file,
+                              DcmDataSet *metadata,
+                              DcmBOT *bot,
+                              uint32_t number)
 {
     ssize_t frame_offset;
     ssize_t first_frame_offset;

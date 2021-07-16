@@ -22,7 +22,7 @@ Upon creation, the Data Element takes over ownership of the memory allocated for
 A copy of the value can be retrieved via the VR-specific getter function (e.g., :c:func:`dcm_element_copy_value_UI()`) using a return attribute.
 When a Data Element is destroyed, the memory allocated for contained values is freed.
 
-A `Data Set <http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_3.html#glossentry_DataSet>`_ (:c:type:`dcm_dataset_t`) is an ordered collection of Data Elements (:c:type:`dcm_element_t`).
+A `Data Set <http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_3.html#glossentry_DataSet>`_ (:c:type:`DcmDataSet`) is an ordered collection of Data Elements (:c:type:`dcm_element_t`).
 A Data Set can be created via :c:func:`dcm_dataset_create()` and destroyed via :c:func:`dcm_dataset_destroy()`.
 Data Elements can be added to a Data Set via :c:func:`dcm_dataset_insert()`, removed from a Data Set via :c:func:`dcm_dataset_remove()`, and retrieved from a Data Set via :c:func:`dcm_dataset_get()` or :c:func:`dcm_dataset_get_clone()`.
 When a Data Element is added to a Data Set, the Data Set takes over ownership of the memory allocated for contained Data Elements.
@@ -31,7 +31,7 @@ Furthermore, an individual Data Element can only be part of only one Data Set.
 When a Data Element is removed from a Data Set, the memory allocated for the Data Element is freed.
 When a Data Set is destroyed, all contained Data Elements are also automatically destroyed.
 
-A `Sequence <http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_3.html#glossentry_SequenceOfItems>`_ (:c:type:`dcm_sequence_t`) is an ordered collection of `Items <http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_3.html#glossentry_Item>`_, each containing one Data Set.
+A `Sequence <http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_3.html#glossentry_SequenceOfItems>`_ (:c:type:`DcmSequence`) is an ordered collection of `Items <http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_3.html#glossentry_Item>`_, each containing one Data Set.
 A Sequence can be created via :c:func:`dcm_sequence_create()` and destroyed via :c:func:`dcm_sequence_destroy()`.
 Data Sets can be added to a Sequence via :c:func:`dcm_sequence_append()`, removed from a Sequence via :c:func:`dcm_sequence_remove()`, and retrieved from a Sequence via :c:func:`dcm_sequence_get()`.
 When a Data Set is added to a sequence, the sequence takes over ownership of the memory allocated for the Data Set (and consequently of each contained Data Element).
@@ -40,7 +40,7 @@ Retrieved Data Sets are immutable (locked).
 When a Data Set is removed from a sequence, the Data Set is destroyed (i.e., the allocated memory is freed).
 When a Sequence is destroyed, all contained Data Sets are also automatically destroyed.
 
-A File (:c:type:`dcm_file_t`) enables access of a `DICOM file <http://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_3.html#glossentry_DICOMFile>`_, which contains an encoded Data Set representing an SOP Instance.
+A File (:c:type:`DcmFile`) enables access of a `DICOM file <http://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_3.html#glossentry_DICOMFile>`_, which contains an encoded Data Set representing an SOP Instance.
 A File can be created via :c:func:`dcm_file_create()` and destroyed via :c:func:`dcm_file_destroy()`, which opens a Part10 file stored on disk and closes it, respectively.
 The content of a Part10 file can be read using various functions.
 The `File Meta Information <http://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_3.html#glossentry_FileMetaInformation>`_ can be read via :c:func:`dcm_file_read_file_meta()`.
@@ -88,12 +88,12 @@ Below is an example for reading metadata from a DICOM Part10 file and printing i
     main() {
         const char *file_path = "/path/to/file.dcm";
 
-        dcm_file_t *file = dcm_file_create(file_path, 'r');
+        DcmFile *file = dcm_file_create(file_path, 'r');
         if (file == NULL) {
             return 1;
         }
 
-        dcm_dataset_t *metadata = dcm_file_read_metadata(file);
+        DcmDataSet *metadata = dcm_file_read_metadata(file);
         if (metadata == NULL) {
             dcm_file_destroy(file);
             return 1;

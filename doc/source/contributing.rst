@@ -28,9 +28,10 @@ Source code should be written following the `K&R (Kernighan & Ritchie) style <ht
 
 * Naming conventions:
 
-  - Names of ``external`` functions, types, and data structures that are declared in the ``dicom.h`` header file are prefixed with ``dcm_``. Names of ``static`` functions, types, or data structures declared in ``*.c`` files are never prefixed.
+  - Data structures (``struct`` or ``enum``) and types are named using upper camel case (e.g., ``DcmDataSet``), while functions are named using all lower case with underscores (e.g., ``dcm_dataset_create()``).
 
-  - Data structures (``struct`` or ``enum``) are named using upper camel case (e.g., ``dcm_DataSet``), while types and functionsare named using all lower case with underscores (e.g., ``dcm_dataset_t`` or ``dcm_dataset_create()``).
+  - Names of ``external`` functions, data structures, and types that are declared in the ``dicom.h`` header file are prefixed with ``dcm_`` or ``Dcm``. Names of ``static`` functions, types, or data structures declared in ``*.c`` files are never prefixed.
+
 
 Interface
 +++++++++
