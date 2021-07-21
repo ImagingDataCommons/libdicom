@@ -118,7 +118,7 @@ static void copy_sequence_item_icd(void *_dst_item, const void *_src_item)
 {
     struct SequenceItem *dst_item = (struct SequenceItem *) _dst_item;
     struct SequenceItem *src_item = (struct SequenceItem *) _src_item;
-    dst_item->dataset = src_item->dataset;
+    dst_item->dataset = dcm_dataset_clone(src_item->dataset);
 }
 
 
@@ -1746,6 +1746,43 @@ DcmDataSet *dcm_dataset_create(void)
     dataset->elements = NULL;
     dataset->is_locked = false;
     return dataset;
+}
+
+
+DcmDataSet *dcm_dataset_clone(DcmDataSet *dataset)
+{
+    DcmDataSet *cloned_dataset = NULL;
+    DcmElement *element = NULL;
+    DcmElement *cloned_element = NULL;
+
+    dcm_log_debug("Clone Data Set.");
+    cloned_dataset = dcm_dataset_create();
+    if (cloned_dataset == NULL) {
+        dcm_log_error("Cloning Data Set failed. "
+                      "Could not allocate memory.");
+        return NULL;
+    }
+
+    for(element = dataset->elements; element; element = element->hh.next) {
+        cloned_element = dcm_element_clone(element);
+        if (cloned_element == NULL) {
+            dcm_log_error("Cloning Data Set failed. "
+                          "Failed to clone Data Element '%08X'.",
+                          dcm_element_get_tag(element));
+            dcm_dataset_destroy(cloned_dataset);
+            return NULL;
+        }
+        if (!dcm_dataset_insert(cloned_dataset, cloned_element)) {
+            dcm_log_error("Cloning Data Set failed. "
+                          "Failed to insert Data Element '%08X'.",
+                          dcm_element_get_tag(cloned_element));
+            dcm_element_destroy(cloned_element);
+            dcm_dataset_destroy(cloned_dataset);
+            return NULL;
+        }
+    }
+
+    return cloned_dataset;
 }
 
 

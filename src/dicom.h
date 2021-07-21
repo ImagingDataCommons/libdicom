@@ -1208,6 +1208,15 @@ extern void dcm_element_destroy(DcmElement *element);
 extern DcmDataSet *dcm_dataset_create(void);
 
 /**
+ * Clone (i.e., create a deep copy of) a Data Set.
+ *
+ * :param dataset: Pointer to Data Set
+ *
+ * :return: Pointer to clone of Data Set
+ */
+extern DcmDataSet *dcm_dataset_clone(DcmDataSet *dataset);
+
+/**
  * Insert a Data Element into a Data Set.
  *
  * :param dataset: Pointer to Data Set
