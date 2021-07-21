@@ -2,6 +2,7 @@
  * Implementation of subroutines that are independent of the DICOM standard.
  */
 #include <stdarg.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -9,6 +10,17 @@
 #include "config.h"
 
 #include "dicom.h"
+
+
+void *dcm_calloc(size_t size)
+{
+    void *result = calloc(1, size);
+    if(!result) {
+        dcm_log_error("Failed to allocate and initialize memory.");
+        return NULL;
+    }
+    return result;
+}
 
 
 const char *dcm_get_version(void)

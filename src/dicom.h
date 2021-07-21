@@ -11,6 +11,20 @@
 #  define DEBUG_ONLY( ... )
 #endif
 
+#define DCM_NEW(TYPE) \
+    (TYPE *) dcm_calloc(sizeof(TYPE))
+
+
+/**
+ * Allocate and initialize a block of memory.
+ *
+ * :param size: Number of bytes.
+ *
+ * :return: Pointer to allocated memory.
+ */
+extern void *dcm_calloc(size_t size);
+
+
 /**
  * Maximum number of characters in values with Value Representation AE.
  */
@@ -55,7 +69,6 @@
  * Maximum number of characters in values with Value Representation LT.
  */
 #define DCM_CAPACITY_LT 10240
-
 
 /**
  * Maximum number of characters in values with Value Representation IS.
