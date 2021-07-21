@@ -14,6 +14,22 @@
 
 #include "dicom.h"
 
+
+#define DCM_NEW(TYPE) \
+    (TYPE *) dcm_calloc(sizeof(TYPE))
+
+
+void *dcm_calloc(size_t size)
+{
+    void *object = calloc(1, size);
+    if(!object) {
+        dcm_log_error("Failed to allocate memory.");
+        return NULL;
+    }
+    return object;
+}
+
+
 struct _DcmElement {
     uint32_t tag;
     char vr[3];
@@ -86,7 +102,7 @@ static struct SequenceItem *create_sequence_item(DcmDataSet *dataset)
 
     struct SequenceItem *item = NULL;
 
-    item = malloc(sizeof(struct SequenceItem));
+    item = DCM_NEW(struct SequenceItem);
     if (item == NULL) {
         dcm_log_error("Creation of Sequence Item failed."
                       "Could not allocate memory.");
@@ -139,7 +155,7 @@ static DcmElement *create_element(uint32_t tag, const char *vr, uint32_t length)
     DcmElement *element = NULL;
 
     dcm_log_debug("Create Data Element '%08X'.", tag);
-    element = malloc(sizeof(struct _DcmElement));
+    element = DCM_NEW(DcmElement);
     if (element == NULL) {
         dcm_log_error("Creation of Data Element failed."
                       "Could not allocate memory for Data Element '%08X'.",
@@ -281,7 +297,7 @@ DcmElement *dcm_element_clone(DcmElement *element)
     DcmElement *clone = NULL;
 
     dcm_log_debug("Clone Data Element '%08X'.", element->tag);
-    clone = malloc(sizeof(struct _DcmElement));
+    clone = DCM_NEW(DcmElement);
     if (clone == NULL) {
         dcm_log_error("Cloning of Data Element failed."
                       "Could not allocate memory for clone of "
@@ -1721,7 +1737,7 @@ DcmDataSet *dcm_dataset_create(void)
     DcmDataSet *dataset = NULL;
 
     dcm_log_debug("Create Data Set.");
-    dataset = malloc(sizeof(struct _DcmDataSet));
+    dataset = DCM_NEW(DcmDataSet);
     if (dataset == NULL) {
         dcm_log_error("Creation of Data Set failed. "
                       "Could not allocate memory.");
@@ -1920,7 +1936,7 @@ DcmSequence *dcm_sequence_create(void)
     DcmSequence *seq;
     UT_array *items;
 
-    seq = malloc(sizeof(struct _DcmSequence));
+    seq = DCM_NEW(DcmSequence);
     if (seq == NULL) {
         dcm_log_error("Creation of Sequence failed. "
                       "Could not allocate memory.");
@@ -2090,7 +2106,7 @@ DcmFrame *dcm_frame_create(uint32_t number,
         return NULL;
     }
 
-    frame = malloc(sizeof(struct _DcmFrame));
+    frame = DCM_NEW(DcmFrame);
     if (frame == NULL) {
         dcm_log_error("Constructing Frame Item failed. "
                       "Could not allocate memory.");
@@ -2240,7 +2256,7 @@ void dcm_frame_destroy(DcmFrame *frame)
 
 DcmBOT *dcm_bot_create(ssize_t *offsets, uint32_t num_frames)
 {
-    DcmBOT *bot = malloc(sizeof(struct _DcmBOT));
+    DcmBOT *bot = DCM_NEW(DcmBOT);
     if (offsets == NULL) {
         dcm_log_error("Constructing Basic Offset Table failed. "
                       "No offsets were provided.");

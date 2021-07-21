@@ -41,17 +41,17 @@ struct PixelDescription {
 typedef struct ItemHeader {
     uint32_t tag;
     uint64_t length;
-} iheader_t;
+} IHeader;
 
 
 typedef struct ElementHeader {
     uint32_t tag;
     char vr[3];
     uint64_t length;
-} eheader_t;
+} EHeader;
 
 
-static iheader_t *iheader_create(uint32_t tag, uint64_t length)
+static IHeader *iheader_create(uint32_t tag, uint64_t length)
 {
     if (!(tag == TAG_ITEM ||
           tag == TAG_ITEM_DELIM ||
@@ -61,7 +61,7 @@ static iheader_t *iheader_create(uint32_t tag, uint64_t length)
                       tag);
         return NULL;
     }
-    iheader_t *header = malloc(sizeof(struct ItemHeader));
+    IHeader *header = malloc(sizeof(struct ItemHeader));
     if (header == NULL) {
         dcm_log_error("Constructing header of Item failed. "
                       "Failed to allocate memory for header of Item '%08X'.",
@@ -74,21 +74,21 @@ static iheader_t *iheader_create(uint32_t tag, uint64_t length)
 }
 
 
-static uint32_t iheader_get_tag(iheader_t *item)
+static uint32_t iheader_get_tag(IHeader *item)
 {
     assert(item);
     return item->tag;
 }
 
 
-static uint64_t iheader_get_length(iheader_t *item)
+static uint64_t iheader_get_length(IHeader *item)
 {
     assert(item);
     return item->length;
 }
 
 
-static void iheader_destroy(iheader_t *item)
+static void iheader_destroy(IHeader *item)
 {
     if (item) {
         free(item);
@@ -97,7 +97,7 @@ static void iheader_destroy(iheader_t *item)
 }
 
 
-static eheader_t *eheader_create(uint32_t tag, const char *vr, uint64_t length)
+static EHeader *eheader_create(uint32_t tag, const char *vr, uint64_t length)
 {
     bool is_valid_tag = dcm_is_valid_tag(tag);
     if (!is_valid_tag) {
@@ -106,7 +106,7 @@ static eheader_t *eheader_create(uint32_t tag, const char *vr, uint64_t length)
                       tag);
         return NULL;
     }
-    eheader_t *header = malloc(sizeof(struct ElementHeader));
+    EHeader *header = malloc(sizeof(struct ElementHeader));
     if (header == NULL) {
         dcm_log_error("Constructing header of Data Element failed. "
                       "Could not allocate memory for "
@@ -131,21 +131,21 @@ static eheader_t *eheader_create(uint32_t tag, const char *vr, uint64_t length)
 }
 
 
-static uint16_t eheader_get_group_number(eheader_t *header)
+static uint16_t eheader_get_group_number(EHeader *header)
 {
     assert(header);
     return (uint16_t)(header->tag >> 16);
 }
 
 
-static uint32_t eheader_get_tag(eheader_t *header)
+static uint32_t eheader_get_tag(EHeader *header)
 {
     assert(header);
     return header->tag;
 }
 
 
-static bool eheader_check_vr(eheader_t *header, const char *vr)
+static bool eheader_check_vr(EHeader *header, const char *vr)
 {
     assert(header);
     if (strcmp(header->vr, vr) == 0) {
@@ -156,14 +156,14 @@ static bool eheader_check_vr(eheader_t *header, const char *vr)
 }
 
 
-static uint64_t eheader_get_length(eheader_t *header)
+static uint64_t eheader_get_length(EHeader *header)
 {
     assert(header);
     return header->length;
 }
 
 
-static void eheader_destroy(eheader_t *header)
+static void eheader_destroy(EHeader *header)
 {
     if (header) {
         free(header);
@@ -247,7 +247,7 @@ finish:
 }
 
 
-static iheader_t *read_item_header(FILE *fp, size_t *n)
+static IHeader *read_item_header(FILE *fp, size_t *n)
 {
     uint32_t tag;
     uint32_t length;
@@ -258,7 +258,7 @@ static iheader_t *read_item_header(FILE *fp, size_t *n)
 }
 
 
-static eheader_t *read_element_header(FILE *fp, size_t *n, bool implicit)
+static EHeader *read_element_header(FILE *fp, size_t *n, bool implicit)
 {
     uint32_t tag;
     char vr[3];
@@ -319,13 +319,13 @@ static eheader_t *read_element_header(FILE *fp, size_t *n, bool implicit)
         }
     }
 
-    eheader_t *header = eheader_create(tag, vr, length);
+    EHeader *header = eheader_create(tag, vr, length);
     return header;
 }
 
 
 static DcmElement *read_element(FILE *fp,
-                                eheader_t *header,
+                                EHeader *header,
                                 size_t *n,
                                 bool implicit)
 {
@@ -339,9 +339,9 @@ static DcmElement *read_element(FILE *fp,
     uint32_t item_tag;
     uint32_t item_length;
     DcmElement *element = NULL;
-    iheader_t *item_iheader = NULL;
+    IHeader *item_iheader = NULL;
     DcmDataSet *item_dataset = NULL;
-    eheader_t *item_eheader = NULL;
+    EHeader *item_eheader = NULL;
     DcmElement *item_element = NULL;
     size_t n_seq = 0;
     size_t *n_seq_ptr = &n_seq;
@@ -783,7 +783,7 @@ DcmFile *dcm_file_create(const char *file_path, char mode)
         exit(1);
     }
 
-    file = malloc(sizeof(struct _DcmFile));
+    file = DCM_NEW(DcmFile);
     if (file == NULL) {
         dcm_log_error("Creation of file failed. "
                       "Could not allocate memory for file.");
@@ -818,7 +818,7 @@ DcmDataSet *dcm_file_read_file_meta(DcmFile *file)
     uint16_t group_number;
     uint32_t group_length;
     DcmDataSet *file_meta = NULL;
-    eheader_t *header = NULL;
+    EHeader *header = NULL;
     DcmElement *element = NULL;
     uint8_t n_elem = 0;
 
@@ -973,7 +973,7 @@ DcmDataSet *dcm_file_read_metadata(DcmFile *file)
     bool implicit = false;
     char tmp[1];
     DcmElement *element = NULL;
-    eheader_t *header = NULL;
+    EHeader *header = NULL;
     DcmDataSet *file_meta = NULL;
     DcmDataSet *dataset = NULL;
 
@@ -1110,8 +1110,8 @@ DcmBOT *dcm_file_read_bot(DcmFile *file, DcmDataSet *metadata)
     uint32_t i;
     size_t tmp_offset = 0;
     ssize_t *offsets = NULL;
-    eheader_t *eheader = NULL;
-    iheader_t *iheader = NULL;
+    EHeader *eheader = NULL;
+    IHeader *iheader = NULL;
     bool implicit = false;
     uint32_t num_frames;
 
@@ -1315,8 +1315,8 @@ DcmBOT *dcm_file_build_bot(DcmFile *file, DcmDataSet *metadata)
     bool implicit = false;
     uint32_t num_frames;
     ssize_t *offsets = NULL;
-    eheader_t *eheader = NULL;
-    iheader_t *iheader = NULL;
+    EHeader *eheader = NULL;
+    IHeader *iheader = NULL;
     struct PixelDescription *desc = NULL;
 
     dcm_log_debug("Building Basic Offset Table.");
@@ -1449,7 +1449,7 @@ DcmFrame *dcm_file_read_frame(DcmFile *file,
     char *value = NULL;
     uint32_t iheader_tag;
     uint32_t num_frames;
-    iheader_t *iheader = NULL;
+    IHeader *iheader = NULL;
     char *transfer_syntax_uid = NULL;
     struct PixelDescription *desc = NULL;
 
