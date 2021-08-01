@@ -226,6 +226,7 @@ finish:
         utarray_free(array);
         return NULL;
     }
+
     for (i = 0; i < n; i++) {
         token_ptr = utarray_eltptr(array, i);
         parts[i] = malloc(strlen(*token_ptr) + 1);
@@ -240,6 +241,7 @@ finish:
         }
         strcpy(parts[i], *token_ptr);
     }
+
     *vm = n;
     utarray_free(array);
     free(string);

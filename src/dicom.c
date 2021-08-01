@@ -12,9 +12,9 @@
 #include "dicom.h"
 
 
-void *dcm_calloc(size_t size)
+void *dcm_calloc(size_t n, size_t size)
 {
-    void *result = calloc(1, size);
+    void *result = calloc(n, size);
     if(!result) {
         dcm_log_error("Failed to allocate and initialize memory.");
         return NULL;
