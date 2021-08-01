@@ -140,10 +140,8 @@ static int compare_tags(const void * a, const void * b)
 
 static DcmElement *create_element(uint32_t tag, const char *vr, uint32_t length)
 {
-    DcmElement *element = NULL;
-
     dcm_log_debug("Create Data Element '%08X'.", tag);
-    element = DCM_NEW(DcmElement);
+    DcmElement *element = DCM_NEW(DcmElement);
     if (element == NULL) {
         dcm_log_error("Creation of Data Element failed."
                       "Could not allocate memory for Data Element '%08X'.",
@@ -517,7 +515,7 @@ static bool check_value_str_multi(DcmElement *element,
 {
     uint32_t i;
     size_t actual_length;
-    char *v = NULL;
+    char *v;
 
     for (i = 0; i < vm; i++) {
         v = values[i];
@@ -570,12 +568,7 @@ static DcmElement *create_element_str(uint32_t tag,
                                       char *value,
                                       uint32_t capacity)
 {
-    uint32_t vm = 1;
-    uint32_t length;
-    DcmElement *element = NULL;
-    char **values = NULL;
-
-    values = malloc(sizeof(char *));
+    char **values = malloc(sizeof(char *));
     if (values == NULL) {
         dcm_log_error("Creation of Data Element failed. "
                       "Could not allocate memory.");
@@ -584,8 +577,8 @@ static DcmElement *create_element_str(uint32_t tag,
     }
     values[0] = value;
 
-    length = strlen(value);
-    element = create_element(tag, vr, length);
+    uint32_t length = strlen(value);
+    DcmElement *element = create_element(tag, vr, length);
     if (element == NULL) {
         free(value);
         if (values[0]) {
@@ -594,7 +587,7 @@ static DcmElement *create_element_str(uint32_t tag,
         free(values);
         return NULL;
     }
-    if (!set_value_str_multi(element, values, vm, capacity)) {
+    if (!set_value_str_multi(element, values, 1, capacity)) {
         free(value);
         dcm_element_destroy(element);
         return NULL;
@@ -609,10 +602,10 @@ static DcmElement *create_element_str_multi(uint32_t tag,
                                             uint32_t capacity)
 {
     uint32_t i;
-    uint32_t length = 0;
-    char *v = NULL;
-    DcmElement *element = NULL;
+    uint32_t length;
+    char *v;
 
+    length = 0;
     for (i = 0; i < vm; i++) {
         v = values[i];
         length += strlen(v);
@@ -621,7 +614,8 @@ static DcmElement *create_element_str_multi(uint32_t tag,
             length += 2;
         }
     }
-    element = create_element(tag, vr, length);
+
+    DcmElement *element = create_element(tag, vr, length);
     if (element == NULL) {
         for (i = 0; i < vm; i++) {
             free(values[i]);
@@ -629,10 +623,12 @@ static DcmElement *create_element_str_multi(uint32_t tag,
         free(values);
         return NULL;
     }
+
     if (!set_value_str_multi(element, values, vm, capacity)) {
         dcm_element_destroy(element);
         return NULL;
     }
+
     return element;
 }
 
@@ -1594,14 +1590,13 @@ void dcm_element_copy_value_OB(DcmElement *element,
 
 DcmElement *dcm_element_create_SQ(uint32_t tag, DcmSequence *value)
 {
-    uint32_t length = 0;
-    uint32_t seq_length = 0;
+    uint32_t length;
     uint32_t i;
-    DcmDataSet *item = NULL;
-    DcmElement *element = NULL;
-    DcmElement *e = NULL;
+    DcmDataSet *item;
+    DcmElement *elem;
 
-    seq_length = dcm_sequence_count(value);
+    uint32_t seq_length = dcm_sequence_count(value);
+    length = 0;
     for (i = 0; i < seq_length; i++) {
         item = dcm_sequence_get(value, i);
         if (item == NULL) {
@@ -1609,11 +1604,12 @@ DcmElement *dcm_element_create_SQ(uint32_t tag, DcmSequence *value)
             dcm_sequence_destroy(value);
             return NULL;
         }
-        for (e = item->elements; e; e = e->hh.next) {
-            length += e->length;
+        for (elem = item->elements; elem; elem = elem->hh.next) {
+            length += elem->length;
         }
     }
-    element = create_element(tag, "SQ", length);
+
+    DcmElement *element = create_element(tag, "SQ", length);
     if (element == NULL) {
         dcm_log_error("Creation of Data Element with VR SQ failed.");
         dcm_sequence_destroy(value);
@@ -1622,6 +1618,7 @@ DcmElement *dcm_element_create_SQ(uint32_t tag, DcmSequence *value)
     element->value.sq = value;
     element->sequence_pointer = value;
     element->vm = 1;
+
     return element;
 }
 
@@ -1639,9 +1636,10 @@ DcmSequence *dcm_element_get_value_SQ(DcmElement *element)
 void dcm_element_print(DcmElement *element, uint8_t indentation)
 {
     assert(element);
+    const uint8_t num_indent = indentation * 2;
+    const uint8_t num_indent_next = (indentation + 1) * 2;
+
     uint32_t i;
-    uint8_t num_indent = indentation * 2;
-    uint8_t num_indent_next = (indentation + 1) * 2;
 
     if (dcm_is_public_tag(element->tag)) {
         const char *keyword = dcm_dict_lookup_keyword(element->tag);
@@ -1750,10 +1748,8 @@ void dcm_element_print(DcmElement *element, uint8_t indentation)
 
 DcmDataSet *dcm_dataset_create(void)
 {
-    DcmDataSet *dataset = NULL;
-
     dcm_log_debug("Create Data Set.");
-    dataset = DCM_NEW(DcmDataSet);
+    DcmDataSet *dataset = DCM_NEW(DcmDataSet);
     if (dataset == NULL) {
         dcm_log_error("Creation of Data Set failed. "
                       "Could not allocate memory.");
@@ -1859,7 +1855,7 @@ bool dcm_dataset_remove(DcmDataSet *dataset, uint32_t tag)
 DcmElement *dcm_dataset_get_clone(DcmDataSet *dataset, uint32_t tag)
 {
     assert(dataset);
-    DcmElement *element = NULL;
+    DcmElement *element;
 
     dcm_log_debug("Copy Data Element '%08X' from Data Set.", tag);
     HASH_FIND_INT(dataset->elements, &tag, element);
@@ -1875,7 +1871,7 @@ DcmElement *dcm_dataset_get_clone(DcmDataSet *dataset, uint32_t tag)
 DcmElement *dcm_dataset_get(DcmDataSet *dataset, uint32_t tag)
 {
     assert(dataset);
-    DcmElement *element = NULL;
+    DcmElement *element;
 
     dcm_log_debug("Get Data Element '%08X' from Data Set.", tag);
     HASH_FIND_INT(dataset->elements, &tag, element);
@@ -1893,11 +1889,11 @@ void dcm_dataset_foreach(DcmDataSet *dataset,
                          void (*fn)(DcmElement *element))
 {
     assert(dataset);
-    DcmElement *e = NULL;
+    DcmElement *element;
 
     HASH_SORT(dataset->elements, compare_tags);
-    for(e = dataset->elements; e; e = e->hh.next) {
-        fn(e);
+    for(element = dataset->elements; element; element = element->hh.next) {
+        fn(element);
     }
 }
 
@@ -1905,9 +1901,8 @@ void dcm_dataset_foreach(DcmDataSet *dataset,
 bool dcm_dataset_contains(DcmDataSet *dataset, uint32_t tag)
 {
     assert(dataset);
-    DcmElement *matched_element = NULL;
 
-    matched_element = dcm_dataset_get(dataset, tag);
+    DcmElement *matched_element = dcm_dataset_get(dataset, tag);
     if (matched_element == NULL) {
         return false;
     }
@@ -1918,9 +1913,8 @@ bool dcm_dataset_contains(DcmDataSet *dataset, uint32_t tag)
 uint32_t dcm_dataset_count(DcmDataSet *dataset)
 {
     assert(dataset);
-    uint32_t num_users;
 
-    num_users = HASH_COUNT(dataset->elements);
+    uint32_t num_users = HASH_COUNT(dataset->elements);
     return num_users;
 }
 
@@ -1928,12 +1922,14 @@ uint32_t dcm_dataset_count(DcmDataSet *dataset)
 void dcm_dataset_copy_tags(DcmDataSet *dataset, uint32_t *tags)
 {
     assert(dataset);
-    uint32_t i = 0;
-    DcmElement *e = NULL;
+    uint32_t i;
+    DcmElement *element;
 
     HASH_SORT(dataset->elements, compare_tags);
-    for(e = dataset->elements; e; e = e->hh.next) {
-        tags[i] = e->tag;
+
+    i = 0;
+    for(element = dataset->elements; element; element = element->hh.next) {
+        tags[i] = element->tag;
         i += 1;
     }
     return;
@@ -1966,12 +1962,12 @@ bool dcm_dataset_is_locked(DcmDataSet *dataset)
 
 void dcm_dataset_destroy(DcmDataSet *dataset)
 {
-    DcmElement *current_element = NULL, *tmp = NULL;
+    DcmElement *element, *tmp;
 
     if (dataset) {
-        HASH_ITER(hh, dataset->elements, current_element, tmp) {
-            HASH_DEL(dataset->elements, current_element);
-            dcm_element_destroy(current_element);
+        HASH_ITER(hh, dataset->elements, element, tmp) {
+            HASH_DEL(dataset->elements, element);
+            dcm_element_destroy(element);
         }
         free(dataset);
         dataset = NULL;
@@ -1983,15 +1979,14 @@ void dcm_dataset_destroy(DcmDataSet *dataset)
 
 DcmSequence *dcm_sequence_create(void)
 {
-    DcmSequence *seq;
-    UT_array *items;
-
-    seq = DCM_NEW(DcmSequence);
+    DcmSequence *seq = DCM_NEW(DcmSequence);
     if (seq == NULL) {
         dcm_log_error("Creation of Sequence failed. "
                       "Could not allocate memory.");
         return NULL;
     }
+
+    UT_array *items;
     utarray_new(items, &sequence_item_icd);
     if (items == NULL) {
         dcm_log_error("Creation of Sequence failed. "
@@ -2001,6 +1996,7 @@ DcmSequence *dcm_sequence_create(void)
     }
     seq->items = items;
     seq->is_locked = false;
+
     return seq;
 }
 
@@ -2058,10 +2054,9 @@ void dcm_sequence_foreach(DcmSequence *seq,
 {
     assert(seq);
     uint32_t i;
-    uint32_t length;
-    struct SequenceItem *item_handle = NULL;
+    struct SequenceItem *item_handle;
 
-    length = utarray_len(seq->items);
+    uint32_t length = utarray_len(seq->items);
     for (i = 0; i < length; i++) {
         item_handle = utarray_eltptr(seq->items, i);
         item_handle->dataset->is_locked = true;
@@ -2135,8 +2130,6 @@ DcmFrame *dcm_frame_create(uint32_t number,
                            const char *photometric_interpretation,
                            const char *transfer_syntax_uid)
 {
-    DcmFrame *frame = NULL;
-
     if (data == NULL || length == 0) {
         dcm_log_error("Constructing Frame Item failed. "
                       "Pixel data cannot be empty.");
@@ -2164,7 +2157,7 @@ DcmFrame *dcm_frame_create(uint32_t number,
         return NULL;
     }
 
-    frame = DCM_NEW(DcmFrame);
+    DcmFrame *frame = DCM_NEW(DcmFrame);
     if (frame == NULL) {
         dcm_log_error("Constructing Frame Item failed. "
                       "Could not allocate memory.");
@@ -2343,8 +2336,9 @@ DcmBOT *dcm_bot_create(ssize_t *offsets, uint32_t num_frames)
 void dcm_bot_print(DcmBOT *bot)
 {
     assert(bot);
-    printf("[");
     uint32_t i;
+
+    printf("[");
     for(i = 0; i < bot->num_frames; i++) {
         if (i == (bot->num_frames - 1)) {
             printf("%zd]\n", bot->offsets[i]);

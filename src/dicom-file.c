@@ -172,7 +172,6 @@ static void eheader_destroy(EHeader *header)
 }
 
 
-
 struct _DcmFile {
     FILE *fp;
     DcmDataSet *meta;
@@ -185,8 +184,7 @@ struct _DcmFile {
 
 static uint32_t read_tag(FILE *fp, size_t *n)
 {
-    uint16_t group_num;
-    uint16_t elem_num;
+    uint16_t group_num, elem_num;
     *n += fread(&group_num, 1, sizeof(group_num), fp);
     *n += fread(&elem_num, 1, sizeof(elem_num), fp);
     return ((uint32_t)group_num << 16) + elem_num;
@@ -195,13 +193,13 @@ static uint32_t read_tag(FILE *fp, size_t *n)
 
 static char **parse_character_string(char *string, uint32_t *vm)
 {
-    uint32_t n;
     uint32_t i;
-    char *token = NULL;
-    char **token_ptr = NULL;
-    UT_array *array = NULL;
-    char **parts = NULL;
+    uint32_t n;
+    char **token_ptr;
+    char **parts;
+    char *token;
 
+    UT_array *array;
     utarray_new(array, &ut_str_icd);
 
     if (strlen(string) == 0) {
@@ -251,10 +249,8 @@ finish:
 
 static IHeader *read_item_header(FILE *fp, size_t *n)
 {
-    uint32_t tag;
+    uint32_t tag = read_tag(fp, n);
     uint32_t length;
-
-    tag = read_tag(fp, n);
     *n += fread(&length, 1, sizeof(length), fp);
     return iheader_create(tag, length);
 }
@@ -262,13 +258,12 @@ static IHeader *read_item_header(FILE *fp, size_t *n)
 
 static EHeader *read_element_header(FILE *fp, size_t *n, bool implicit)
 {
-    uint32_t tag;
     char vr[3];
     uint32_t length;
     uint16_t short_length;
     uint16_t reserved;
 
-    tag = read_tag(fp, n);
+    uint32_t tag = read_tag(fp, n);
     if (implicit) {
         // Value Representation
         const char *tmp = dcm_dict_lookup_vr(tag);
@@ -332,26 +327,28 @@ static DcmElement *read_element(FILE *fp,
                                 bool implicit)
 {
     assert(header);
-    uint32_t tag;
-    const char *vr = NULL;
-    uint32_t length;
     uint32_t i;
-    uint32_t vm = 1;
-    uint32_t item_index = 0;
+    uint32_t vm;
+    const char *vr;
+    uint32_t item_index;
     uint32_t item_tag;
     uint32_t item_length;
-    DcmElement *element = NULL;
-    IHeader *item_iheader = NULL;
-    DcmDataSet *item_dataset = NULL;
-    EHeader *item_eheader = NULL;
-    DcmElement *item_element = NULL;
-    size_t n_seq = 0;
+    size_t n_seq;
     size_t *n_seq_ptr = &n_seq;
-    size_t n_item = 0;
+    size_t n_item;
     size_t *n_item_ptr = &n_item;
+    DcmElement *element;
+    IHeader *item_iheader;
+    DcmDataSet *item_dataset;
+    EHeader *item_eheader;
+    DcmElement *item_element;
 
-    tag =  eheader_get_tag(header);
-    length = eheader_get_length(header);
+    uint32_t tag =  eheader_get_tag(header);
+    uint32_t length = eheader_get_length(header);
+
+    n_seq = 0;
+    n_item = 0;
+    item_index = 0;
 
     dcm_log_debug("Read Data Element '%08X' with VR '%s'", tag, vr);
 
@@ -496,6 +493,7 @@ static DcmElement *read_element(FILE *fp,
             return NULL;
         }
     } else if (eheader_check_vr(header, "SQ")) {
+        vm = 1;
         DcmSequence *value = dcm_sequence_create();
         if (value == NULL) {
             dcm_log_error("Reading of Data Element failed. "
@@ -776,22 +774,20 @@ static DcmElement *read_element(FILE *fp,
 
 DcmFile *dcm_file_create(const char *file_path, char mode)
 {
-    DcmFile *file = NULL;
-    char file_mode[3];
-
     if (mode != 'r' && mode != 'w') {
         dcm_log_error("Creation of file failed. "
                       "Wrong file mode specified.");
         exit(1);
     }
 
-    file = DCM_NEW(DcmFile);
+    DcmFile *file = DCM_NEW(DcmFile);
     if (file == NULL) {
         dcm_log_error("Creation of file failed. "
                       "Could not allocate memory for file.");
         return NULL;
     }
 
+    char file_mode[3];
     file_mode[0] = mode;
     file_mode[1] = 'b';
     file_mode[2] = '\0';
@@ -811,31 +807,33 @@ DcmFile *dcm_file_create(const char *file_path, char mode)
 
 DcmDataSet *dcm_file_read_file_meta(DcmFile *file)
 {
-    size_t size = 0;
+    const bool implicit = false;
+
+    size_t size;
     size_t *n = &size;
-    char preamble[129];
-    char prefix[5];
-    bool implicit = false;
+    uint8_t n_elem;
     uint32_t tag;
     uint16_t group_number;
     uint32_t group_length;
-    DcmDataSet *file_meta = NULL;
-    EHeader *header = NULL;
-    DcmElement *element = NULL;
-    uint8_t n_elem = 0;
+    EHeader *header;
+    DcmElement *element;
 
-    file_meta = dcm_dataset_create();
+    DcmDataSet *file_meta = dcm_dataset_create();
     if (file_meta == NULL) {
         dcm_log_error("Reading of File Meta Information failed. "
                       "Could not construct Data Set.");
         return NULL;
     }
 
+    size = 0;
+
     // File Preamble
+    char preamble[129];
     size += fread(preamble, 1, sizeof(preamble) - 1, file->fp);
     preamble[128] = '\0';
 
     // DICOM Prefix
+    char prefix[5];
     size += fread(prefix, 1, sizeof(prefix) - 1, file->fp);
     prefix[4] = '\0';
     if (strcmp(prefix, "DICM") != 0) {
@@ -890,6 +888,7 @@ DcmDataSet *dcm_file_read_file_meta(DcmFile *file)
     eheader_destroy(header);
     dcm_element_destroy(element);
 
+    n_elem = 0;
     while(true) {
         header = read_element_header(file->fp, n, implicit);
         if (header == NULL) {
@@ -971,16 +970,14 @@ DcmDataSet *dcm_file_read_metadata(DcmFile *file)
     uint16_t group_number;
     size_t size = 0;
     size_t *n = &size;
-    uint32_t n_elem = 0;
-    bool implicit = false;
+    uint32_t n_elem;
+    bool implicit;
     char tmp[1];
-    DcmElement *element = NULL;
-    EHeader *header = NULL;
-    DcmDataSet *file_meta = NULL;
-    DcmDataSet *dataset = NULL;
+    DcmElement *element;
+    EHeader *header;
 
     if (file->offset == 0) {
-        file_meta = dcm_file_read_file_meta(file);
+        DcmDataSet *file_meta = dcm_file_read_file_meta(file);
         if (file_meta == NULL) {
             dcm_log_error("Reading metadata failed. "
                           "Could not read File Meta Information.");
@@ -989,19 +986,21 @@ DcmDataSet *dcm_file_read_metadata(DcmFile *file)
     }
     fseek(file->fp, file->offset, SEEK_SET);
 
+    implicit = false;
     if (file->transfer_syntax_uid) {
         if (strcmp(file->transfer_syntax_uid, "1.2.840.10008.1.2") == 0) {
             implicit = true;
         }
     }
 
-    dataset = dcm_dataset_create();
+    DcmDataSet *dataset = dcm_dataset_create();
     if (dataset == NULL) {
         dcm_log_error("Reading of Data Set failed. "
                       "Could not construct Data Set.");
         return NULL;
     }
 
+    n_elem = 0;
     while (!feof(file->fp)) {
         if (fread(tmp, 1, 1, file->fp) == 0) {
             dcm_log_info("Stop reading Data Set. Reached end of file.");
@@ -1075,28 +1074,27 @@ DcmDataSet *dcm_file_read_metadata(DcmFile *file)
 }
 
 
-static bool get_num_frames(DcmDataSet *metadata, uint32_t *num_frames)
+static bool get_num_frames(DcmDataSet *metadata, uint32_t *number_of_frames)
 {
-    uint32_t number_of_frames_tag = 0x00280008;
-    DcmElement *number_of_frames_element = NULL;
-    char *number_of_frames = NULL;
+    const uint32_t tag = 0x00280008;
 
-    number_of_frames_element = dcm_dataset_get(metadata, number_of_frames_tag);
-    if (number_of_frames_element == NULL) {
+    DcmElement *element = dcm_dataset_get(metadata, tag);
+    if (element == NULL) {
         dcm_log_error("Getting value of Data Element 'Number of Frames' "
                       "failed. Could not find Data Element with Tag '%08X'.",
-                      number_of_frames_tag);
+                      tag);
         return false;
     }
-    number_of_frames = malloc(DCM_CAPACITY_IS + 1);
-    if (number_of_frames == NULL) {
+
+    char *value = malloc(DCM_CAPACITY_IS + 1);
+    if (value == NULL) {
         dcm_log_error("Getting value of Data Element 'Number of Frames' "
                       "failed. Could not allocate memory for value.");
         return false;
     }
-    dcm_element_copy_value_IS(number_of_frames_element, 0, number_of_frames);
-    *num_frames = (uint32_t) strtol(number_of_frames, NULL, 10);
-    free(number_of_frames);
+    dcm_element_copy_value_IS(element, 0, value);
+    *number_of_frames = (uint32_t) strtol(value, NULL, 10);
+    free(value);
 
     return true;
 }
@@ -1104,18 +1102,10 @@ static bool get_num_frames(DcmDataSet *metadata, uint32_t *num_frames)
 
 DcmBOT *dcm_file_read_bot(DcmFile *file, DcmDataSet *metadata)
 {
-    uint32_t item_tag;
-    uint32_t eheader_tag;
-    uint32_t item_length;
     uint32_t tmp_value;
     uint64_t value;
     uint32_t i;
-    size_t tmp_offset = 0;
-    ssize_t *offsets = NULL;
-    EHeader *eheader = NULL;
-    IHeader *iheader = NULL;
-    bool implicit = false;
-    uint32_t num_frames;
+    size_t tmp_offset;
 
     dcm_log_debug("Reading Basic Offset Table.");
 
@@ -1127,6 +1117,7 @@ DcmBOT *dcm_file_read_bot(DcmFile *file, DcmDataSet *metadata)
         return NULL;
     }
 
+    uint32_t num_frames;
     if (!get_num_frames(metadata, &num_frames)) {
         dcm_log_error("Reading Basic Offset Table failed. "
                       "Could not get value of Data Element 'Number of Frames'.");
@@ -1145,8 +1136,8 @@ DcmBOT *dcm_file_read_bot(DcmFile *file, DcmDataSet *metadata)
     }
     fseek(file->fp, file->pixel_data_offset, SEEK_SET);
 
-    eheader = read_element_header(file->fp, &tmp_offset, implicit);
-    eheader_tag = eheader_get_tag(eheader);
+    EHeader *eheader = read_element_header(file->fp, &tmp_offset, false);
+    uint32_t eheader_tag = eheader_get_tag(eheader);
     eheader_destroy(eheader);
     if (!(eheader_tag == TAG_PIXEL_DATA ||
           eheader_tag == TAG_FLOAT_PIXEL_DATA ||
@@ -1157,14 +1148,14 @@ DcmBOT *dcm_file_read_bot(DcmFile *file, DcmDataSet *metadata)
     }
 
     // The header of the BOT Item
-    iheader = read_item_header(file->fp, &tmp_offset);
+    IHeader *iheader = read_item_header(file->fp, &tmp_offset);
     if (iheader == NULL) {
         dcm_log_error("Reading Basic Offset Table failed. "
                       "Could not read header of Basic Offset Table Item.");
         iheader_destroy(iheader);
         return NULL;
     }
-    item_tag = iheader_get_tag(iheader);
+    uint32_t item_tag = iheader_get_tag(iheader);
     if (item_tag != TAG_ITEM) {
         dcm_log_error("Reading Basic Offset Table failed. "
                       "Unexpected Tag found for Basic Offset Table Item.");
@@ -1172,7 +1163,7 @@ DcmBOT *dcm_file_read_bot(DcmFile *file, DcmDataSet *metadata)
         return NULL;
     }
 
-    offsets = malloc(num_frames * sizeof(ssize_t *));
+    ssize_t *offsets = malloc(num_frames * sizeof(ssize_t *));
     if (offsets == NULL) {
         dcm_log_error("Reading Basic Offset Table failed. "
                       "Could not allocate memory for values of "
@@ -1182,7 +1173,7 @@ DcmBOT *dcm_file_read_bot(DcmFile *file, DcmDataSet *metadata)
     }
 
     // The BOT Item must be present, but the value is optional
-    item_length = iheader_get_length(iheader);
+    uint32_t item_length = iheader_get_length(iheader);
     iheader_destroy(iheader);
     if (item_length > 0) {
         dcm_log_info("Read Basic Offset Table value.");
@@ -1209,12 +1200,11 @@ DcmBOT *dcm_file_read_bot(DcmFile *file, DcmDataSet *metadata)
 }
 
 
-static struct PixelDescription *get_pixel_description(DcmDataSet *metadata)
+static struct PixelDescription *pixel_description_create(DcmDataSet *metadata)
 {
-    DcmElement *element = NULL;
-    struct PixelDescription *desc = NULL;
+    DcmElement *element;
 
-    desc = malloc(sizeof(struct PixelDescription));
+    struct PixelDescription *desc = malloc(sizeof(struct PixelDescription));
     if (desc == NULL) {
         dcm_log_error("Getting image pixel description failed. "
                       "Could not allocate memory.");
@@ -1304,25 +1294,28 @@ static struct PixelDescription *get_pixel_description(DcmDataSet *metadata)
     return desc;
 }
 
+static void pixel_description_destroy(struct PixelDescription *desc)
+{
+    if (desc) {
+        if (desc->photometric_interpretation) {
+            free(desc->photometric_interpretation);
+        }
+        free(desc);
+    }
+}
+
 
 DcmBOT *dcm_file_build_bot(DcmFile *file, DcmDataSet *metadata)
 {
-    uint32_t item_tag;
-    uint32_t eheader_tag;
-    uint32_t iheader_tag;
+    uint32_t item_tag, iheader_tag;
     uint32_t item_length;
     uint64_t i;
-    size_t current_offset = 0;
-    size_t tmp_offset = 0;
-    bool implicit = false;
-    uint32_t num_frames;
-    ssize_t *offsets = NULL;
-    EHeader *eheader = NULL;
-    IHeader *iheader = NULL;
-    struct PixelDescription *desc = NULL;
+    size_t current_offset, tmp_offset;
+    IHeader *iheader;
 
     dcm_log_debug("Building Basic Offset Table.");
 
+    uint32_t num_frames;
     if (!get_num_frames(metadata, &num_frames)) {
         dcm_log_error("Building Basic Offset Table failed. "
                       "Could not get value of Data Element 'Number of Frames'.");
@@ -1341,8 +1334,8 @@ DcmBOT *dcm_file_build_bot(DcmFile *file, DcmDataSet *metadata)
     }
     fseek(file->fp, file->pixel_data_offset, SEEK_SET);
 
-    eheader = read_element_header(file->fp, &tmp_offset, implicit);
-    eheader_tag = eheader_get_tag(eheader);
+    EHeader *eheader = read_element_header(file->fp, &tmp_offset, false);
+    uint32_t eheader_tag = eheader_get_tag(eheader);
     eheader_destroy(eheader);
     if (!(eheader_tag == TAG_PIXEL_DATA ||
           eheader_tag == TAG_FLOAT_PIXEL_DATA ||
@@ -1352,7 +1345,7 @@ DcmBOT *dcm_file_build_bot(DcmFile *file, DcmDataSet *metadata)
         return NULL;
     }
 
-    offsets = malloc(num_frames * sizeof(ssize_t *));
+    ssize_t *offsets = malloc(num_frames * sizeof(ssize_t *));
     if (offsets == NULL) {
         dcm_log_error("Building Basic Offset Table failed. "
                       "Could not allocate memory for values of "
@@ -1423,7 +1416,7 @@ DcmBOT *dcm_file_build_bot(DcmFile *file, DcmDataSet *metadata)
             return NULL;
         }
     } else {
-        desc = get_pixel_description(metadata);
+        struct PixelDescription *desc = pixel_description_create(metadata);
         if (desc == NULL) {
             dcm_log_error("Building Basic Offset Table failed. "
                           "Could not get image pixel description.");
@@ -1431,6 +1424,7 @@ DcmBOT *dcm_file_build_bot(DcmFile *file, DcmDataSet *metadata)
         for (i = 0; i < num_frames; i++) {
             offsets[i] = i * desc->rows * desc->columns * desc->samples_per_pixel;
         }
+        pixel_description_destroy(desc);
     }
 
     return dcm_bot_create(offsets, num_frames);
@@ -1442,18 +1436,10 @@ DcmFrame *dcm_file_read_frame(DcmFile *file,
                               DcmBOT *bot,
                               uint32_t number)
 {
-    ssize_t frame_offset;
-    ssize_t first_frame_offset;
-    ssize_t total_frame_offset;
+    ssize_t first_frame_offset, total_frame_offset;
+    uint32_t length;
     size_t current_offset = 0;
     size_t *n = &current_offset;
-    uint32_t length;
-    char *value = NULL;
-    uint32_t iheader_tag;
-    uint32_t num_frames;
-    IHeader *iheader = NULL;
-    char *transfer_syntax_uid = NULL;
-    struct PixelDescription *desc = NULL;
 
     dcm_log_debug("Read Frame Item #%d.", number);
     if (number == 0) {
@@ -1461,8 +1447,8 @@ DcmFrame *dcm_file_read_frame(DcmFile *file,
                       "Frame Number must be positive.");
         return NULL;
     }
-    frame_offset = dcm_bot_get_frame_offset(bot, number);
-    num_frames = dcm_bot_get_num_frames(bot);
+    ssize_t frame_offset = dcm_bot_get_frame_offset(bot, number);
+    uint32_t num_frames = dcm_bot_get_num_frames(bot);
     if (dcm_is_encapsulated_transfer_syntax(file->transfer_syntax_uid)) {
         // Header of Pixel Data Element and Basic Offset Table
         first_frame_offset = 12 + 8 + 4 * num_frames;
@@ -1476,7 +1462,7 @@ DcmFrame *dcm_file_read_frame(DcmFile *file,
                           frame_offset);
     fseek(file->fp, total_frame_offset, SEEK_SET);
 
-    desc = get_pixel_description(metadata);
+    struct PixelDescription *desc = pixel_description_create(metadata);
     if (desc == NULL) {
         dcm_log_error("Reading Frame Item failed. "
                       "Could not get image pixel description.");
@@ -1484,18 +1470,20 @@ DcmFrame *dcm_file_read_frame(DcmFile *file,
     }
 
     if (dcm_is_encapsulated_transfer_syntax(file->transfer_syntax_uid)) {
-        iheader = read_item_header(file->fp, n);
+        IHeader *iheader = read_item_header(file->fp, n);
         if (iheader == NULL) {
             dcm_log_error("Reading Frame Item failed. "
                           "Could not read header of Frame Item #%d.",
                           number);
+            pixel_description_destroy(desc);
             return NULL;
         }
-        iheader_tag = iheader_get_tag(iheader);
+        uint32_t iheader_tag = iheader_get_tag(iheader);
         if (iheader_tag != TAG_ITEM) {
             dcm_log_error("Reading Frame Item failed. "
                           "No Item Tag found for Frame Item #%d.",
                           number);
+            pixel_description_destroy(desc);
             iheader_destroy(iheader);
             return NULL;
         }
@@ -1505,7 +1493,7 @@ DcmFrame *dcm_file_read_frame(DcmFile *file,
         length = desc->rows * desc->columns * desc->samples_per_pixel;
     }
 
-    value = malloc(length);
+    char *value = malloc(length);
     if (value == NULL) {
         dcm_log_error("Reading Frame Item failed. "
                       "Could not allocate memory for Frame Item #%d.",
@@ -1514,6 +1502,7 @@ DcmFrame *dcm_file_read_frame(DcmFile *file,
     }
     *n += fread(value, 1, length, file->fp);
 
+    char *transfer_syntax_uid;
     transfer_syntax_uid = malloc(strlen(file->transfer_syntax_uid));
     if (transfer_syntax_uid == NULL) {
         dcm_log_error("Reading Frame Item failed. "
@@ -1523,16 +1512,19 @@ DcmFrame *dcm_file_read_frame(DcmFile *file,
     }
     strcpy(transfer_syntax_uid, file->transfer_syntax_uid);
 
-    return dcm_frame_create(number,
-                            value,
-                            length,
-                            desc->rows,
-                            desc->columns,
-                            desc->samples_per_pixel,
-                            desc->bits_allocated,
-                            desc->bits_stored,
-                            desc->pixel_representation,
-                            desc->planar_configuration,
-                            desc->photometric_interpretation,
-                            transfer_syntax_uid);
+    DcmFrame *frame = dcm_frame_create(number,
+                                       value,
+                                       length,
+                                       desc->rows,
+                                       desc->columns,
+                                       desc->samples_per_pixel,
+                                       desc->bits_allocated,
+                                       desc->bits_stored,
+                                       desc->pixel_representation,
+                                       desc->planar_configuration,
+                                       desc->photometric_interpretation,
+                                       transfer_syntax_uid);
+    pixel_description_destroy(desc);
+
+    return frame;
 }
