@@ -12,17 +12,20 @@
 #endif
 
 #define DCM_NEW(TYPE) \
-    (TYPE *) dcm_calloc(sizeof(TYPE))
+    (TYPE *) dcm_calloc(1, sizeof(TYPE))
 
+#define DCM_ARRAY_ZEROS(N, TYPE) \
+    (TYPE *) dcm_calloc(N, sizeof(TYPE))
 
 /**
  * Allocate and initialize a block of memory.
  *
- * :param size: Number of bytes.
+ * :param n: Number of items.
+ * :param size: Number of bytes per item.
  *
  * :return: Pointer to allocated memory.
  */
-extern void *dcm_calloc(size_t size);
+extern void *dcm_calloc(size_t n, size_t size);
 
 
 /**
@@ -61,6 +64,11 @@ extern void *dcm_calloc(size_t size);
 #define DCM_CAPACITY_DT 26
 
 /**
+ * Maximum number of characters in values with Value Representation IS.
+ */
+#define DCM_CAPACITY_IS 12
+
+/**
  * Maximum number of characters in values with Value Representation LO.
  */
 #define DCM_CAPACITY_LO 64
@@ -69,11 +77,6 @@ extern void *dcm_calloc(size_t size);
  * Maximum number of characters in values with Value Representation LT.
  */
 #define DCM_CAPACITY_LT 10240
-
-/**
- * Maximum number of characters in values with Value Representation IS.
- */
-#define DCM_CAPACITY_IS 12
 
 /**
  * Maximum number of characters in values with Value Representation PN.
@@ -1106,6 +1109,18 @@ extern bool dcm_element_is_multivalued(DcmElement *element);
 extern DcmElement *dcm_element_clone(DcmElement *element);
 
 /**
+ * Copy value of a Data Element with Value Representation AE
+ * (Appllication Entity).
+ *
+ * :param element: Pointer to Data Element
+ * :param index: Zero-based index of value within the Data Element
+ * :param value: Pointer to memory location into which to copy value
+ */
+extern void dcm_element_copy_value_AE(DcmElement *element,
+                                      uint32_t index,
+                                      char *value);
+
+/**
  * Copy value of a Data Element with Value Representation CS (Code String).
  *
  * :param element: Pointer to Data Element
@@ -1113,6 +1128,18 @@ extern DcmElement *dcm_element_clone(DcmElement *element);
  * :param value: Pointer to memory location into which to copy value
  */
 extern void dcm_element_copy_value_CS(DcmElement *element,
+                                      uint32_t index,
+                                      char *value);
+
+/**
+ * Copy value of a Data Element with Value Representation DS
+ * (Decimal String).
+ *
+ * :param element: Pointer to Data Element
+ * :param index: Zero-based index of value within the Data Element
+ * :param value: Pointer to memory location into which to copy value
+ */
+extern void dcm_element_copy_value_DS(DcmElement *element,
                                       uint32_t index,
                                       char *value);
 
