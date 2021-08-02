@@ -123,7 +123,7 @@ static EHeader *eheader_create(uint32_t tag, const char *vr, uint64_t length)
         free(header);
         return NULL;
     }
-    strcpy(header->vr, vr);
+    strncpy(header->vr, vr, 3);
     header->vr[2] = '\0';
 
     header->length = length;
@@ -267,7 +267,7 @@ static EHeader *read_element_header(FILE *fp, size_t *n, bool implicit)
     if (implicit) {
         // Value Representation
         const char *tmp = dcm_dict_lookup_vr(tag);
-        strcpy(vr, tmp);
+        strncpy(vr, tmp, 3);
 
         // Value Length
         *n += fread(&length, 1, sizeof(length), fp);
