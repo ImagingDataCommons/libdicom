@@ -814,7 +814,6 @@ DcmDataSet *dcm_file_read_file_meta(DcmFile *file)
     uint8_t n_elem;
     uint32_t tag;
     uint16_t group_number;
-    uint32_t group_length;
     EHeader *header;
     DcmElement *element;
 
@@ -863,7 +862,8 @@ DcmDataSet *dcm_file_read_file_meta(DcmFile *file)
         dcm_dataset_destroy(file_meta);
         return NULL;
     }
-    dcm_element_copy_value_UL(element, 0, &group_length);
+
+    uint32_t group_length = dcm_element_get_value_UL(element, 0);
     eheader_destroy(header);
     dcm_element_destroy(element);
 
@@ -935,7 +935,9 @@ DcmDataSet *dcm_file_read_file_meta(DcmFile *file)
     file->offset = ftell(file->fp);
 
     element = dcm_dataset_get(file_meta, 0x00020010);
-    file->transfer_syntax_uid = malloc(DCM_CAPACITY_UI + 1);
+    const char *transfer_syntax_uid = dcm_element_get_value_UI(element, 0);
+    ssize_t len = strlen(transfer_syntax_uid) + 1;
+    file->transfer_syntax_uid = malloc(len);
     if (file->transfer_syntax_uid == NULL) {
         dcm_log_error("Reading of File Meta Information failed. "
                       "Could not allocate memory for data element "
@@ -943,8 +945,10 @@ DcmDataSet *dcm_file_read_file_meta(DcmFile *file)
         dcm_dataset_destroy(file_meta);
         return NULL;
     }
-    dcm_element_copy_value_UI(element, 0, file->transfer_syntax_uid);
-    file->transfer_syntax_uid[DCM_CAPACITY_UI] = '\0';
+    memcpy(file->transfer_syntax_uid,
+           transfer_syntax_uid,
+           len);
+    file->transfer_syntax_uid[len] = '\0';
 
     dcm_dataset_lock(file_meta);
     return file_meta;
@@ -1086,15 +1090,8 @@ static bool get_num_frames(DcmDataSet *metadata, uint32_t *number_of_frames)
         return false;
     }
 
-    char *value = malloc(DCM_CAPACITY_IS + 1);
-    if (value == NULL) {
-        dcm_log_error("Getting value of Data Element 'Number of Frames' "
-                      "failed. Could not allocate memory for value.");
-        return false;
-    }
-    dcm_element_copy_value_IS(element, 0, value);
+    const char *value = dcm_element_get_value_IS(element, 0);
     *number_of_frames = (uint32_t) strtol(value, NULL, 10);
-    free(value);
 
     return true;
 }
@@ -1218,7 +1215,7 @@ static struct PixelDescription *pixel_description_create(DcmDataSet *metadata)
         free(desc);
         return NULL;
     }
-    dcm_element_copy_value_US(element, 0, &desc->rows);
+    desc->rows = dcm_element_get_value_US(element, 0);
 
     element = dcm_dataset_get(metadata, 0x00280011);
     if (element == NULL) {
@@ -1227,7 +1224,7 @@ static struct PixelDescription *pixel_description_create(DcmDataSet *metadata)
         free(desc);
         return NULL;
     }
-    dcm_element_copy_value_US(element, 0, &desc->columns);
+    desc->columns = dcm_element_get_value_US(element, 0);
 
     element = dcm_dataset_get(metadata, 0x00280002);
     if (element == NULL) {
@@ -1236,7 +1233,7 @@ static struct PixelDescription *pixel_description_create(DcmDataSet *metadata)
         free(desc);
         return NULL;
     }
-    dcm_element_copy_value_US(element, 0, &desc->samples_per_pixel);
+    desc->samples_per_pixel = dcm_element_get_value_US(element, 0);
 
     element = dcm_dataset_get(metadata, 0x00280100);
     if (element == NULL) {
@@ -1245,7 +1242,7 @@ static struct PixelDescription *pixel_description_create(DcmDataSet *metadata)
         free(desc);
         return NULL;
     }
-    dcm_element_copy_value_US(element, 0, &desc->bits_allocated);
+    desc->bits_allocated = dcm_element_get_value_US(element, 0);
 
     element = dcm_dataset_get(metadata, 0x00280101);
     if (element == NULL) {
@@ -1254,7 +1251,7 @@ static struct PixelDescription *pixel_description_create(DcmDataSet *metadata)
         free(desc);
         return NULL;
     }
-    dcm_element_copy_value_US(element, 0, &desc->bits_stored);
+    desc->bits_stored = dcm_element_get_value_US(element, 0);
 
     element = dcm_dataset_get(metadata, 0x00280103);
     if (element == NULL) {
@@ -1263,7 +1260,7 @@ static struct PixelDescription *pixel_description_create(DcmDataSet *metadata)
         free(desc);
         return NULL;
     }
-    dcm_element_copy_value_US(element, 0, &desc->pixel_representation);
+    desc->pixel_representation = dcm_element_get_value_US(element, 0);
 
     element = dcm_dataset_get(metadata, 0x00280006);
     if (element == NULL) {
@@ -1272,16 +1269,18 @@ static struct PixelDescription *pixel_description_create(DcmDataSet *metadata)
         free(desc);
         return NULL;
     }
-    dcm_element_copy_value_US(element, 0, &desc->planar_configuration);
+    desc->planar_configuration = dcm_element_get_value_US(element, 0);
 
     element = dcm_dataset_get(metadata, 0x00280004);
+    const char *photometric_interpretation = dcm_element_get_value_CS(element, 0);
+    ssize_t len = strlen(photometric_interpretation) + 1;
     if (element == NULL) {
         dcm_log_error("Getting image pixel description failed. "
                       "Could not get Data Element 'Photometric Interpretation'.");
         free(desc);
         return NULL;
     }
-    desc->photometric_interpretation = malloc(DCM_CAPACITY_CS + 1);
+    desc->photometric_interpretation = malloc(len);
     if (desc->photometric_interpretation == NULL) {
         dcm_log_error("Getting image pixel description failed. "
                       "Could not allocate memory for value of "
@@ -1289,10 +1288,13 @@ static struct PixelDescription *pixel_description_create(DcmDataSet *metadata)
         free(desc);
         return NULL;
     }
-    dcm_element_copy_value_CS(element, 0, desc->photometric_interpretation);
+    memcpy(desc->photometric_interpretation,
+           photometric_interpretation,
+           len);
 
     return desc;
 }
+
 
 static void pixel_description_destroy(struct PixelDescription *desc)
 {
@@ -1502,15 +1504,27 @@ DcmFrame *dcm_file_read_frame(DcmFile *file,
     }
     *n += fread(value, 1, length, file->fp);
 
-    char *transfer_syntax_uid;
-    transfer_syntax_uid = malloc(strlen(file->transfer_syntax_uid));
+    length = strlen(file->transfer_syntax_uid) + 1;
+    char *transfer_syntax_uid = malloc(length);
     if (transfer_syntax_uid == NULL) {
         dcm_log_error("Reading Frame Item failed. "
                       "Could not allocate memory for Frame item #%d.",
                       number);
         return NULL;
     }
-    strcpy(transfer_syntax_uid, file->transfer_syntax_uid);
+    memcpy(transfer_syntax_uid, file->transfer_syntax_uid, length);
+
+    length = strlen(desc->photometric_interpretation) + 1;
+    char *photometric_interpretation = malloc(length);
+    if (photometric_interpretation == NULL) {
+        dcm_log_error("Reading Frame Item failed. "
+                      "Could not allocate memory for Frame item #%d.",
+                      number);
+        free(transfer_syntax_uid);
+        pixel_description_destroy(desc);
+        return NULL;
+    }
+    memcpy(photometric_interpretation, desc->photometric_interpretation, length);
 
     DcmFrame *frame = dcm_frame_create(number,
                                        value,
@@ -1522,7 +1536,7 @@ DcmFrame *dcm_file_read_frame(DcmFile *file,
                                        desc->bits_stored,
                                        desc->pixel_representation,
                                        desc->planar_configuration,
-                                       desc->photometric_interpretation,
+                                       photometric_interpretation,
                                        transfer_syntax_uid);
     pixel_description_destroy(desc);
 

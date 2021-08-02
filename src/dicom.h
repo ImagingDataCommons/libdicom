@@ -6,9 +6,9 @@
 #define DCM_INCLUDED
 
 #ifndef NDEBUG
-#  define DEBUG_ONLY( ... ) __VA_ARGS__
+#  define DCM_DEBUG_ONLY( ... ) __VA_ARGS__
 #else
-#  define DEBUG_ONLY( ... )
+#  define DCM_DEBUG_ONLY( ... )
 #endif
 
 #define DCM_NEW(TYPE) \
@@ -297,7 +297,7 @@ extern bool dcm_is_encapsulated_transfer_syntax(const char *transfer_syntax_uid)
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_AE(uint32_t tag, char *values);
+extern DcmElement *dcm_element_create_AE(uint32_t tag, char *value);
 
 /**
  * Create a Data Element with Value Representation AE (Application Entity)
@@ -718,8 +718,8 @@ extern DcmElement *dcm_element_create_SS(uint32_t tag, int16_t value);
  * :return: Pointer to Data Element
  */
 extern DcmElement *dcm_element_create_SS_multi(uint32_t tag,
-                                                  int16_t *values,
-                                                  uint32_t vm);
+                                               int16_t *values,
+                                               uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation SL (Signed Long).
@@ -868,8 +868,7 @@ extern DcmElement *dcm_element_create_UV_multi(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_ST(uint32_t tag,
-                                            char *value);
+extern DcmElement *dcm_element_create_ST(uint32_t tag, char *value);
 
 /**
  * Create a Data Element with Value Representation SQ (Sequence).
@@ -1010,7 +1009,8 @@ extern DcmElement *dcm_element_create_UN(uint32_t tag,
                                          uint32_t length);
 
 /**
- * Create a Data Element with Value Representation UR (Universal Resource Identifier).
+ * Create a Data Element with Value Representation UR
+ * (Universal Resource Identifier).
  *
  * :param tag: Tag
  * :param value: Character string value
@@ -1073,7 +1073,7 @@ extern uint32_t dcm_element_get_tag(DcmElement *element);
 extern bool dcm_element_check_vr(DcmElement *element, const char *vr);
 
 /**
- * Get length of the value of a Data Element.
+ * Get length of the entire value of a Data Element.
  *
  * :param element: Pointer to Data Element
  *
@@ -1109,103 +1109,314 @@ extern bool dcm_element_is_multivalued(DcmElement *element);
 extern DcmElement *dcm_element_clone(DcmElement *element);
 
 /**
- * Copy value of a Data Element with Value Representation AE
+ * Get value of a Data Element with Value Representation AE
  * (Appllication Entity).
  *
  * :param element: Pointer to Data Element
  * :param index: Zero-based index of value within the Data Element
- * :param value: Pointer to memory location into which to copy value
+ *
+ * :return: Pointer to memory location where value is stored
  */
-extern void dcm_element_copy_value_AE(DcmElement *element,
-                                      uint32_t index,
-                                      char *value);
+extern const char *dcm_element_get_value_AE(DcmElement *element,
+                                            uint32_t index);
 
 /**
- * Copy value of a Data Element with Value Representation CS (Code String).
+ * Get value of a Data Element with Value Representation AS (Age String).
  *
  * :param element: Pointer to Data Element
  * :param index: Zero-based index of value within the Data Element
- * :param value: Pointer to memory location into which to copy value
+ *
+ * :return: Pointer to memory location where value is stored
  */
-extern void dcm_element_copy_value_CS(DcmElement *element,
-                                      uint32_t index,
-                                      char *value);
+extern const char *dcm_element_get_value_AS(DcmElement *element,
+                                            uint32_t index);
 
 /**
- * Copy value of a Data Element with Value Representation DS
- * (Decimal String).
+ * Get value of a Data Element with Value Representation AT (Attribute Tag).
  *
  * :param element: Pointer to Data Element
  * :param index: Zero-based index of value within the Data Element
- * :param value: Pointer to memory location into which to copy value
+ *
+ * :return: Pointer to memory location where value is stored
  */
-extern void dcm_element_copy_value_DS(DcmElement *element,
-                                      uint32_t index,
-                                      char *value);
+extern const char *dcm_element_get_value_AT(DcmElement *element,
+                                            uint32_t index);
 
 /**
- * Copy value of a Data Element with Value Representation IS (Integer String).
+ * Get value of a Data Element with Value Representation CS (Code String).
  *
  * :param element: Pointer to Data Element
  * :param index: Zero-based index of value within the Data Element
- * :param value: Pointer to memory location into which to copy value
+ *
+ * :return: Pointer to memory location where value is stored
  */
-extern void dcm_element_copy_value_IS(DcmElement *element,
-                                      uint32_t index,
-                                      char *value);
+extern const char *dcm_element_get_value_CS(DcmElement *element,
+                                            uint32_t index);
 
 /**
- * Copy value of a Data Element with Value Representation FD (Floating Point Double).
+ * Get value of a Data Element with Value Representation DA (Date).
  *
  * :param element: Pointer to Data Element
  * :param index: Zero-based index of value within the Data Element
- * :param value: Pointer to memory location into which to copy value
+ *
+ * :return: Pointer to memory location where value is stored
  */
-extern void dcm_element_copy_value_FD(DcmElement *element,
-                                      uint32_t index,
-                                      double *value);
+extern const char *dcm_element_get_value_DA(DcmElement *element,
+                                            uint32_t index);
 
-extern void dcm_element_copy_value_FL(DcmElement *element,
-                                      uint32_t index,
-                                      float *value);
+/**
+ * Get value of a Data Element with Value Representation DS (Decimal String).
+ *
+ * :param element: Pointer to Data Element
+ * :param index: Zero-based index of value within the Data Element
+ *
+ * :return: Pointer to memory location where value is stored
+ */
+extern const char *dcm_element_get_value_DS(DcmElement *element,
+                                            uint32_t index);
 
-extern void dcm_element_copy_value_SL(DcmElement *element,
-                                      uint32_t index,
-                                      int32_t *value);
+/**
+ * Get value of a Data Element with Value Representation DT (Date Time).
+ *
+ * :param element: Pointer to Data Element
+ * :param index: Zero-based index of value within the Data Element
+ *
+ * :return: Pointer to memory location where value is stored
+ */
+extern const char *dcm_element_get_value_DT(DcmElement *element,
+                                            uint32_t index);
 
-extern void dcm_element_copy_value_ST(DcmElement *element,
-                                      char *value);
+/**
+ * Get value of a Data Element with Value Representation FD
+ * (Floating Point Double).
+ *
+ * :param element: Pointer to Data Element
+ * :param index: Zero-based index of value within the Data Element
+ *
+ * :return: Value
+ */
+extern double dcm_element_get_value_FD(DcmElement *element, uint32_t index);
 
-extern void dcm_element_copy_value_UI(DcmElement *element,
-                                      uint32_t index,
-                                      char *value);
+/**
+ * Get value of a Data Element with Value Representation FL (Floating Point).
+ *
+ * :param element: Pointer to Data Element
+ * :param index: Zero-based index of value within the Data Element
+ *
+ * :return: Value
+ */
+extern float dcm_element_get_value_FL(DcmElement *element, uint32_t index);
 
-extern void dcm_element_copy_value_UL(DcmElement *element,
-                                      uint32_t index,
-                                      uint32_t *value);
+/**
+ * Get value of a Data Element with Value Representation IS (Integer String).
+ *
+ * :param element: Pointer to Data Element
+ * :param index: Zero-based index of value within the Data Element
+ *
+ * :return: Pointer to memory location where value is stored
+ */
+extern const char *dcm_element_get_value_IS(DcmElement *element,
+                                            uint32_t index);
 
-extern void dcm_element_copy_value_US(DcmElement *element,
-                                      uint32_t index,
-                                      uint16_t *value);
+/**
+ * Get value of a Data Element with Value Representation LO (Long String).
+ *
+ * :param element: Pointer to Data Element
+ *
+ * :return: Pointer to memory location where value is stored
+ */
+extern const char *dcm_element_get_value_LO(DcmElement *element);
 
-extern void dcm_element_copy_value_UV(DcmElement *element,
-                                      uint32_t index,
-                                      uint16_t *value);
+/**
+ * Get value of a Data Element with Value Representation PN (Person Name).
+ *
+ * :param element: Pointer to Data Element
+ *
+ * :return: Pointer to memory location where value is stored
+ */
+extern const char *dcm_element_get_value_PN(DcmElement *element);
 
-extern void dcm_element_copy_value_SS(DcmElement *element,
-                                      uint32_t index,
-                                      int16_t *value);
+/**
+ * Get value of a Data Element with Value Representation SH (Short String).
+ *
+ * :param element: Pointer to Data Element
+ *
+ * :return: Pointer to memory location where value is stored
+ */
+extern const char *dcm_element_get_value_SH(DcmElement *element);
 
-extern void dcm_element_copy_value_SV(DcmElement *element,
-                                      uint32_t index,
-                                      int64_t *value);
+/**
+ * Get value of a Data Element with Value Representation TM (Time).
+ *
+ * :param element: Pointer to Data Element
+ *
+ * :return: Pointer to memory location where value is stored
+ */
+extern const char *dcm_element_get_value_TM(DcmElement *element);
 
-extern void dcm_element_copy_value_ST(DcmElement *element,
-                                      char *value);
+/**
+ * Get value of a Data Element with Value Representation SL (Signed Long).
+ *
+ * :param element: Pointer to Data Element
+ * :param index: Zero-based index of value within the Data Element
+ *
+ * :return: Value
+ */
+extern int32_t dcm_element_get_value_SL(DcmElement *element, uint32_t index);
 
-extern void dcm_element_copy_value_OB(DcmElement *element,
-                                      char *value,
-                                      ssize_t n);
+/**
+ * Get value of a Data Element with Value Representation SS (Signed Short).
+ *
+ * :param element: Pointer to Data Element
+ * :param index: Zero-based index of value within the Data Element
+ *
+ * :return: Value
+ */
+extern int16_t dcm_element_get_value_SS(DcmElement *element, uint32_t index);
+
+/**
+ * Get value of a Data Element with Value Representation SV (Signed Very Long).
+ *
+ * :param element: Pointer to Data Element
+ * :param index: Zero-based index of value within the Data Element
+ *
+ * :return: Value
+ */
+extern int64_t dcm_element_get_value_SV(DcmElement *element, uint32_t index);
+
+/**
+ * Get value of a Data Element with Value Representation ST (Short text).
+ *
+ * :param element: Pointer to Data Element
+ *
+ * :return: Pointer to memory location where value is stored
+ */
+extern const char *dcm_element_get_value_ST(DcmElement *element);
+
+/**
+ * Get value of a Data Element with Value Representation UI (Unique Identifier).
+ *
+ * :param element: Pointer to Data Element
+ * :param index: Zero-based index of value within the Data Element
+ *
+ * :return: Pointer to memory location where value is stored
+ */
+extern const char *dcm_element_get_value_UI(DcmElement *element,
+                                            uint32_t index);
+
+/**
+ * Get value of a Data Element with Value Representation UL (Unsigned Long).
+ *
+ * :param element: Pointer to Data Element
+ * :param index: Zero-based index of value within the Data Element
+ *
+ * :return: Value
+ */
+extern uint32_t dcm_element_get_value_UL(DcmElement *element, uint32_t index);
+
+/**
+ * Get value of a Data Element with Value Representation US (Unsigned Short).
+ *
+ * :param element: Pointer to Data Element
+ * :param index: Zero-based index of value within the Data Element
+ *
+ * :return: Value
+ */
+extern uint16_t dcm_element_get_value_US(DcmElement *element, uint32_t index);
+
+/**
+ * Get value of a Data Element with Value Representation UV (Unsigned Very Long).
+ *
+ * :param element: Pointer to Data Element
+ * :param index: Zero-based index of value within the Data Element
+ *
+ * :return: Value
+ */
+extern uint64_t dcm_element_get_value_UV(DcmElement *element, uint32_t index);
+
+
+/**
+ * Get value of a Data Element with Value Representation OB (Other Byte).
+ *
+ * :param element: Pointer to Data Element
+ *
+ * :return: Pointer to memory location where value is stored
+ */
+extern const char *dcm_element_get_value_OB(DcmElement *element);
+
+/**
+ * Get value of a Data Element with Value Representation OD (Other Double).
+ *
+ * :param element: Pointer to Data Element
+ *
+ * :return: Pointer to memory location where value is stored
+ */
+extern const char *dcm_element_get_value_OD(DcmElement *element);
+
+/**
+ * Get value of a Data Element with Value Representation OF (Other Float).
+ *
+ * :param element: Pointer to Data Element
+ *
+ * :return: Pointer to memory location where value is stored
+ */
+extern const char *dcm_element_get_value_OF(DcmElement *element);
+
+/**
+ * Get value of a Data Element with Value Representation OV (Other Very Long).
+ *
+ * :param element: Pointer to Data Element
+ *
+ * :return: Pointer to memory location where value is stored
+ */
+extern const char *dcm_element_get_value_OV(DcmElement *element);
+
+/**
+ * Get value of a Data Element with Value Representation OW (Other Word).
+ *
+ * :param element: Pointer to Data Element
+ *
+ * :return: Pointer to memory location where value is stored
+ */
+extern const char *dcm_element_get_value_OW(DcmElement *element);
+
+/**
+ * Get value of a Data Element with Value Representation UC (Unlimited Characters).
+ *
+ * :param element: Pointer to Data Element
+ *
+ * :return: Pointer to memory location where value is stored
+ */
+extern const char *dcm_element_get_value_UC(DcmElement *element);
+
+/**
+ * Get value of a Data Element with Value Representation UN (Unknown).
+ *
+ * :param element: Pointer to Data Element
+ *
+ * :return: Pointer to memory location where value is stored
+ */
+extern const char *dcm_element_get_value_UN(DcmElement *element);
+
+/**
+ * Get value of a Data Element with Value Representation UR
+ * (Universal Resource Identifier).
+ *
+ * :param element: Pointer to Data Element
+ *
+ * :return: Pointer to memory location where value is stored
+ */
+extern const char *dcm_element_get_value_UR(DcmElement *element);
+
+/**
+ * Get value of a Data Element with Value Representation UT (Unlimited Text).
+ *
+ * :param element: Pointer to Data Element
+ *
+ * :return: Pointer to memory location where value is stored
+ */
+extern const char *dcm_element_copy_value_UT(DcmElement *element);
+
 
 extern DcmSequence *dcm_element_get_value_SQ(DcmElement *element);
 
@@ -1475,17 +1686,17 @@ extern void dcm_sequence_destroy(DcmSequence *seq);
  * :return: Frame Item
  */
 extern DcmFrame *dcm_frame_create(uint32_t number,
-                                     char *data,
-                                     uint32_t length,
-                                     uint16_t rows,
-                                     uint16_t columns,
-                                     uint16_t samples_per_pixel,
-                                     uint16_t bits_allocated,
-                                     uint16_t bits_stored,
-                                     uint16_t pixel_representation,
-                                     uint16_t planar_configuration,
-                                     const char *photometric_interpretation,
-                                     const char *transfer_syntax_uid);
+                                  const char *data,
+                                  uint32_t length,
+                                  uint16_t rows,
+                                  uint16_t columns,
+                                  uint16_t samples_per_pixel,
+                                  uint16_t bits_allocated,
+                                  uint16_t bits_stored,
+                                  uint16_t pixel_representation,
+                                  uint16_t planar_configuration,
+                                  const char *photometric_interpretation,
+                                  const char *transfer_syntax_uid);
 
 /**
  * Get number of a Frame Item within the Pixel Data Element.

@@ -68,8 +68,8 @@ struct _DcmFrame {
     uint16_t high_bit;
     uint16_t pixel_representation;
     uint16_t planar_configuration;
-    char *photometric_interpretation;
-    char *transfer_syntax_uid;
+    const char *photometric_interpretation;
+    const char *transfer_syntax_uid;
 };
 
 
@@ -82,6 +82,45 @@ struct _DcmBOT {
 struct SequenceItem {
     DcmDataSet *dataset;
 };
+
+
+static bool is_vr_string(const char *vr) {
+    if (strcmp(vr, "AE") == 0 ||
+        strcmp(vr, "AS") == 0 ||
+        strcmp(vr, "AT") == 0 ||
+        strcmp(vr, "CS") == 0 ||
+        strcmp(vr, "DA") == 0 ||
+        strcmp(vr, "DS") == 0 ||
+        strcmp(vr, "DT") == 0 ||
+        strcmp(vr, "IS") == 0 ||
+        strcmp(vr, "LO") == 0 ||
+        strcmp(vr, "LT") == 0 ||
+        strcmp(vr, "PN") == 0 ||
+        strcmp(vr, "SH") == 0 ||
+        strcmp(vr, "ST") == 0 ||
+        strcmp(vr, "TM") == 0 ||
+        strcmp(vr, "UI") == 0 ||
+        strcmp(vr, "UR") == 0 ||
+        strcmp(vr, "UT") == 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+static bool is_vr_bytes(const char *vr) {
+    if (strcmp(vr, "OB") == 0 ||
+        strcmp(vr, "OD") == 0 ||
+        strcmp(vr, "OF") == 0 ||
+        strcmp(vr, "OV") == 0 ||
+        strcmp(vr, "UC") == 0 ||
+        strcmp(vr, "UN") == 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
 
 
 static struct SequenceItem *create_sequence_item(DcmDataSet *dataset)
@@ -149,7 +188,7 @@ static DcmElement *create_element(uint32_t tag, const char *vr, uint32_t length)
         return NULL;
     }
     element->tag = tag;
-    strcpy(element->vr, vr);
+    strncpy(element->vr, vr, 3);
     element->vr[2] = '\0';
     if (length % 2 != 0) {
         // Zero padding
@@ -241,12 +280,11 @@ DcmElement *dcm_element_clone(DcmElement *element)
         return NULL;
     }
     clone->tag = element->tag;
-    strcpy(clone->vr, element->vr);
+    strncpy(clone->vr, element->vr, 3);
     clone->length = element->length;
     clone->vm = element->vm;
 
     if (strcmp(element->vr, "SQ") == 0) {
-        // Sequences
         if (element->value.sq) {
             // Copy each data set in sequence
             DcmSequence *seq = dcm_sequence_create();
@@ -269,24 +307,7 @@ DcmElement *dcm_element_clone(DcmElement *element)
             clone->value.sq = seq;
             clone->sequence_pointer = seq;
         }
-    } else if (strcmp(element->vr, "AE") == 0 ||
-               strcmp(element->vr, "AS") == 0 ||
-               strcmp(element->vr, "AT") == 0 ||
-               strcmp(element->vr, "CS") == 0 ||
-               strcmp(element->vr, "DA") == 0 ||
-               strcmp(element->vr, "DS") == 0 ||
-               strcmp(element->vr, "DT") == 0 ||
-               strcmp(element->vr, "IS") == 0 ||
-               strcmp(element->vr, "LO") == 0 ||
-               strcmp(element->vr, "LT") == 0 ||
-               strcmp(element->vr, "PN") == 0 ||
-               strcmp(element->vr, "SH") == 0 ||
-               strcmp(element->vr, "ST") == 0 ||
-               strcmp(element->vr, "TM") == 0 ||
-               strcmp(element->vr, "UI") == 0 ||
-               strcmp(element->vr, "UR") == 0 ||
-               strcmp(element->vr, "UT") == 0) {
-        // Character Strings
+    } else if (is_vr_string(element->vr)) {
         if (element->value.str_multi) {
             clone->value.str_multi = malloc(element->vm * sizeof(char *));
             if (clone->value.str_multi == NULL) {
@@ -298,31 +319,25 @@ DcmElement *dcm_element_clone(DcmElement *element)
                 return NULL;
             }
             for (i = 0; i < element->vm; i++) {
-                clone->value.str_multi[i] = malloc(
-                    strlen(element->value.str_multi[i]) + 1
-                );
+                ssize_t len = strlen(element->value.str_multi[i]) + 1;
+                clone->value.str_multi[i] = malloc(len);
                 if (clone->value.str_multi[i] == NULL) {
                     dcm_log_error("Cloning of Data Element failed."
                                   "Could not allocate memory for value of clone "
                                   "clone of Data Element '%08X'.",
                                   element->tag);
-                    // FIXME
+                    // FIXME: free memory allocated for previous values
                     free(clone->value.str_multi);
                     free(clone);
                     return NULL;
                 }
-                strcpy(clone->value.str_multi[i],
-                       element->value.str_multi[i]);
+                memcpy(clone->value.str_multi[i],
+                       element->value.str_multi[i],
+                       len);
             }
             clone->value_pointer_array = clone->value.str_multi;
         }
-    } else if (strcmp(element->vr, "OB") == 0 ||
-               strcmp(element->vr, "OD") == 0 ||
-               strcmp(element->vr, "OF") == 0 ||
-               strcmp(element->vr, "OV") == 0 ||
-               strcmp(element->vr, "UC") == 0 ||
-               strcmp(element->vr, "UN") == 0) {
-        // Bytes
+    } else if (is_vr_bytes(element->vr)) {
         if (element->value.bytes) {
             clone->value.bytes = malloc(element->length);
             if (clone->value.bytes == NULL) {
@@ -488,7 +503,7 @@ uint32_t dcm_element_get_length(DcmElement *element)
 
 static inline void assert_vr(DcmElement *element, const char *vr)
 {
-    DEBUG_ONLY(bool success =) dcm_element_check_vr(element, vr);
+    DCM_DEBUG_ONLY(bool success =) dcm_element_check_vr(element, vr);
     assert(success);
 }
 
@@ -501,7 +516,7 @@ static inline bool check_value_index(DcmElement *element, uint32_t index)
 
 static inline void assert_value_index(DcmElement *element, uint32_t index)
 {
-    DEBUG_ONLY(bool success =) check_value_index(element, index);
+    DCM_DEBUG_ONLY(bool success =) check_value_index(element, index);
     assert(success);
 }
 
@@ -794,61 +809,245 @@ DcmElement *dcm_element_create_UI_multi(uint32_t tag,
 }
 
 
-void dcm_element_copy_value_AE(DcmElement *element,
-                               uint32_t index,
-                               char *value)
+static char *get_value_str_multi(DcmElement *element, uint32_t index)
+{
+    assert_value_index(element, index);
+    return element->value.str_multi[index];
+}
+
+
+const char *dcm_element_get_value_AE(DcmElement *element, uint32_t index)
 {
     assert(element);
     assert_vr(element, "AE");
-    assert_value_index(element, index);
-    strcpy(value, element->value.str_multi[index]);
-    value[strlen(element->value.str_multi[index])] = '\0';
+    return get_value_str_multi(element, index);
 }
 
 
-void dcm_element_copy_value_CS(DcmElement *element,
-                               uint32_t index,
-                               char *value)
+const char *dcm_element_get_value_AS(DcmElement *element, uint32_t index)
+{
+    assert(element);
+    assert_vr(element, "AS");
+    return get_value_str_multi(element, index);
+}
+
+
+const char *dcm_element_get_value_AT(DcmElement *element, uint32_t index)
+{
+    assert(element);
+    assert_vr(element, "AT");
+    return get_value_str_multi(element, index);
+}
+
+
+const char *dcm_element_get_value_CS(DcmElement *element, uint32_t index)
 {
     assert(element);
     assert_vr(element, "CS");
-    assert_value_index(element, index);
-    strcpy(value, element->value.str_multi[index]);
-    value[strlen(element->value.str_multi[index])] = '\0';
+    return get_value_str_multi(element, index);
 }
 
 
-void dcm_element_copy_value_DS(DcmElement *element,
-                               uint32_t index,
-                               char *value)
+const char *dcm_element_get_value_DA(DcmElement *element, uint32_t index)
+{
+    assert(element);
+    assert_vr(element, "DA");
+    return get_value_str_multi(element, index);
+}
+
+
+const char *dcm_element_get_value_DS(DcmElement *element, uint32_t index)
 {
     assert(element);
     assert_vr(element, "DS");
-    assert_value_index(element, index);
-    strcpy(value, element->value.str_multi[index]);
-    value[strlen(element->value.str_multi[index])] = '\0';
+    return get_value_str_multi(element, index);
 }
 
 
-void dcm_element_copy_value_ST(DcmElement *element, char *value)
+const char *dcm_element_get_value_DT(DcmElement *element, uint32_t index)
+{
+    assert(element);
+    assert_vr(element, "DT");
+    return get_value_str_multi(element, index);
+}
+
+
+double dcm_element_get_value_FD(DcmElement *element, uint32_t index)
+{
+    assert(element);
+    assert_vr(element, "FD");
+    assert_value_index(element, index);
+    return element->value.fd_multi[index];
+}
+
+
+float dcm_element_get_value_FL(DcmElement *element, uint32_t index)
+{
+    assert(element);
+    assert_vr(element, "FL");
+    assert_value_index(element, index);
+    return element->value.fl_multi[index];
+}
+
+
+const char *dcm_element_get_value_IS(DcmElement *element, uint32_t index)
+{
+    assert(element);
+    assert_vr(element, "IS");
+    return get_value_str_multi(element, index);
+}
+
+
+const char *dcm_element_get_value_LO(DcmElement *element)
+{
+    assert(element);
+    assert_vr(element, "LO");
+    return get_value_str_multi(element, 0);
+}
+
+
+const char *dcm_element_get_value_PN(DcmElement *element)
+{
+    assert(element);
+    assert_vr(element, "PN");
+    return get_value_str_multi(element, 0);
+}
+
+
+const char *dcm_element_get_value_SH(DcmElement *element)
+{
+    assert(element);
+    assert_vr(element, "SH");
+    return get_value_str_multi(element, 0);
+}
+
+
+const char *dcm_element_get_value_TM(DcmElement *element)
+{
+    assert(element);
+    assert_vr(element, "TM");
+    return get_value_str_multi(element, 0);
+}
+
+
+int16_t dcm_element_get_value_SS(DcmElement *element, uint32_t index)
+{
+    assert_vr(element, "SS");
+    assert_value_index(element, index);
+    return element->value.ss_multi[index];
+}
+
+
+int32_t dcm_element_get_value_SL(DcmElement *element, uint32_t index)
+{
+    assert_vr(element, "SL");
+    assert_value_index(element, index);
+    return element->value.sl_multi[index];
+}
+
+
+int64_t dcm_element_get_value_SV(DcmElement *element, uint32_t index)
+{
+    assert_vr(element, "SV");
+    assert_value_index(element, index);
+    return element->value.sv_multi[index];
+}
+
+
+const char *dcm_element_get_value_ST(DcmElement *element)
 {
     assert(element);
     assert_vr(element, "ST");
-    assert_value_index(element, 0);
-    strcpy(value, element->value.str_multi[0]);
-    value[strlen(element->value.str_multi[0])] = '\0';
+    return get_value_str_multi(element, 0);
 }
 
 
-void dcm_element_copy_value_UI(DcmElement *element,
-                               uint32_t index,
-                               char *value)
+const char *dcm_element_get_value_UI(DcmElement *element, uint32_t index)
 {
     assert(element);
     assert_vr(element, "UI");
+    return get_value_str_multi(element, index);
+}
+
+uint32_t dcm_element_get_value_UL(DcmElement *element, uint32_t index)
+{
+    assert_vr(element, "UL");
     assert_value_index(element, index);
-    strcpy(value, element->value.str_multi[index]);
-    value[strlen(element->value.str_multi[index])] = '\0';
+    return element->value.ul_multi[index];
+}
+
+
+uint16_t dcm_element_get_value_US(DcmElement *element, uint32_t index)
+{
+    assert_vr(element, "US");
+    assert_value_index(element, index);
+    return element->value.us_multi[index];
+}
+
+
+uint64_t dcm_element_get_value_UV(DcmElement *element, uint32_t index)
+{
+    assert_vr(element, "UV");
+    assert_value_index(element, index);
+    return element->value.uv_multi[index];
+}
+
+
+const char *dcm_element_get_value_UR(DcmElement *element)
+{
+    assert(element);
+    assert_vr(element, "UR");
+    return get_value_str_multi(element, 0);
+}
+
+
+const char *dcm_element_get_value_UT(DcmElement *element)
+{
+    assert(element);
+    assert_vr(element, "UT");
+    return get_value_str_multi(element, 0);
+}
+
+
+const char *dcm_element_copy_value_OB(DcmElement *element)
+{
+    assert_vr(element, "OB");
+    return element->value.bytes;
+}
+
+
+const char *dcm_element_copy_value_OD(DcmElement *element)
+{
+    assert_vr(element, "OD");
+    return element->value.bytes;
+}
+
+
+const char *dcm_element_copy_value_OF(DcmElement *element)
+{
+    assert_vr(element, "OF");
+    return element->value.bytes;
+}
+
+
+const char *dcm_element_copy_value_OW(DcmElement *element)
+{
+    assert_vr(element, "OW");
+    return element->value.bytes;
+}
+
+
+const char *dcm_element_copy_value_UC(DcmElement *element)
+{
+    assert_vr(element, "UC");
+    return element->value.bytes;
+}
+
+
+const char *dcm_element_copy_value_UN(DcmElement *element)
+{
+    assert_vr(element, "UN");
+    return element->value.bytes;
 }
 
 
@@ -1301,97 +1500,6 @@ DcmElement *dcm_element_create_UV_multi(uint32_t tag,
 }
 
 
-void dcm_element_copy_value_FD(DcmElement *element,
-                               uint32_t index,
-                               double *value)
-{
-    assert_vr(element, "FD");
-    assert_value_index(element, index);
-    *value = element->value.fd_multi[index];
-}
-
-
-void dcm_element_copy_value_FL(DcmElement *element,
-                               uint32_t index,
-                               float *value)
-{
-    assert_vr(element, "FL");
-    assert_value_index(element, index);
-    *value = element->value.fl_multi[index];
-}
-
-
-void dcm_element_copy_value_IS(DcmElement *element,
-                               uint32_t index,
-                               char *value)
-{
-    assert_vr(element, "IS");
-    assert_value_index(element, index);
-    strcpy(value, element->value.str_multi[index]);
-    value[strlen(element->value.str_multi[index])] = '\0';
-}
-
-
-void dcm_element_copy_value_SS(DcmElement *element,
-                               uint32_t index,
-                               int16_t *value)
-{
-    assert_vr(element, "SS");
-    assert_value_index(element, index);
-    *value = element->value.ss_multi[index];
-}
-
-
-void dcm_element_copy_value_SL(DcmElement *element,
-                               uint32_t index,
-                               int32_t *value)
-{
-    assert_vr(element, "SL");
-    assert_value_index(element, index);
-    *value = element->value.ss_multi[index];
-}
-
-
-void dcm_element_copy_value_SV(DcmElement *element,
-                               uint32_t index,
-                               int64_t *value)
-{
-    assert_vr(element, "SV");
-    assert_value_index(element, index);
-    *value = element->value.sv_multi[index];
-}
-
-
-void dcm_element_copy_value_UL(DcmElement *element,
-                               uint32_t index,
-                               uint32_t *value)
-{
-    assert_vr(element, "UL");
-    assert_value_index(element, index);
-    *value = element->value.ul_multi[index];
-}
-
-
-void dcm_element_copy_value_US(DcmElement *element,
-                               uint32_t index,
-                               uint16_t *value)
-{
-    assert_vr(element, "US");
-    assert_value_index(element, index);
-    *value = element->value.us_multi[index];
-}
-
-
-void dcm_element_copy_value_UV(DcmElement *element,
-                               uint32_t index,
-                               uint16_t *value)
-{
-    assert_vr(element, "UV");
-    assert_value_index(element, index);
-    *value = element->value.uv_multi[index];
-}
-
-
 static void print_element_value_DS(DcmElement *element, uint32_t index)
 {
     assert(element);
@@ -1577,15 +1685,6 @@ DcmElement *dcm_element_create_UT(uint32_t tag, char *value)
 }
 
 
-void dcm_element_copy_value_OB(DcmElement *element,
-                               char *value,
-                               ssize_t n)
-{
-    assert_vr(element, "OB");
-    memmove(value, element->value.bytes, n);
-}
-
-
 // Sequence Data Element
 
 DcmElement *dcm_element_create_SQ(uint32_t tag, DcmSequence *value)
@@ -1708,6 +1807,8 @@ void dcm_element_print(DcmElement *element, uint8_t indentation)
                 print_element_value_US(element, i);
             } else if (strcmp(element->vr, "UL") == 0) {
                 print_element_value_UL(element, i);
+            } else {
+                dcm_log_warning("Encountered unexpected Value Representation.");
             }
 
             if (element->vm > 1) {
@@ -2118,7 +2219,7 @@ void dcm_sequence_destroy(DcmSequence *seq)
 // Frames
 
 DcmFrame *dcm_frame_create(uint32_t number,
-                           char *data,
+                           const char *data,
                            uint32_t length,
                            uint16_t rows,
                            uint16_t columns,
@@ -2138,22 +2239,25 @@ DcmFrame *dcm_frame_create(uint32_t number,
     if (!(bits_allocated == 1 || bits_allocated % 8 == 0)) {
         dcm_log_error("Constructing Frame Item failed. "
                       "Wrong number of bits allocated.");
-        free(data);
+        free((char *)data);
         return NULL;
     }
     if (!(bits_stored == 1 || bits_stored % 8 == 0)) {
         dcm_log_error("Constructing Frame Item failed. "
                       "Wrong number of bits stored.");
+        free((char *)data);
         return NULL;
     }
     if (!(pixel_representation == 0 || pixel_representation == 1)) {
         dcm_log_error("Constructing Frame Item failed. "
                       "Wrong pixel representation.");
+        free((char *)data);
         return NULL;
     }
     if (!(planar_configuration == 0 || planar_configuration == 1)) {
         dcm_log_error("Constructing Frame Item failed. "
                       "Wrong planar configuration.");
+        free((char *)data);
         return NULL;
     }
 
@@ -2174,31 +2278,8 @@ DcmFrame *dcm_frame_create(uint32_t number,
     frame->high_bit = bits_stored - 1;
     frame->pixel_representation = pixel_representation;
     frame->planar_configuration = planar_configuration;
-
-    frame->photometric_interpretation = malloc(DCM_CAPACITY_CS + 1);
-    if (frame->photometric_interpretation == NULL) {
-        dcm_log_error("Constructing Frame Item failed. "
-                      "Could not allocate memory.");
-        free(data);
-        free((char *)transfer_syntax_uid);
-        free(frame);
-        return NULL;
-    }
-    strcpy(frame->photometric_interpretation, photometric_interpretation);
-    frame->photometric_interpretation[DCM_CAPACITY_CS] = '\0';
-
-    frame->transfer_syntax_uid = malloc(DCM_CAPACITY_UI + 1);
-    if (frame->transfer_syntax_uid == NULL) {
-        dcm_log_error("Constructing Frame Item failed. "
-                      "Could not allocate memory.");
-        free(data);
-        free((char *)transfer_syntax_uid);
-        free(frame->photometric_interpretation);
-        free(frame);
-        return NULL;
-    }
-    strcpy(frame->transfer_syntax_uid, transfer_syntax_uid);
-    frame->transfer_syntax_uid[DCM_CAPACITY_UI] = '\0';
+    frame->photometric_interpretation = photometric_interpretation;
+    frame->transfer_syntax_uid = transfer_syntax_uid;
 
     return frame;
 }
@@ -2291,10 +2372,10 @@ void dcm_frame_destroy(DcmFrame *frame)
             free((char*)frame->data);
         }
         if (frame->photometric_interpretation) {
-            free(frame->photometric_interpretation);
+            free((char*)frame->photometric_interpretation);
         }
         if (frame->transfer_syntax_uid) {
-            free(frame->transfer_syntax_uid);
+            free((char*)frame->transfer_syntax_uid);
         }
         free(frame);
         frame = NULL;
