@@ -329,7 +329,6 @@ static DcmElement *read_element(FILE *fp,
     assert(header);
     uint32_t i;
     uint32_t vm;
-    const char *vr;
     uint32_t item_index;
     uint32_t item_tag;
     uint32_t item_length;
@@ -350,7 +349,7 @@ static DcmElement *read_element(FILE *fp,
     n_item = 0;
     item_index = 0;
 
-    dcm_log_debug("Read Data Element '%08X' with VR '%s'", tag, vr);
+    dcm_log_debug("Read Data Element '%08X'", tag);
 
     // Character strings
     if (eheader_check_vr(header, "AE") ||
@@ -483,9 +482,9 @@ static DcmElement *read_element(FILE *fp,
             return dcm_element_create_UT(tag, str);
         } else {
             dcm_log_error("Reading of Data Element failed. "
-                          "Encountered unexpected Value Representation '%s' "
+                          "Encountered unexpected Value Representation "
                           "for Data Element '%08X'.",
-                          vr, tag);
+                          tag);
             for (i = 0; i < vm; i++) {
                 free(strings[i]);
             }
