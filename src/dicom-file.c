@@ -1191,7 +1191,7 @@ DcmBOT *dcm_file_read_bot(DcmFile *file, DcmDataSet *metadata)
 }
 
 
-static struct PixelDescription *pixel_description_create(DcmDataSet *metadata)
+static struct PixelDescription *create_pixel_description(DcmDataSet *metadata)
 {
     DcmElement *element;
 
@@ -1266,15 +1266,14 @@ static struct PixelDescription *pixel_description_create(DcmDataSet *metadata)
     desc->planar_configuration = dcm_element_get_value_US(element, 0);
 
     element = dcm_dataset_get(metadata, 0x00280004);
-    const char *photometric_interpretation = dcm_element_get_value_CS(element, 0);
-    ssize_t len = strlen(photometric_interpretation) + 1;
     if (element == NULL) {
         dcm_log_error("Getting image pixel description failed. "
                       "Could not get Data Element 'Photometric Interpretation'.");
         free(desc);
         return NULL;
     }
-    desc->photometric_interpretation = malloc(len);
+    const char *photometric_interpretation = dcm_element_get_value_CS(element, 0);
+    desc->photometric_interpretation = strdup(photometric_interpretation);
     if (desc->photometric_interpretation == NULL) {
         dcm_log_error("Getting image pixel description failed. "
                       "Could not allocate memory for value of "
@@ -1282,15 +1281,12 @@ static struct PixelDescription *pixel_description_create(DcmDataSet *metadata)
         free(desc);
         return NULL;
     }
-    memcpy(desc->photometric_interpretation,
-           photometric_interpretation,
-           len);
 
     return desc;
 }
 
 
-static void pixel_description_destroy(struct PixelDescription *desc)
+static void destroy_pixel_description(struct PixelDescription *desc)
 {
     if (desc) {
         if (desc->photometric_interpretation) {
@@ -1412,7 +1408,7 @@ DcmBOT *dcm_file_build_bot(DcmFile *file, DcmDataSet *metadata)
             return NULL;
         }
     } else {
-        struct PixelDescription *desc = pixel_description_create(metadata);
+        struct PixelDescription *desc = create_pixel_description(metadata);
         if (desc == NULL) {
             dcm_log_error("Building Basic Offset Table failed. "
                           "Could not get image pixel description.");
@@ -1420,7 +1416,7 @@ DcmBOT *dcm_file_build_bot(DcmFile *file, DcmDataSet *metadata)
         for (i = 0; i < num_frames; i++) {
             offsets[i] = i * desc->rows * desc->columns * desc->samples_per_pixel;
         }
-        pixel_description_destroy(desc);
+        destroy_pixel_description(desc);
     }
 
     return dcm_bot_create(offsets, num_frames);
@@ -1458,7 +1454,7 @@ DcmFrame *dcm_file_read_frame(DcmFile *file,
                           frame_offset);
     fseek(file->fp, total_frame_offset, SEEK_SET);
 
-    struct PixelDescription *desc = pixel_description_create(metadata);
+    struct PixelDescription *desc = create_pixel_description(metadata);
     if (desc == NULL) {
         dcm_log_error("Reading Frame Item failed. "
                       "Could not get image pixel description.");
@@ -1471,7 +1467,7 @@ DcmFrame *dcm_file_read_frame(DcmFile *file,
             dcm_log_error("Reading Frame Item failed. "
                           "Could not read header of Frame Item #%d.",
                           number);
-            pixel_description_destroy(desc);
+            destroy_pixel_description(desc);
             return NULL;
         }
         uint32_t iheader_tag = iheader_get_tag(iheader);
@@ -1479,7 +1475,7 @@ DcmFrame *dcm_file_read_frame(DcmFile *file,
             dcm_log_error("Reading Frame Item failed. "
                           "No Item Tag found for Frame Item #%d.",
                           number);
-            pixel_description_destroy(desc);
+            destroy_pixel_description(desc);
             iheader_destroy(iheader);
             return NULL;
         }
@@ -1498,27 +1494,23 @@ DcmFrame *dcm_file_read_frame(DcmFile *file,
     }
     *n += fread(value, 1, length, file->fp);
 
-    length = strlen(file->transfer_syntax_uid) + 1;
-    char *transfer_syntax_uid = malloc(length);
+    char *transfer_syntax_uid = strdup(file->transfer_syntax_uid);
     if (transfer_syntax_uid == NULL) {
         dcm_log_error("Reading Frame Item failed. "
                       "Could not allocate memory for Frame item #%d.",
                       number);
         return NULL;
     }
-    memcpy(transfer_syntax_uid, file->transfer_syntax_uid, length);
 
-    length = strlen(desc->photometric_interpretation) + 1;
-    char *photometric_interpretation = malloc(length);
+    char *photometric_interpretation = strdup(desc->photometric_interpretation);
     if (photometric_interpretation == NULL) {
         dcm_log_error("Reading Frame Item failed. "
                       "Could not allocate memory for Frame item #%d.",
                       number);
         free(transfer_syntax_uid);
-        pixel_description_destroy(desc);
+        destroy_pixel_description(desc);
         return NULL;
     }
-    memcpy(photometric_interpretation, desc->photometric_interpretation, length);
 
     DcmFrame *frame = dcm_frame_create(number,
                                        value,
@@ -1532,7 +1524,7 @@ DcmFrame *dcm_file_read_frame(DcmFile *file,
                                        desc->planar_configuration,
                                        photometric_interpretation,
                                        transfer_syntax_uid);
-    pixel_description_destroy(desc);
+    destroy_pixel_description(desc);
 
     return frame;
 }
