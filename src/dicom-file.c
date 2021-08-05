@@ -935,8 +935,7 @@ DcmDataSet *dcm_file_read_file_meta(DcmFile *file)
 
     element = dcm_dataset_get(file_meta, 0x00020010);
     const char *transfer_syntax_uid = dcm_element_get_value_UI(element, 0);
-    ssize_t len = strlen(transfer_syntax_uid) + 1;
-    file->transfer_syntax_uid = malloc(len);
+    file->transfer_syntax_uid = strdup(transfer_syntax_uid);
     if (file->transfer_syntax_uid == NULL) {
         dcm_log_error("Reading of File Meta Information failed. "
                       "Could not allocate memory for data element "
@@ -944,10 +943,6 @@ DcmDataSet *dcm_file_read_file_meta(DcmFile *file)
         dcm_dataset_destroy(file_meta);
         return NULL;
     }
-    memcpy(file->transfer_syntax_uid,
-           transfer_syntax_uid,
-           len);
-    file->transfer_syntax_uid[len] = '\0';
 
     dcm_dataset_lock(file_meta);
     return file_meta;
