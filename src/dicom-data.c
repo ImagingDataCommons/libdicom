@@ -319,8 +319,7 @@ DcmElement *dcm_element_clone(DcmElement *element)
                 return NULL;
             }
             for (i = 0; i < element->vm; i++) {
-                ssize_t len = strlen(element->value.str_multi[i]) + 1;
-                clone->value.str_multi[i] = malloc(len);
+                clone->value.str_multi[i] = strdup(element->value.str_multi[i]);
                 if (clone->value.str_multi[i] == NULL) {
                     dcm_log_error("Cloning of Data Element failed."
                                   "Could not allocate memory for value of clone "
@@ -331,9 +330,6 @@ DcmElement *dcm_element_clone(DcmElement *element)
                     free(clone);
                     return NULL;
                 }
-                memcpy(clone->value.str_multi[i],
-                       element->value.str_multi[i],
-                       len);
             }
             clone->value_pointer_array = clone->value.str_multi;
         }
