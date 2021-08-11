@@ -1513,10 +1513,10 @@ extern DcmElement *dcm_dataset_get_clone(const DcmDataSet *dataset,
  * they were originally inserted into the Data Set.
  *
  * :param dataset: Pointer to Data Set
- * :param fn: Function that should be called for each Data Element
+ * :param fn: Pointer to function that should be called for each Data Element
  */
 extern void dcm_dataset_foreach(const DcmDataSet *dataset,
-                                void (*fn)(DcmElement *element));
+                                void (*fn)(const DcmElement *element));
 
 /**
  * Determine whether a Data Element is contained in a Data Set.
@@ -1631,10 +1631,10 @@ extern DcmDataSet *dcm_sequence_get(const DcmSequence *seq, uint32_t index);
  * Iterate over Data Set items in a Sequence.
  *
  * :param seq: Pointer to Sequence
- * :param fn: Function that should be called for each Data Set item
+ * :param fn: Pointer to function that should be called for each Data Set item
  */
 extern void dcm_sequence_foreach(const DcmSequence *seq,
-                                 void (*fn)(DcmDataSet *item));
+                                 void (*fn)(const DcmDataSet *item));
 
 /**
  * Remove a Data Set item from a Sequence.
