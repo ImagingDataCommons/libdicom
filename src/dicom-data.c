@@ -169,7 +169,7 @@ static UT_icd sequence_item_icd = {
 };
 
 
-static int compare_tags(const void * a, const void * b)
+static int compare_tags(const void *a, const void *b)
 {
    return ( *(uint32_t*)a - *(uint32_t*)b );
 }
@@ -228,28 +228,28 @@ void dcm_element_destroy(DcmElement *element)
 }
 
 
-uint16_t dcm_element_get_group_number(DcmElement *element)
+uint16_t dcm_element_get_group_number(const DcmElement *element)
 {
     assert(element);
     return (uint16_t)(element->tag >> 16);
 }
 
 
-uint16_t dcm_element_get_element_number(DcmElement *element)
+uint16_t dcm_element_get_element_number(const DcmElement *element)
 {
     assert(element);
     return (uint16_t)(element->tag);
 }
 
 
-uint32_t dcm_element_get_tag(DcmElement *element)
+uint32_t dcm_element_get_tag(const DcmElement *element)
 {
     assert(element);
     return element->tag;
 }
 
 
-bool dcm_element_check_vr(DcmElement *element, const char *vr)
+bool dcm_element_check_vr(const DcmElement *element, const char *vr)
 {
     assert(element);
     if (strcmp(element->vr, vr) == 0) {
@@ -260,13 +260,13 @@ bool dcm_element_check_vr(DcmElement *element, const char *vr)
 }
 
 
-uint32_t dcm_element_get_vm(DcmElement *element)
+uint32_t dcm_element_get_vm(const DcmElement *element)
 {
     assert(element);
     return element->vm;
 }
 
-DcmElement *dcm_element_clone(DcmElement *element)
+DcmElement *dcm_element_clone(const DcmElement *element)
 {
     assert(element);
     uint32_t i;
@@ -483,34 +483,34 @@ DcmElement *dcm_element_clone(DcmElement *element)
 }
 
 
-bool dcm_element_is_multivalued(DcmElement *element)
+bool dcm_element_is_multivalued(const DcmElement *element)
 {
     assert(element);
     return element->vm > 1;
 }
 
 
-uint32_t dcm_element_get_length(DcmElement *element)
+uint32_t dcm_element_get_length(const DcmElement *element)
 {
     assert(element);
     return element->length;
 }
 
 
-static inline void assert_vr(DcmElement *element, const char *vr)
+static inline void assert_vr(const DcmElement *element, const char *vr)
 {
     DCM_DEBUG_ONLY(bool success =) dcm_element_check_vr(element, vr);
     assert(success);
 }
 
 
-static inline bool check_value_index(DcmElement *element, uint32_t index)
+static inline bool check_value_index(const DcmElement *element, uint32_t index)
 {
     return index <= (element->vm - 1);
 }
 
 
-static inline void assert_value_index(DcmElement *element, uint32_t index)
+static inline void assert_value_index(const DcmElement *element, uint32_t index)
 {
     DCM_DEBUG_ONLY(bool success =) check_value_index(element, index);
     assert(success);
@@ -519,7 +519,7 @@ static inline void assert_value_index(DcmElement *element, uint32_t index)
 
 // Data Elements with character string Value Representation
 
-static bool check_value_str_multi(DcmElement *element,
+static bool check_value_str_multi(const DcmElement *element,
                                   char **values,
                                   uint32_t vm,
                                   uint32_t capacity)
@@ -805,14 +805,14 @@ DcmElement *dcm_element_create_UI_multi(uint32_t tag,
 }
 
 
-static char *get_value_str_multi(DcmElement *element, uint32_t index)
+static char *get_value_str_multi(const DcmElement *element, uint32_t index)
 {
     assert_value_index(element, index);
     return element->value.str_multi[index];
 }
 
 
-const char *dcm_element_get_value_AE(DcmElement *element, uint32_t index)
+const char *dcm_element_get_value_AE(const DcmElement *element, uint32_t index)
 {
     assert(element);
     assert_vr(element, "AE");
@@ -820,7 +820,7 @@ const char *dcm_element_get_value_AE(DcmElement *element, uint32_t index)
 }
 
 
-const char *dcm_element_get_value_AS(DcmElement *element, uint32_t index)
+const char *dcm_element_get_value_AS(const DcmElement *element, uint32_t index)
 {
     assert(element);
     assert_vr(element, "AS");
@@ -828,7 +828,7 @@ const char *dcm_element_get_value_AS(DcmElement *element, uint32_t index)
 }
 
 
-const char *dcm_element_get_value_AT(DcmElement *element, uint32_t index)
+const char *dcm_element_get_value_AT(const DcmElement *element, uint32_t index)
 {
     assert(element);
     assert_vr(element, "AT");
@@ -836,7 +836,7 @@ const char *dcm_element_get_value_AT(DcmElement *element, uint32_t index)
 }
 
 
-const char *dcm_element_get_value_CS(DcmElement *element, uint32_t index)
+const char *dcm_element_get_value_CS(const DcmElement *element, uint32_t index)
 {
     assert(element);
     assert_vr(element, "CS");
@@ -844,7 +844,7 @@ const char *dcm_element_get_value_CS(DcmElement *element, uint32_t index)
 }
 
 
-const char *dcm_element_get_value_DA(DcmElement *element, uint32_t index)
+const char *dcm_element_get_value_DA(const DcmElement *element, uint32_t index)
 {
     assert(element);
     assert_vr(element, "DA");
@@ -852,7 +852,7 @@ const char *dcm_element_get_value_DA(DcmElement *element, uint32_t index)
 }
 
 
-const char *dcm_element_get_value_DS(DcmElement *element, uint32_t index)
+const char *dcm_element_get_value_DS(const DcmElement *element, uint32_t index)
 {
     assert(element);
     assert_vr(element, "DS");
@@ -860,7 +860,7 @@ const char *dcm_element_get_value_DS(DcmElement *element, uint32_t index)
 }
 
 
-const char *dcm_element_get_value_DT(DcmElement *element, uint32_t index)
+const char *dcm_element_get_value_DT(const DcmElement *element, uint32_t index)
 {
     assert(element);
     assert_vr(element, "DT");
@@ -868,7 +868,7 @@ const char *dcm_element_get_value_DT(DcmElement *element, uint32_t index)
 }
 
 
-double dcm_element_get_value_FD(DcmElement *element, uint32_t index)
+double dcm_element_get_value_FD(const DcmElement *element, uint32_t index)
 {
     assert(element);
     assert_vr(element, "FD");
@@ -877,7 +877,7 @@ double dcm_element_get_value_FD(DcmElement *element, uint32_t index)
 }
 
 
-float dcm_element_get_value_FL(DcmElement *element, uint32_t index)
+float dcm_element_get_value_FL(const DcmElement *element, uint32_t index)
 {
     assert(element);
     assert_vr(element, "FL");
@@ -886,7 +886,7 @@ float dcm_element_get_value_FL(DcmElement *element, uint32_t index)
 }
 
 
-const char *dcm_element_get_value_IS(DcmElement *element, uint32_t index)
+const char *dcm_element_get_value_IS(const DcmElement *element, uint32_t index)
 {
     assert(element);
     assert_vr(element, "IS");
@@ -894,7 +894,7 @@ const char *dcm_element_get_value_IS(DcmElement *element, uint32_t index)
 }
 
 
-const char *dcm_element_get_value_LO(DcmElement *element)
+const char *dcm_element_get_value_LO(const DcmElement *element)
 {
     assert(element);
     assert_vr(element, "LO");
@@ -902,7 +902,7 @@ const char *dcm_element_get_value_LO(DcmElement *element)
 }
 
 
-const char *dcm_element_get_value_PN(DcmElement *element)
+const char *dcm_element_get_value_PN(const DcmElement *element)
 {
     assert(element);
     assert_vr(element, "PN");
@@ -910,7 +910,7 @@ const char *dcm_element_get_value_PN(DcmElement *element)
 }
 
 
-const char *dcm_element_get_value_SH(DcmElement *element)
+const char *dcm_element_get_value_SH(const DcmElement *element)
 {
     assert(element);
     assert_vr(element, "SH");
@@ -918,7 +918,7 @@ const char *dcm_element_get_value_SH(DcmElement *element)
 }
 
 
-const char *dcm_element_get_value_TM(DcmElement *element)
+const char *dcm_element_get_value_TM(const DcmElement *element)
 {
     assert(element);
     assert_vr(element, "TM");
@@ -926,7 +926,7 @@ const char *dcm_element_get_value_TM(DcmElement *element)
 }
 
 
-int16_t dcm_element_get_value_SS(DcmElement *element, uint32_t index)
+int16_t dcm_element_get_value_SS(const DcmElement *element, uint32_t index)
 {
     assert_vr(element, "SS");
     assert_value_index(element, index);
@@ -934,7 +934,7 @@ int16_t dcm_element_get_value_SS(DcmElement *element, uint32_t index)
 }
 
 
-int32_t dcm_element_get_value_SL(DcmElement *element, uint32_t index)
+int32_t dcm_element_get_value_SL(const DcmElement *element, uint32_t index)
 {
     assert_vr(element, "SL");
     assert_value_index(element, index);
@@ -942,7 +942,7 @@ int32_t dcm_element_get_value_SL(DcmElement *element, uint32_t index)
 }
 
 
-int64_t dcm_element_get_value_SV(DcmElement *element, uint32_t index)
+int64_t dcm_element_get_value_SV(const DcmElement *element, uint32_t index)
 {
     assert_vr(element, "SV");
     assert_value_index(element, index);
@@ -950,7 +950,7 @@ int64_t dcm_element_get_value_SV(DcmElement *element, uint32_t index)
 }
 
 
-const char *dcm_element_get_value_ST(DcmElement *element)
+const char *dcm_element_get_value_ST(const DcmElement *element)
 {
     assert(element);
     assert_vr(element, "ST");
@@ -958,14 +958,14 @@ const char *dcm_element_get_value_ST(DcmElement *element)
 }
 
 
-const char *dcm_element_get_value_UI(DcmElement *element, uint32_t index)
+const char *dcm_element_get_value_UI(const DcmElement *element, uint32_t index)
 {
     assert(element);
     assert_vr(element, "UI");
     return get_value_str_multi(element, index);
 }
 
-uint32_t dcm_element_get_value_UL(DcmElement *element, uint32_t index)
+uint32_t dcm_element_get_value_UL(const DcmElement *element, uint32_t index)
 {
     assert_vr(element, "UL");
     assert_value_index(element, index);
@@ -973,7 +973,7 @@ uint32_t dcm_element_get_value_UL(DcmElement *element, uint32_t index)
 }
 
 
-uint16_t dcm_element_get_value_US(DcmElement *element, uint32_t index)
+uint16_t dcm_element_get_value_US(const DcmElement *element, uint32_t index)
 {
     assert_vr(element, "US");
     assert_value_index(element, index);
@@ -981,7 +981,7 @@ uint16_t dcm_element_get_value_US(DcmElement *element, uint32_t index)
 }
 
 
-uint64_t dcm_element_get_value_UV(DcmElement *element, uint32_t index)
+uint64_t dcm_element_get_value_UV(const DcmElement *element, uint32_t index)
 {
     assert_vr(element, "UV");
     assert_value_index(element, index);
@@ -989,7 +989,7 @@ uint64_t dcm_element_get_value_UV(DcmElement *element, uint32_t index)
 }
 
 
-const char *dcm_element_get_value_UR(DcmElement *element)
+const char *dcm_element_get_value_UR(const DcmElement *element)
 {
     assert(element);
     assert_vr(element, "UR");
@@ -997,7 +997,7 @@ const char *dcm_element_get_value_UR(DcmElement *element)
 }
 
 
-const char *dcm_element_get_value_UT(DcmElement *element)
+const char *dcm_element_get_value_UT(const DcmElement *element)
 {
     assert(element);
     assert_vr(element, "UT");
@@ -1005,119 +1005,119 @@ const char *dcm_element_get_value_UT(DcmElement *element)
 }
 
 
-const char *dcm_element_copy_value_OB(DcmElement *element)
+const char *dcm_element_get_value_OB(const DcmElement *element)
 {
     assert_vr(element, "OB");
     return element->value.bytes;
 }
 
 
-const char *dcm_element_copy_value_OD(DcmElement *element)
+const char *dcm_element_get_value_OD(const DcmElement *element)
 {
     assert_vr(element, "OD");
     return element->value.bytes;
 }
 
 
-const char *dcm_element_copy_value_OF(DcmElement *element)
+const char *dcm_element_get_value_OF(const DcmElement *element)
 {
     assert_vr(element, "OF");
     return element->value.bytes;
 }
 
 
-const char *dcm_element_copy_value_OW(DcmElement *element)
+const char *dcm_element_get_value_OW(const DcmElement *element)
 {
     assert_vr(element, "OW");
     return element->value.bytes;
 }
 
 
-const char *dcm_element_copy_value_UC(DcmElement *element)
+const char *dcm_element_get_value_UC(const DcmElement *element)
 {
     assert_vr(element, "UC");
     return element->value.bytes;
 }
 
 
-const char *dcm_element_copy_value_UN(DcmElement *element)
+const char *dcm_element_get_value_UN(const DcmElement *element)
 {
     assert_vr(element, "UN");
     return element->value.bytes;
 }
 
 
-static inline void print_element_value_AE(DcmElement *element,
+static inline void print_element_value_AE(const DcmElement *element,
                                           uint32_t index)
 {
     printf("%s", element->value.str_multi[index]);
 }
 
 
-static inline void print_element_value_AT(DcmElement *element,
+static inline void print_element_value_AT(const DcmElement *element,
                                           uint32_t index)
 {
     printf("%s", element->value.str_multi[index]);
 }
 
 
-static inline void print_element_value_AS(DcmElement *element,
+static inline void print_element_value_AS(const DcmElement *element,
                                           uint32_t index)
 {
     printf("%s", element->value.str_multi[index]);
 }
 
 
-static inline void print_element_value_CS(DcmElement *element,
+static inline void print_element_value_CS(const DcmElement *element,
                                           uint32_t index)
 {
     printf("%s", element->value.str_multi[index]);
 }
 
 
-static inline void print_element_value_DA(DcmElement *element,
+static inline void print_element_value_DA(const DcmElement *element,
                                           uint32_t index)
 {
     printf("%s", element->value.str_multi[index]);
 }
 
 
-static inline void print_element_value_DT(DcmElement *element,
+static inline void print_element_value_DT(const DcmElement *element,
                                           uint32_t index)
 {
     printf("%s", element->value.str_multi[index]);
 }
 
 
-static inline void print_element_value_LO(DcmElement *element,
+static inline void print_element_value_LO(const DcmElement *element,
                                           uint32_t index)
 {
     printf("%s", element->value.str_multi[index]);
 }
 
 
-static inline void print_element_value_PN(DcmElement *element,
+static inline void print_element_value_PN(const DcmElement *element,
                                           uint32_t index)
 {
     printf("%s", element->value.str_multi[index]);
 }
 
 
-static inline void print_element_value_SH(DcmElement *element,
+static inline void print_element_value_SH(const DcmElement *element,
                                           uint32_t index)
 {
     printf("%s", element->value.str_multi[index]);
 }
 
 
-static inline void print_element_value_TM(DcmElement *element,
+static inline void print_element_value_TM(const DcmElement *element,
                                           uint32_t index)
 {
     printf("%s", element->value.str_multi[index]);
 }
 
 
-static inline void print_element_value_UI(DcmElement *element,
+static inline void print_element_value_UI(const DcmElement *element,
                                           uint32_t index)
 {
     printf("%s", element->value.str_multi[index]);
@@ -1496,66 +1496,66 @@ DcmElement *dcm_element_create_UV_multi(uint32_t tag,
 }
 
 
-static void print_element_value_DS(DcmElement *element, uint32_t index)
+inline static void print_element_value_DS(const DcmElement *element,
+                                          uint32_t index)
 {
-    assert(element);
     printf("%s", element->value.str_multi[index]);
 }
 
 
-static void print_element_value_FD(DcmElement *element, uint32_t index)
+inline static void print_element_value_FD(const DcmElement *element,
+                                          uint32_t index)
 {
-    assert(element);
     printf("%f", element->value.fd_multi[index]);
 }
 
 
-static void print_element_value_FL(DcmElement *element, uint32_t index)
+inline static void print_element_value_FL(const DcmElement *element,
+                                          uint32_t index)
 {
-    assert(element);
     printf("%f", element->value.fl_multi[index]);
 }
 
 
-static void print_element_value_IS(DcmElement *element, uint32_t index)
+inline static void print_element_value_IS(const DcmElement *element,
+                                          uint32_t index)
 {
-    assert(element);
     printf("%s", element->value.str_multi[index]);
 }
 
 
-static void print_element_value_SS(DcmElement *element, uint32_t index)
+inline static void print_element_value_SS(const DcmElement *element,
+                                          uint32_t index)
 {
-    assert(element);
     printf("%d", element->value.ss_multi[index]);
 }
 
 
-static void print_element_value_SL(DcmElement *element, uint32_t index)
+inline static void print_element_value_SL(const DcmElement *element,
+                                          uint32_t index)
 {
-    assert(element);
     printf("%d", element->value.sl_multi[index]);
 }
 
 
-static void print_element_value_SV(DcmElement *element, uint32_t index)
+inline static void print_element_value_SV(const DcmElement *element,
+                                          uint32_t index)
 {
-    assert(element);
     // Cast seems necessary for some platforms
     printf("%lld", (long long)element->value.sv_multi[index]);
 }
 
 
-static void print_element_value_US(DcmElement *element, uint32_t index)
+inline static void print_element_value_US(const DcmElement *element,
+                                          uint32_t index)
 {
-    assert(element);
     printf("%hu", element->value.us_multi[index]);
 }
 
 
-static void print_element_value_UL(DcmElement *element, uint32_t index)
+inline static void print_element_value_UL(const DcmElement *element,
+                                          uint32_t index)
 {
-    assert(element);
     printf("%u", element->value.ul_multi[index]);
 }
 
@@ -1718,7 +1718,7 @@ DcmElement *dcm_element_create_SQ(uint32_t tag, DcmSequence *value)
 }
 
 
-DcmSequence *dcm_element_get_value_SQ(DcmElement *element)
+DcmSequence *dcm_element_get_value_SQ(const DcmElement *element)
 {
     assert(element);
     assert_vr(element, "SQ");
@@ -1728,7 +1728,7 @@ DcmSequence *dcm_element_get_value_SQ(DcmElement *element)
 }
 
 
-void dcm_element_print(DcmElement *element, uint8_t indentation)
+void dcm_element_print(const DcmElement *element, uint8_t indentation)
 {
     assert(element);
     const uint8_t num_indent = indentation * 2;
@@ -1858,7 +1858,7 @@ DcmDataSet *dcm_dataset_create(void)
 }
 
 
-DcmDataSet *dcm_dataset_clone(DcmDataSet *dataset)
+DcmDataSet *dcm_dataset_clone(const DcmDataSet *dataset)
 {
     dcm_log_debug("Clone Data Set.");
     DcmDataSet *cloned_dataset = dcm_dataset_create();
@@ -1949,7 +1949,7 @@ bool dcm_dataset_remove(DcmDataSet *dataset, uint32_t tag)
 }
 
 
-DcmElement *dcm_dataset_get_clone(DcmDataSet *dataset, uint32_t tag)
+DcmElement *dcm_dataset_get_clone(const DcmDataSet *dataset, uint32_t tag)
 {
     assert(dataset);
     DcmElement *element;
@@ -1965,7 +1965,7 @@ DcmElement *dcm_dataset_get_clone(DcmDataSet *dataset, uint32_t tag)
 }
 
 
-DcmElement *dcm_dataset_get(DcmDataSet *dataset, uint32_t tag)
+DcmElement *dcm_dataset_get(const DcmDataSet *dataset, uint32_t tag)
 {
     assert(dataset);
     DcmElement *element;
@@ -1982,20 +1982,19 @@ DcmElement *dcm_dataset_get(DcmDataSet *dataset, uint32_t tag)
 }
 
 
-void dcm_dataset_foreach(DcmDataSet *dataset,
+void dcm_dataset_foreach(const DcmDataSet *dataset,
                          void (*fn)(DcmElement *element))
 {
     assert(dataset);
     DcmElement *element;
 
-    HASH_SORT(dataset->elements, compare_tags);
     for(element = dataset->elements; element; element = element->hh.next) {
         fn(element);
     }
 }
 
 
-bool dcm_dataset_contains(DcmDataSet *dataset, uint32_t tag)
+bool dcm_dataset_contains(const DcmDataSet *dataset, uint32_t tag)
 {
     assert(dataset);
 
@@ -2007,7 +2006,7 @@ bool dcm_dataset_contains(DcmDataSet *dataset, uint32_t tag)
 }
 
 
-uint32_t dcm_dataset_count(DcmDataSet *dataset)
+uint32_t dcm_dataset_count(const DcmDataSet *dataset)
 {
     assert(dataset);
 
@@ -2016,32 +2015,43 @@ uint32_t dcm_dataset_count(DcmDataSet *dataset)
 }
 
 
-void dcm_dataset_copy_tags(DcmDataSet *dataset, uint32_t *tags)
+void dcm_dataset_copy_tags(const DcmDataSet *dataset, uint32_t *tags, uint32_t n)
 {
     assert(dataset);
     uint32_t i;
     DcmElement *element;
-
-    HASH_SORT(dataset->elements, compare_tags);
 
     i = 0;
     for(element = dataset->elements; element; element = element->hh.next) {
         tags[i] = element->tag;
         i += 1;
     }
-    return;
+
+    qsort(tags, n, sizeof(uint32_t), compare_tags);
 }
 
 
-void dcm_dataset_print(DcmDataSet *dataset, uint8_t indentation)
+void dcm_dataset_print(const DcmDataSet *dataset, uint8_t indentation)
 {
     assert(dataset);
+    uint32_t i;
     DcmElement *element;
 
-    HASH_SORT(dataset->elements, compare_tags);
-    for(element = dataset->elements; element; element = element->hh.next) {
+    uint32_t n = dcm_dataset_count(dataset);
+    uint32_t *tags = DCM_ARRAY_ZEROS(n, uint32_t);
+    if (tags == NULL) {
+        dcm_log_error("Printing Data Set failed. "
+                      "Could not allocated memory.");
+        return;
+    }
+    dcm_dataset_copy_tags(dataset, tags, n);
+
+    for(i = 0; i < n; i++) {
+        element = dcm_dataset_get(dataset, tags[i]);
         dcm_element_print(element, indentation);
     }
+
+    free(tags);
 }
 
 
@@ -2051,7 +2061,7 @@ void dcm_dataset_lock(DcmDataSet *dataset)
 }
 
 
-bool dcm_dataset_is_locked(DcmDataSet *dataset)
+bool dcm_dataset_is_locked(const DcmDataSet *dataset)
 {
     return dataset->is_locked;
 }
@@ -2118,7 +2128,7 @@ bool dcm_sequence_append(DcmSequence *seq, DcmDataSet *item)
 }
 
 
-DcmDataSet *dcm_sequence_get(DcmSequence *seq, uint32_t index)
+DcmDataSet *dcm_sequence_get(const DcmSequence *seq, uint32_t index)
 {
     assert(seq);
 
@@ -2146,7 +2156,7 @@ DcmDataSet *dcm_sequence_get(DcmSequence *seq, uint32_t index)
 }
 
 
-void dcm_sequence_foreach(DcmSequence *seq,
+void dcm_sequence_foreach(const DcmSequence *seq,
                           void (*fn)(DcmDataSet *item))
 {
     assert(seq);
@@ -2182,7 +2192,7 @@ void dcm_sequence_remove(DcmSequence *seq, uint32_t index)
 }
 
 
-uint32_t dcm_sequence_count(DcmSequence *seq)
+uint32_t dcm_sequence_count(const DcmSequence *seq)
 {
     uint32_t length = utarray_len(seq->items);
     return length;
@@ -2195,7 +2205,7 @@ void dcm_sequence_lock(DcmSequence *seq)
 }
 
 
-bool dcm_sequence_is_locked(DcmSequence *seq)
+bool dcm_sequence_is_locked(const DcmSequence *seq)
 {
     return seq->is_locked;
 }
@@ -2281,80 +2291,80 @@ DcmFrame *dcm_frame_create(uint32_t number,
 }
 
 
-uint32_t dcm_frame_get_number(DcmFrame *frame)
+uint32_t dcm_frame_get_number(const DcmFrame *frame)
 {
     assert(frame);
     return frame->number;
 }
 
-uint32_t dcm_frame_get_length(DcmFrame *frame)
+uint32_t dcm_frame_get_length(const DcmFrame *frame)
 {
     assert(frame);
     return frame->length;
 }
 
-uint16_t dcm_frame_get_rows(DcmFrame *frame)
+uint16_t dcm_frame_get_rows(const DcmFrame *frame)
 {
     assert(frame);
     return frame->rows;
 }
 
-uint16_t dcm_frame_get_columns(DcmFrame *frame)
+uint16_t dcm_frame_get_columns(const DcmFrame *frame)
 {
     assert(frame);
     return frame->columns;
 }
 
-uint16_t dcm_frame_get_samples_per_pixel(DcmFrame *frame)
+uint16_t dcm_frame_get_samples_per_pixel(const DcmFrame *frame)
 {
     assert(frame);
     return frame->samples_per_pixel;
 }
 
-uint16_t dcm_frame_get_bits_allocated(DcmFrame *frame)
+uint16_t dcm_frame_get_bits_allocated(const DcmFrame *frame)
 {
     assert(frame);
     return frame->bits_allocated;
 }
 
-uint16_t dcm_frame_get_bits_stored(DcmFrame *frame)
+uint16_t dcm_frame_get_bits_stored(const DcmFrame *frame)
 {
     assert(frame);
     return frame->bits_stored;
 }
 
-uint16_t dcm_frame_get_high_bit(DcmFrame *frame)
+uint16_t dcm_frame_get_high_bit(const DcmFrame *frame)
 {
     assert(frame);
     return frame->high_bit;
 }
 
-uint16_t dcm_frame_get_pixel_representation(DcmFrame *frame)
+uint16_t dcm_frame_get_pixel_representation(const DcmFrame *frame)
 {
     assert(frame);
     return frame->pixel_representation;
 }
 
-uint16_t dcm_frame_get_planar_configuration(DcmFrame *frame)
+uint16_t dcm_frame_get_planar_configuration(const DcmFrame *frame)
 {
     assert(frame);
     return frame->planar_configuration;
 }
 
-const char *dcm_frame_get_photometric_interpretation(DcmFrame *frame)
+const char *dcm_frame_get_photometric_interpretation(const DcmFrame *frame)
 {
     assert(frame);
     return frame->photometric_interpretation;
 }
 
-const char *dcm_frame_get_transfer_syntax_uid(DcmFrame *frame)
+const char *dcm_frame_get_transfer_syntax_uid(const DcmFrame *frame)
 {
     assert(frame);
     return frame->transfer_syntax_uid;
 }
 
 
-const char *dcm_frame_get_value(DcmFrame *frame)
+const char *dcm_frame_get_value(const DcmFrame *frame)
 {
     assert(frame);
     return frame->data;
@@ -2410,7 +2420,7 @@ DcmBOT *dcm_bot_create(ssize_t *offsets, uint32_t num_frames)
 }
 
 
-void dcm_bot_print(DcmBOT *bot)
+void dcm_bot_print(const DcmBOT *bot)
 {
     assert(bot);
     uint32_t i;
@@ -2426,14 +2436,14 @@ void dcm_bot_print(DcmBOT *bot)
 }
 
 
-uint32_t dcm_bot_get_num_frames(DcmBOT *bot)
+uint32_t dcm_bot_get_num_frames(const DcmBOT *bot)
 {
     assert(bot);
     return bot->num_frames;
 }
 
 
-ssize_t dcm_bot_get_frame_offset(DcmBOT *bot, uint32_t number)
+ssize_t dcm_bot_get_frame_offset(const DcmBOT *bot, uint32_t number)
 {
     assert(bot);
     assert(number > 0 && number < bot->num_frames);
