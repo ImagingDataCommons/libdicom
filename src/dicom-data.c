@@ -1983,7 +1983,7 @@ DcmElement *dcm_dataset_get(const DcmDataSet *dataset, uint32_t tag)
 
 
 void dcm_dataset_foreach(const DcmDataSet *dataset,
-                         void (*fn)(DcmElement *element))
+                         void (*fn)(const DcmElement *element))
 {
     assert(dataset);
     DcmElement *element;
@@ -1998,7 +1998,7 @@ bool dcm_dataset_contains(const DcmDataSet *dataset, uint32_t tag)
 {
     assert(dataset);
 
-    DcmElement *matched_element = dcm_dataset_get(dataset, tag);
+    const DcmElement *matched_element = dcm_dataset_get(dataset, tag);
     if (matched_element == NULL) {
         return false;
     }
@@ -2157,7 +2157,7 @@ DcmDataSet *dcm_sequence_get(const DcmSequence *seq, uint32_t index)
 
 
 void dcm_sequence_foreach(const DcmSequence *seq,
-                          void (*fn)(DcmDataSet *item))
+                          void (*fn)(const DcmDataSet *item))
 {
     assert(seq);
     uint32_t i;
