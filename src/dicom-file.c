@@ -1072,7 +1072,8 @@ DcmDataSet *dcm_file_read_metadata(DcmFile *file)
 }
 
 
-static bool get_num_frames(DcmDataSet *metadata, uint32_t *number_of_frames)
+static bool get_num_frames(const DcmDataSet *metadata,
+                           uint32_t *number_of_frames)
 {
     const uint32_t tag = 0x00280008;
 
@@ -1191,7 +1192,7 @@ DcmBOT *dcm_file_read_bot(DcmFile *file, DcmDataSet *metadata)
 }
 
 
-static struct PixelDescription *create_pixel_description(DcmDataSet *metadata)
+static struct PixelDescription *create_pixel_description(const DcmDataSet *metadata)
 {
     DcmElement *element;
 
