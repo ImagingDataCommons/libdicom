@@ -771,7 +771,7 @@ static DcmElement *read_element(FILE *fp,
 }
 
 
-DcmFile *dcm_file_create(const char *file_path, char mode)
+DcmFile *dcm_file_create(const char *file_path, const char mode)
 {
     if (mode != 'r' && mode != 'w') {
         dcm_log_error("Creation of file failed. "
@@ -940,6 +940,7 @@ DcmDataSet *dcm_file_read_file_meta(DcmFile *file)
         dcm_log_error("Reading of File Meta Information failed. "
                       "Could not allocate memory for data element "
                       "'Transfer Syntax UID'.");
+        file->offset = 0;  // reset state
         dcm_dataset_destroy(file_meta);
         return NULL;
     }
@@ -1092,7 +1093,7 @@ static bool get_num_frames(const DcmDataSet *metadata,
 }
 
 
-DcmBOT *dcm_file_read_bot(DcmFile *file, DcmDataSet *metadata)
+DcmBOT *dcm_file_read_bot(const DcmFile *file, const DcmDataSet *metadata)
 {
     uint32_t tmp_value;
     uint64_t value;
@@ -1122,9 +1123,10 @@ DcmBOT *dcm_file_read_bot(DcmFile *file, DcmDataSet *metadata)
     }
 
     if (file->pixel_data_offset == 0) {
-        // Only done to determine the offset of the Pixel Data element.
-        DcmDataSet *metadata = dcm_file_read_metadata(file);
-        dcm_dataset_destroy(metadata);
+        dcm_log_error("Reading Basic Offset Table failed. "
+                      "Could not determine offset of Pixel Data Element. "
+                      "Read metadata first.");
+        return NULL;
     }
     fseek(file->fp, file->pixel_data_offset, SEEK_SET);
 
@@ -1298,7 +1300,7 @@ static void destroy_pixel_description(struct PixelDescription *desc)
 }
 
 
-DcmBOT *dcm_file_build_bot(DcmFile *file, DcmDataSet *metadata)
+DcmBOT *dcm_file_build_bot(const DcmFile *file, const DcmDataSet *metadata)
 {
     uint32_t item_tag, iheader_tag;
     uint32_t item_length;
@@ -1321,9 +1323,10 @@ DcmBOT *dcm_file_build_bot(DcmFile *file, DcmDataSet *metadata)
     }
 
     if (file->pixel_data_offset == 0) {
-        // Only done to determine the offset of the Pixel Data element.
-        DcmDataSet *metadata = dcm_file_read_metadata(file);
-        dcm_dataset_destroy(metadata);
+        dcm_log_error("Reading Basic Offset Table failed. "
+                      "Could not determine offset of Pixel Data Element. "
+                      "Read metadata first.");
+        return NULL;
     }
     fseek(file->fp, file->pixel_data_offset, SEEK_SET);
 
@@ -1424,9 +1427,9 @@ DcmBOT *dcm_file_build_bot(DcmFile *file, DcmDataSet *metadata)
 }
 
 
-DcmFrame *dcm_file_read_frame(DcmFile *file,
-                              DcmDataSet *metadata,
-                              DcmBOT *bot,
+DcmFrame *dcm_file_read_frame(const DcmFile *file,
+                              const DcmDataSet *metadata,
+                              const DcmBOT *bot,
                               uint32_t number)
 {
     ssize_t first_frame_offset, total_frame_offset;
@@ -1450,6 +1453,7 @@ DcmFrame *dcm_file_read_frame(DcmFile *file,
         first_frame_offset = 10;
 
     }
+
     total_frame_offset = (file->pixel_data_offset +
                           first_frame_offset +
                           frame_offset);

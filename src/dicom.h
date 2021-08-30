@@ -1905,17 +1905,21 @@ extern void dcm_bot_destroy(DcmBOT *bot);
  */
 
 /**
- * Create a File
+ * Create a File.
  *
  * :param file_path: Path to the file on disk.
  * :param mode: File Mode to use when opening the file.
  *
  * :return: file
  */
-extern DcmFile *dcm_file_create(const char *file_path, char mode);
+extern DcmFile *dcm_file_create(const char *file_path, const char mode);
 
 /**
  * Read File Metainformation from a File.
+ *
+ * Keeps track of the offset of the Data Set relative to the beginning of the
+ * file to speed up subsequent access and determines the transfer syntax in
+ * which the contained Data Set is encoded.
  *
  * :param file: File
  *
@@ -1925,6 +1929,9 @@ extern DcmDataSet *dcm_file_read_file_meta(DcmFile *file);
 
 /**
  * Read metadata from a File.
+ *
+ * Keeps track of the offset of the Pixel Data Element relative to the beginning
+ * of the file to speed up subsequent access to individual Frame items.
  *
  * :param file: File
  *
@@ -1940,7 +1947,8 @@ extern DcmDataSet *dcm_file_read_metadata(DcmFile *file);
  *
  * :return: Basic Offset Table
  */
-extern DcmBOT *dcm_file_read_bot(DcmFile *file, DcmDataSet *metadata);
+extern DcmBOT *dcm_file_read_bot(const DcmFile *file,
+                                 const DcmDataSet *metadata);
 
 /**
  * Build Basic Offset Table for a File.
@@ -1950,7 +1958,8 @@ extern DcmBOT *dcm_file_read_bot(DcmFile *file, DcmDataSet *metadata);
  *
  * :return: Basic Offset Table
  */
-extern DcmBOT *dcm_file_build_bot(DcmFile *file, DcmDataSet *metadata);
+extern DcmBOT *dcm_file_build_bot(const DcmFile *file,
+                                  const DcmDataSet *metadata);
 
 /**
  * Read an individual Frame from a File.
@@ -1962,9 +1971,9 @@ extern DcmBOT *dcm_file_build_bot(DcmFile *file, DcmDataSet *metadata);
  *
  * :return: Frame
  */
-extern DcmFrame *dcm_file_read_frame(DcmFile *file,
-                                     DcmDataSet *metadata,
-                                     DcmBOT *bot,
+extern DcmFrame *dcm_file_read_frame(const DcmFile *file,
+                                     const DcmDataSet *metadata,
+                                     const DcmBOT *bot,
                                      uint32_t index);
 
 /**
