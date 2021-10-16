@@ -1026,6 +1026,13 @@ const char *dcm_element_get_value_OF(const DcmElement *element)
 }
 
 
+const char *dcm_element_get_value_OL(const DcmElement *element)
+{
+    assert_vr(element, "OL");
+    return element->value.bytes;
+}
+
+
 const char *dcm_element_get_value_OW(const DcmElement *element)
 {
     assert_vr(element, "OW");
@@ -1607,6 +1614,19 @@ DcmElement *dcm_element_create_OD(uint32_t tag, char *value, uint32_t length)
 DcmElement *dcm_element_create_OF(uint32_t tag, char *value, uint32_t length)
 {
     DcmElement *element = create_element(tag, "OF", length);
+    if (element == NULL) {
+        free(value);
+        return NULL;
+    }
+    set_value_bytes(element, value);
+    element->vm = 1;
+    return element;
+}
+
+
+DcmElement *dcm_element_create_OL(uint32_t tag, char *value, uint32_t length)
+{
+    DcmElement *element = create_element(tag, "OL", length);
     if (element == NULL) {
         free(value);
         return NULL;
