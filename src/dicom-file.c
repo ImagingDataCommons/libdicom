@@ -751,6 +751,8 @@ static DcmElement *read_element(FILE *fp,
             return dcm_element_create_OD(tag, value, length);
         } else if (eheader_check_vr(header, "OF")) {
             return dcm_element_create_OF(tag, value, length);
+        } else if (eheader_check_vr(header, "OL")) {
+            return dcm_element_create_OL(tag, value, length);
         } else if (eheader_check_vr(header, "OV")) {
             return dcm_element_create_OV(tag, value, length);
         } else if (eheader_check_vr(header, "OW")) {
