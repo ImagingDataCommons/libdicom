@@ -945,6 +945,22 @@ extern DcmElement *dcm_element_create_OF(uint32_t tag,
                                          uint32_t length);
 
 /**
+ * Create a Data Element with Value Representation OL (Other Long).
+ *
+ * :param tag: Tag
+ * :param value: Byte string value
+ * :param length: Number of bytes
+ *
+ * The created object takes over ownership of the memory referenced by `value`
+ * and frees it when the object is destroyed or if the creation fails.
+ *
+ * :return: Pointer to Data Element
+ */
+extern DcmElement *dcm_element_create_OL(uint32_t tag,
+                                         char *value,
+                                         uint32_t length);
+
+/**
  * Create a Data Element with Value Representation OV (Other Very Long).
  *
  * :param tag: Tag
@@ -1369,6 +1385,15 @@ extern const char *dcm_element_get_value_OD(const DcmElement *element);
  * :return: Pointer to memory location where value is stored
  */
 extern const char *dcm_element_get_value_OF(const DcmElement *element);
+
+/**
+ * Get value of a Data Element with Value Representation OL (Other Long).
+ *
+ * :param element: Pointer to Data Element
+ *
+ * :return: Pointer to memory location where value is stored
+ */
+extern const char *dcm_element_get_value_OL(const DcmElement *element);
 
 /**
  * Get value of a Data Element with Value Representation OV (Other Very Long).
@@ -1941,6 +1966,10 @@ extern DcmDataSet *dcm_file_read_metadata(DcmFile *file);
 
 /**
  * Read Basic Offset Table from a File.
+ *
+ * In case the Pixel Data element does not contain a Basic Offset Table item,
+ * but contains an Extended Offset Table element, the value of the Extended
+ * Offset Table element will be read instead.
  *
  * :param file: File
  * :param metadata: Metadata

@@ -1189,6 +1189,26 @@ DcmBOT *dcm_file_read_bot(const DcmFile *file, const DcmDataSet *metadata)
         }
     } else {
         dcm_log_info("Basic Offset Table is emtpy.");
+        // Handle Extended Offset Table attribute
+        const DcmElement *eot_element = dcm_dataset_get(metadata, 0x7FE00001);
+        if (eot_element) {
+            dcm_log_info("Found Extended Offset Table.");
+            const char *blob = dcm_element_get_value_OV(eot_element);
+            char *end_ptr;
+            for (i = 0; i < num_frames; i++) {
+                value = (uint64_t) strtoull(blob, &end_ptr, 64);
+                // strtoull returns 0 in case of error
+                if (value == 0 && i > 0) {
+                    dcm_log_error("Reading Basic Offset Table failed. "
+                                  "Failed to parse value of Extended Offset "
+                                  "Table element for frame #%d.", i + 1);
+                    free(offsets);
+                    iheader_destroy(iheader);
+                    return NULL;
+                }
+                offsets[i] = value;
+            }
+        }
         return NULL;
     }
 
