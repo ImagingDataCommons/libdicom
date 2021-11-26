@@ -143,7 +143,8 @@ static void copy_sequence_item_icd(void *_dst_item, const void *_src_item)
 {
     struct SequenceItem *dst_item = (struct SequenceItem *) _dst_item;
     struct SequenceItem *src_item = (struct SequenceItem *) _src_item;
-    dst_item->dataset = dcm_dataset_clone(src_item->dataset);
+    dst_item->dataset = src_item->dataset;
+    dst_item->dataset->is_locked = true;
 }
 
 
@@ -156,13 +157,14 @@ static void destroy_sequence_item_icd(void *_item)
                 dcm_dataset_destroy(item->dataset);
                 item->dataset = NULL;
             }
+            // utarray frees the memory of the item itself
         }
     }
 }
 
 
 static UT_icd sequence_item_icd = {
-    sizeof(struct SequenceItem *),
+    sizeof(struct SequenceItem),
     NULL,
     copy_sequence_item_icd,
     destroy_sequence_item_icd
@@ -303,6 +305,7 @@ DcmElement *dcm_element_clone(const DcmElement *element)
                     return NULL;
                 }
                 dcm_sequence_append(seq, cloned_item);
+                dcm_dataset_destroy(cloned_item);
             }
             clone->value.sq = seq;
             clone->sequence_pointer = seq;
@@ -1029,6 +1032,13 @@ const char *dcm_element_get_value_OF(const DcmElement *element)
 const char *dcm_element_get_value_OL(const DcmElement *element)
 {
     assert_vr(element, "OL");
+    return element->value.bytes;
+}
+
+
+const char *dcm_element_get_value_OV(const DcmElement *element)
+{
+    assert_vr(element, "OV");
     return element->value.bytes;
 }
 
@@ -2141,8 +2151,16 @@ bool dcm_sequence_append(DcmSequence *seq, DcmDataSet *item)
         return false;
     }
 
+    /**
+     * The SequenceItem is just a thin wrapper around a DcmDataSet object as a
+     * handle for utarray. Under the hood, utarray frees the memory of the
+     * DcmDataSet object when the array item gets destroyed. However, utarray
+     * does not free the memory of the item handle. Therefore, we need to free
+     * the memory of the item handle after the item was added to the array.
+     */
     struct SequenceItem *item_handle = create_sequence_item(item);
     utarray_push_back(seq->items, item_handle);
+    free(item_handle);
 
     return true;
 }
