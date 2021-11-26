@@ -11,7 +11,7 @@ Note that if the creation of a data structure fails, the memory of the passed ar
 API overview
 ++++++++++++
 
-A `Data Element <http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_3.html#glossentry_DataElement>`_ (:c:type:`dcm_element_t`) is an immutable data container for storing values.
+A `Data Element <http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_3.html#glossentry_DataElement>`_ (:c:type:`DcmElement`) is an immutable data container for storing values.
 Every Data Element has a `Value Representation (VR) <http://dicom.nema.org/medical/dicom/current/output/chtml/part05/sect_6.2.html>`_, which specifies the data type and format of the contained value.
 VRs can be conceptually grouped into numbers (integers or floating-point values), numeric strings (strings of characters encoding numbers using the decimal or scientific notation), character strings (text of restriction length and character repertoire), or byte strings (unicode).
 Each VR is represented using a standard C type (e.g,. VR ``"US"`` has type ``uint16_t`` and VR ``"UI"`` has type ``char *``) and additional value constraints may be checked at runtime (e.g., the maximal capacity of a character string).
@@ -19,10 +19,11 @@ Depending on the VR, an individual Data Element may have a `Value Multiplicity (
 Under the hood, a Data Element thus generally contains an array of values.
 A Data Element can be created via the VR-specific constructor function (e.g., :c:func:`dcm_element_create_UI()`) and destroyed via :c:func:`dcm_element_destroy()`.
 Upon creation, the Data Element takes over ownership of the memory allocated for the contained values.
-A copy of the value can be retrieved via the VR-specific getter function (e.g., :c:func:`dcm_element_copy_value_UI()`) using a return attribute.
-When a Data Element is destroyed, the memory allocated for contained values is freed.
+An individual value can be retrieved via the VR-specific getter function (e.g., :c:func:`dcm_element_get_value_UI()`).
+Note that in case of character string or binary values, the getter function returns the pointer to the stored character array  (``const char *``) and that pointer is only valid for the lifetime of the Data Element.
+When a Data Element is destroyed, the memory allocated for contained values is freed and any pointers to the freed memory area become dangling pointers.
 
-A `Data Set <http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_3.html#glossentry_DataSet>`_ (:c:type:`DcmDataSet`) is an ordered collection of Data Elements (:c:type:`dcm_element_t`).
+A `Data Set <http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_3.html#glossentry_DataSet>`_ (:c:type:`DcmDataSet`) is an ordered collection of Data Elements (:c:type:`DcmElement`).
 A Data Set can be created via :c:func:`dcm_dataset_create()` and destroyed via :c:func:`dcm_dataset_destroy()`.
 Data Elements can be added to a Data Set via :c:func:`dcm_dataset_insert()`, removed from a Data Set via :c:func:`dcm_dataset_remove()`, and retrieved from a Data Set via :c:func:`dcm_dataset_get()` or :c:func:`dcm_dataset_get_clone()`.
 When a Data Element is added to a Data Set, the Data Set takes over ownership of the memory allocated for contained Data Elements.

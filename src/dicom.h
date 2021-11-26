@@ -1571,7 +1571,7 @@ extern uint32_t dcm_dataset_count(const DcmDataSet *dataset);
  * :param tags: Pointer to memory location to of the array into which to copy
  *              tags. Number of items in the array must match the number of
  *              Data Elements in the Data Set as determined by
- *              `:c:func:dcm_dataset_count()`.
+ *              :c:func:`dcm_dataset_count`.
  * :param n: Number of items in the array.
  *
  * Ownership of the memory allocated for `tags` remains with the caller.
