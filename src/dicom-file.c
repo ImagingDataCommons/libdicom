@@ -521,6 +521,7 @@ static DcmElement *read_element(FILE *fp,
                 dcm_log_error("Reading of Data Element failed. "
                               "Could not construct Item #%d of "
                               "Data Element '%08X'.", item_index, tag);
+                iheader_destroy(item_iheader);
                 dcm_sequence_destroy(value);
                 return NULL;
             }
@@ -530,6 +531,7 @@ static DcmElement *read_element(FILE *fp,
                 dcm_log_debug("Stop reading Data Element '%08X'. "
                               "Encountered Sequence Delimination Tag.",
                               tag);
+                iheader_destroy(item_iheader);
                 break;
             }
             if (item_tag != TAG_ITEM) {
@@ -540,6 +542,7 @@ static DcmElement *read_element(FILE *fp,
                               item_tag,
                               item_index,
                               tag);
+                iheader_destroy(item_iheader);
                 dcm_sequence_destroy(value);
                 return NULL;
             } else if (item_length == 0xFFFFFFFF) {
@@ -559,6 +562,7 @@ static DcmElement *read_element(FILE *fp,
                               "Item #%d of Data Element '%08X'.",
                               item_index,
                               tag);
+                iheader_destroy(item_iheader);
                 dcm_sequence_destroy(value);
                 return NULL;
             }
@@ -735,6 +739,7 @@ static DcmElement *read_element(FILE *fp,
         }
         return dcm_element_create_UV_multi(tag, values, vm);
     } else {
+        vm = 1;
         char *value = malloc(length);
         if (value == NULL) {
             dcm_log_error("Reading of Data Element failed. "
@@ -1182,7 +1187,6 @@ DcmBOT *dcm_file_read_bot(const DcmFile *file, const DcmDataSet *metadata)
                               "Encountered unexpected Item Tag "
                               "in Basic Offset Table.");
                 free(offsets);
-                iheader_destroy(iheader);
                 return NULL;
             }
             offsets[i] = value;
