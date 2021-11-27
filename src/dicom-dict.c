@@ -4919,7 +4919,7 @@ static const int n_attributes = sizeof(attribute_table) /
     sizeof(struct dcm_Attribute);
 
 
-static const struct dcm_Attribute *lookup(uint32_t tag) 
+static const struct dcm_Attribute *attribute_from_tag(uint32_t tag) 
 {
     static struct dcm_Attribute_hash_entry *dictionary = NULL;
 
@@ -4929,9 +4929,16 @@ static const struct dcm_Attribute *lookup(uint32_t tag)
         int i;
 
         for (i = 0; i < n_attributes; i++) {
+            HASH_FIND_INT(dictionary, &attribute_table[i].tag, entry);
+            if (entry) {
+                dcm_log_critical("Duplicate tag in attribute table '%08x'", 
+                    attribute_table[i].tag);
+                exit(1);
+            }
+
             entry = DCM_NEW(struct dcm_Attribute_hash_entry);
             *((struct dcm_Attribute *)entry) = attribute_table[i];
-            HASH_ADD_INT (dictionary, tag, entry);
+            HASH_ADD_INT(dictionary, tag, entry);
         }
     }
 
@@ -4941,19 +4948,41 @@ static const struct dcm_Attribute *lookup(uint32_t tag)
 }
 
 
+static const struct dcm_Attribute *attribute_from_vr(const char *vr) 
+{
+    static struct dcm_Attribute_hash_entry *dictionary = NULL;
+
+    struct dcm_Attribute_hash_entry *entry;
+
+    if (!dictionary) {
+        int i;
+
+        for (i = 0; i < n_attributes; i++) {
+            HASH_FIND_STR(dictionary, attribute_table[i].vr, entry);
+
+            if (!entry) {
+                entry = DCM_NEW(struct dcm_Attribute_hash_entry);
+                *((struct dcm_Attribute *)entry) = attribute_table[i];
+                HASH_ADD_STR(dictionary, vr, entry);
+            }
+        }
+    }
+
+    HASH_FIND_STR(dictionary, vr, entry);
+
+    return (const struct dcm_Attribute *)entry;
+}
+
+
 bool dcm_is_public_tag(uint32_t tag)
 {
-    return lookup(tag) != NULL;
+    return attribute_from_tag(tag) != NULL;
 }
 
 
 bool dcm_is_private_tag(uint32_t tag)
 {
-    uint16_t group_number = (uint16_t)(tag >> 16);
-    if ((group_number % 2) != 0) {
-        return true;
-    }
-    return false;
+    return tag & (1 << 16);
 }
 
 
@@ -4968,56 +4997,16 @@ bool dcm_is_valid_tag(uint32_t tag)
 
 bool dcm_is_valid_vr(const char *vr)
 {
-    if (vr == NULL) {
-        return false;
-    }
-    if (strlen(vr) != 2) {
-        return false;
-    }
-    if (strcmp(vr, "AE") == 0 ||
-        strcmp(vr, "AS") == 0 ||
-        strcmp(vr, "AT") == 0 ||
-        strcmp(vr, "CS") == 0 ||
-        strcmp(vr, "DA") == 0 ||
-        strcmp(vr, "DS") == 0 ||
-        strcmp(vr, "DT") == 0 ||
-        strcmp(vr, "FD") == 0 ||
-        strcmp(vr, "FL") == 0 ||
-        strcmp(vr, "IL") == 0 ||
-        strcmp(vr, "IS") == 0 ||
-        strcmp(vr, "LO") == 0 ||
-        strcmp(vr, "LT") == 0 ||
-        strcmp(vr, "OB") == 0 ||
-        strcmp(vr, "OD") == 0 ||
-        strcmp(vr, "OF") == 0 ||
-        strcmp(vr, "OL") == 0 ||
-        strcmp(vr, "OV") == 0 ||
-        strcmp(vr, "OW") == 0 ||
-        strcmp(vr, "PN") == 0 ||
-        strcmp(vr, "SH") == 0 ||
-        strcmp(vr, "SL") == 0 ||
-        strcmp(vr, "SQ") == 0 ||
-        strcmp(vr, "SS") == 0 ||
-        strcmp(vr, "ST") == 0 ||
-        strcmp(vr, "SV") == 0 ||
-        strcmp(vr, "TM") == 0 ||
-        strcmp(vr, "UI") == 0 ||
-        strcmp(vr, "UL") == 0 ||
-        strcmp(vr, "UN") == 0 ||
-        strcmp(vr, "UR") == 0 ||
-        strcmp(vr, "US") == 0 ||
-        strcmp(vr, "UT") == 0 ||
-        strcmp(vr, "UV") == 0) {
-        return true;
-    }
-    return false;
+    return !vr || 
+        attribute_from_vr(vr);
 }
 
 
 const char *dcm_dict_lookup_vr(uint32_t tag)
 {
-    const struct dcm_Attribute *attribute = lookup(tag);
-    if (!attribute || !attribute->vr) {
+    const struct dcm_Attribute *attribute = attribute_from_tag(tag);
+    if (!attribute || 
+        !attribute->vr) {
         dcm_log_critical("Lookup of VR for Attribute '%08x' failed", tag);
         exit(1);
     }
@@ -5027,8 +5016,9 @@ const char *dcm_dict_lookup_vr(uint32_t tag)
 
 const char *dcm_dict_lookup_keyword(uint32_t tag)
 {
-    const struct dcm_Attribute *attribute = lookup(tag);
-    if (!attribute || !attribute->keyword) {
+    const struct dcm_Attribute *attribute = attribute_from_tag(tag);
+    if (!attribute || 
+        !attribute->keyword) {
         dcm_log_critical("Lookup of Keyword for Attribute '%08x' failed.", tag);
         exit(1);
     }
