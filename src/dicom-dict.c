@@ -4997,16 +4997,14 @@ bool dcm_is_valid_tag(uint32_t tag)
 
 bool dcm_is_valid_vr(const char *vr)
 {
-    return !vr || 
-        attribute_from_vr(vr);
+    return !vr || attribute_from_vr(vr);
 }
 
 
 const char *dcm_dict_lookup_vr(uint32_t tag)
 {
     const struct dcm_Attribute *attribute = attribute_from_tag(tag);
-    if (!attribute || 
-        !attribute->vr) {
+    if (!attribute) {
         dcm_log_critical("Lookup of VR for Attribute '%08x' failed", tag);
         exit(1);
     }
@@ -5017,8 +5015,7 @@ const char *dcm_dict_lookup_vr(uint32_t tag)
 const char *dcm_dict_lookup_keyword(uint32_t tag)
 {
     const struct dcm_Attribute *attribute = attribute_from_tag(tag);
-    if (!attribute || 
-        !attribute->keyword) {
+    if (!attribute) {
         dcm_log_critical("Lookup of Keyword for Attribute '%08x' failed.", tag);
         exit(1);
     }
