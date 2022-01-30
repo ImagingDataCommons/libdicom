@@ -11,6 +11,7 @@ C library and executable tools for reading DICOM files.
 make
 make install
 ```
+See [the installation documentation](https://libdicom.readthedocs.io/en/latest/installation.html) for build dependencies and installation options.
 
 ### Printing the metadata of a DICOM file
 
