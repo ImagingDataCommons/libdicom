@@ -267,7 +267,8 @@ static EHeader *read_element_header(FILE *fp, size_t *n, bool implicit)
     if (implicit) {
         // Value Representation
         const char *tmp = dcm_dict_lookup_vr(tag);
-        strncpy(vr, tmp, 3);
+        strncpy(vr, tmp, 2);
+        vr[2] = '\0';
 
         // Value Length
         *n += fread(&length, 1, sizeof(length), fp);
@@ -351,6 +352,7 @@ static DcmElement *read_element(FILE *fp,
 
     dcm_log_debug("Read Data Element '%08X'", tag);
 
+    vm = 1;
     // Character strings
     if (eheader_check_vr(header, "AE") ||
         eheader_check_vr(header, "AS") ||
