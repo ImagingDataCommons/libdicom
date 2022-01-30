@@ -20,4 +20,4 @@ dcm-dump data/test_files/sm_image.dcm
 
 ## Documentation
 
-User and developer guides as well as API documentation is located under `doc`.
+User and developer guides as well as API documentation can be found at [libdicom.readthedocs.io](https://libdicom.readthedocs.io/en/latest/).
