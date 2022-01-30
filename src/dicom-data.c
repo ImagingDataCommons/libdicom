@@ -1570,6 +1570,12 @@ inline static void print_element_value_US(const DcmElement *element,
 }
 
 
+inline static void print_element_value_UT(const DcmElement *element)
+{
+    printf("%s", element->value.str_multi[0]);
+}
+
+
 inline static void print_element_value_UL(const DcmElement *element,
                                           uint32_t index)
 {
@@ -1831,6 +1837,8 @@ void dcm_element_print(const DcmElement *element, uint8_t indentation)
                 print_element_value_UI(element, i);
             } else if (strcmp(element->vr, "US") == 0) {
                 print_element_value_US(element, i);
+            } else if (strcmp(element->vr, "UT") == 0) {
+                print_element_value_UT(element);
             } else if (strcmp(element->vr, "UL") == 0) {
                 print_element_value_UL(element, i);
             } else {

@@ -13,14 +13,15 @@
 #include "../lib/uthash.h"
 
 
-struct dcm_Attribute {
+struct _DcmAttribute {
     uint32_t tag;
     char vr[3];
     char keyword[63];
 };
 
-struct dcm_Attribute_hash_entry {
-    /* The first three items are identical to dcm_Attribute, so we can cast
+
+struct _DcmAttribute_hash_entry {
+    /* The first three items are identical to _DcmAttribute, so we can cast
      * pointers from one to another.
      */
     uint32_t tag;
@@ -30,7 +31,8 @@ struct dcm_Attribute_hash_entry {
     UT_hash_handle hh;
 };
 
-static const struct dcm_Attribute attribute_table[] = {
+
+static const struct _DcmAttribute attribute_table[] = {
     {0X00000000, "UL", "CommandGroupLength"},
     {0X00000001, "UL", "CommandLengthToEnd"},
     {0X00000002, "UI", "AffectedSOPClassUID"},
@@ -4915,15 +4917,17 @@ static const struct dcm_Attribute attribute_table[] = {
     {0XFFFAFFFA, "SQ", "DigitalSignaturesSequence"},
     {0XFFFCFFFC, "OB", "DataSetTrailingPadding"},
 };
-static const int n_attributes = sizeof(attribute_table) / 
-    sizeof(struct dcm_Attribute);
 
 
-static const struct dcm_Attribute *attribute_from_tag(uint32_t tag) 
+static const int n_attributes = sizeof(attribute_table) /
+                                sizeof(struct _DcmAttribute);
+
+
+static const struct _DcmAttribute *attribute_from_tag(uint32_t tag)
 {
-    static struct dcm_Attribute_hash_entry *dictionary = NULL;
+    static struct _DcmAttribute_hash_entry *dictionary = NULL;
 
-    struct dcm_Attribute_hash_entry *entry;
+    struct _DcmAttribute_hash_entry *entry;
 
     if (!dictionary) {
         int i;
@@ -4931,28 +4935,29 @@ static const struct dcm_Attribute *attribute_from_tag(uint32_t tag)
         for (i = 0; i < n_attributes; i++) {
             HASH_FIND_INT(dictionary, &attribute_table[i].tag, entry);
             if (entry) {
-                dcm_log_critical("Duplicate tag in attribute table '%08x'", 
-                    attribute_table[i].tag);
+                dcm_log_critical("Encoutered duplicate entry in Data "
+                                 "Dictionary for Attribute '%08x'.",
+                                 attribute_table[i].tag);
                 exit(1);
             }
 
-            entry = DCM_NEW(struct dcm_Attribute_hash_entry);
-            *((struct dcm_Attribute *)entry) = attribute_table[i];
+            entry = DCM_NEW(struct _DcmAttribute_hash_entry);
+            *((struct _DcmAttribute *)entry) = attribute_table[i];
             HASH_ADD_INT(dictionary, tag, entry);
         }
     }
 
     HASH_FIND_INT(dictionary, &tag, entry);
 
-    return (const struct dcm_Attribute *)entry;
+    return (const struct _DcmAttribute *)entry;
 }
 
 
-static const struct dcm_Attribute *attribute_from_vr(const char *vr) 
+static const struct _DcmAttribute *attribute_from_vr(const char *vr)
 {
-    static struct dcm_Attribute_hash_entry *dictionary = NULL;
+    static struct _DcmAttribute_hash_entry *dictionary = NULL;
 
-    struct dcm_Attribute_hash_entry *entry;
+    struct _DcmAttribute_hash_entry *entry;
 
     if (!dictionary) {
         int i;
@@ -4961,8 +4966,8 @@ static const struct dcm_Attribute *attribute_from_vr(const char *vr)
             HASH_FIND_STR(dictionary, attribute_table[i].vr, entry);
 
             if (!entry) {
-                entry = DCM_NEW(struct dcm_Attribute_hash_entry);
-                *((struct dcm_Attribute *)entry) = attribute_table[i];
+                entry = DCM_NEW(struct _DcmAttribute_hash_entry);
+                *((struct _DcmAttribute *)entry) = attribute_table[i];
                 HASH_ADD_STR(dictionary, vr, entry);
             }
         }
@@ -4970,7 +4975,7 @@ static const struct dcm_Attribute *attribute_from_vr(const char *vr)
 
     HASH_FIND_STR(dictionary, vr, entry);
 
-    return (const struct dcm_Attribute *)entry;
+    return (const struct _DcmAttribute *)entry;
 }
 
 
@@ -5003,9 +5008,9 @@ bool dcm_is_valid_vr(const char *vr)
 
 const char *dcm_dict_lookup_vr(uint32_t tag)
 {
-    const struct dcm_Attribute *attribute = attribute_from_tag(tag);
+    const struct _DcmAttribute *attribute = attribute_from_tag(tag);
     if (!attribute) {
-        dcm_log_critical("Lookup of VR for Attribute '%08x' failed", tag);
+        dcm_log_critical("Lookup of VR for Attribute '%08x' failed.", tag);
         exit(1);
     }
     return attribute->vr;
@@ -5014,7 +5019,7 @@ const char *dcm_dict_lookup_vr(uint32_t tag)
 
 const char *dcm_dict_lookup_keyword(uint32_t tag)
 {
-    const struct dcm_Attribute *attribute = attribute_from_tag(tag);
+    const struct _DcmAttribute *attribute = attribute_from_tag(tag);
     if (!attribute) {
         dcm_log_critical("Lookup of Keyword for Attribute '%08x' failed.", tag);
         exit(1);

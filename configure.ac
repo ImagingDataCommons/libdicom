@@ -13,7 +13,7 @@ AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 
 # Checks for programs.
-AC_PROG_CC
+AC_PROG_CC([clang gcc])
 AM_PROG_CC_C_O
 
 # Checks for header files.
@@ -75,7 +75,7 @@ AC_LINK_IFELSE([
 ])
 
 # Compiler warnings
-WARN_CFLAGS="-Wall -Wextra -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs"
+WARN_CFLAGS="-Wall -Werror -Wextra -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wformat -Wformat-security"
 AC_SUBST([WARN_CFLAGS])
 
 AC_SUBST(FEATURE_FLAGS)

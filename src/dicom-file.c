@@ -739,6 +739,7 @@ static DcmElement *read_element(FILE *fp,
         }
         return dcm_element_create_UV_multi(tag, values, vm);
     } else {
+        vm = 1;
         char *value = malloc(length);
         if (value == NULL) {
             dcm_log_error("Reading of Data Element failed. "
