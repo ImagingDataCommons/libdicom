@@ -6,6 +6,13 @@ C library and executable tools for reading DICOM files.
 
 ### Building from source
 
+For debian/ubuntu you need some prereqs:
+```
+sudo apt-get install autogen     dh-autoreconf     build-essential     check     dumb-init     libtool     pkg-config     shtool
+```
+
+Then:
+
 ```none
 ./autogen.sh
 make
