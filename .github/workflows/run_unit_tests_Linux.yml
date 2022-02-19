@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     name: Build and run tests
-    runs-on: ${ { matrix.os } }
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -37,7 +37,7 @@ jobs:
 
     - name: Build and install library
       run: |
-        export CC=${ { matrix.cc } }
+        export CC=${{ matrix.cc }}
         ./autogen.sh
         make
         make install
