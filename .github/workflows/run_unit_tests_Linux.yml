@@ -21,26 +21,26 @@ jobs:
       run: |
         export DEBIAN_FRONTEND=noninteractive
         export DEBCONF_NONINTERACTIVE_SEEN=true
-        apt-get update
-        apt-get install -y --no-install-suggests --no-install-recommends
-        autogen
-        dh-autoreconf
-        build-essential
-        check
-        clang
-        llvm
-        libtool
-        pkg-config
-        shtool
-        valgrind
-        apt-get clean
+        sudo apt-get update
+        sudo apt-get install -y --no-install-suggests --no-install-recommends \
+          autogen \
+          dh-autoreconf \
+          build-essential \
+          check \
+          clang \
+          llvm \
+          libtool \
+          pkg-config \
+          shtool \
+          valgrind
+        sudo apt-get clean
 
     - name: Build and install library
       run: |
         export CC=${{ matrix.cc }}
         ./autogen.sh
         make
-        make install
+        sudo make install
 
     - name: Run unit tests
       run: make check
