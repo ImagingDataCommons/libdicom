@@ -1555,6 +1555,13 @@ inline static void print_element_value_SL(const DcmElement *element,
 }
 
 
+inline static void print_element_value_ST(const DcmElement *element,
+                                          uint32_t index)
+{
+    printf("%s", element->value.str_multi[index]);
+}
+
+
 inline static void print_element_value_SV(const DcmElement *element,
                                           uint32_t index)
 {
@@ -1829,6 +1836,8 @@ void dcm_element_print(const DcmElement *element, uint8_t indentation)
                 print_element_value_SS(element, i);
             } else if (strcmp(element->vr, "SL") == 0) {
                 print_element_value_SL(element, i);
+            } else if (strcmp(element->vr, "ST") == 0) {
+                print_element_value_ST(element, i);
             } else if (strcmp(element->vr, "SV") == 0) {
                 print_element_value_SV(element, i);
             } else if (strcmp(element->vr, "TM") == 0) {
