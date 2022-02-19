@@ -1,3 +1,5 @@
+[![Build Status](https://github.com/hackermd/libdicom/actions/workflows/run_unit_tests_Linux.yml/badge.svg)](https://github.com/hackermd/libdicom/actions)
+
 # libdicom
 
 C library and executable tools for reading DICOM files.
