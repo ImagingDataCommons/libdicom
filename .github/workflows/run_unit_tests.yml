@@ -64,7 +64,7 @@ jobs:
       run: |
         brew update
         brew upgrade
-        brew install autoconf automake libtool
+        brew install autoconf automake check libtool
 
     - name: Build and install library
       run: |
