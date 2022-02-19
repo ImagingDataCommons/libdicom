@@ -1,0 +1,58 @@
+name: build and test on Linux
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    name: ${ { matrix.config.name } }
+    runs-on: ${ { matrix.config.os } }
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {
+            name: "Linux Ubuntu latest [GCC]",
+            os: ubuntu-latest,
+            cc: "gcc"
+          }
+        - {
+            name: "Linux Ubuntu latest [Clang]",
+            os: ubuntu-latest,
+            cc: "clang"
+          }
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install build and test dependencies
+      run: |
+        export DEBIAN_FRONTEND=noninteractive
+        export DEBCONF_NONINTERACTIVE_SEEN=true
+        apt-get update
+        apt-get install -y --no-install-suggests --no-install-recommends
+        autogen
+        dh-autoreconf
+        build-essential
+        check
+        clang
+        llvm
+        libtool
+        pkg-config
+        shtool
+        valgrind
+        apt-get clean
+
+    - name: Build and install library
+      run: |
+        export CC=${ { matrix.config.cc } }
+        ./autogen.sh
+        make
+        make install
+
+    - name: Run unit tests
+      run: make check
+
+    - name: Run valgrind
+      run: valgrind --leak-check=full dcm-dump ./data/test_files/sm_image.dcm > /dev/null
