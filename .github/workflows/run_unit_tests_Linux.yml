@@ -46,4 +46,6 @@ jobs:
       run: make check
 
     - name: Run valgrind
-      run: valgrind --leak-check=full dcm-dump ./data/test_files/sm_image.dcm > /dev/null
+      run: |
+        export LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}"
+        valgrind --leak-check=full dcm-dump ./data/test_files/sm_image.dcm > /dev/null
