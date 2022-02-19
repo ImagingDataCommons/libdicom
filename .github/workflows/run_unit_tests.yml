@@ -1,4 +1,4 @@
-name: build and test on Linux
+name: build and test
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
-    name: Build and run tests
+  linux:
+    name: Build and run tests on Linux
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -49,3 +49,29 @@ jobs:
       run: |
         export LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}"
         valgrind --leak-check=full dcm-dump ./data/test_files/sm_image.dcm > /dev/null
+
+  macos:
+    name: Build and run tests on macOS
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest]
+        cc: [clang]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install build and test dependencies
+      run: |
+        brew update
+        brew upgrade
+        brew install autoconf automake libtool
+
+    - name: Build and install library
+      run: |
+        export CC=${{ matrix.cc }}
+        ./autogen.sh
+        make
+        make install
+
+    - name: Run unit tests
+      run: make check
