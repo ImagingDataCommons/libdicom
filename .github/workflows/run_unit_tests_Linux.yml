@@ -8,22 +8,13 @@ on:
 
 jobs:
   build:
-    name: ${ { matrix.config.name } }
-    runs-on: ${ { matrix.config.os } }
+    name: Build and run tests
+    runs-on: ${ { matrix.os } }
     strategy:
       fail-fast: false
       matrix:
-        config:
-        - {
-            name: "Linux Ubuntu latest [GCC]",
-            os: ubuntu-latest,
-            cc: "gcc"
-          }
-        - {
-            name: "Linux Ubuntu latest [Clang]",
-            os: ubuntu-latest,
-            cc: "clang"
-          }
+        os: [ubuntu-latest]
+        cc: [gcc]
     steps:
     - uses: actions/checkout@v2
     - name: Install build and test dependencies
@@ -46,7 +37,7 @@ jobs:
 
     - name: Build and install library
       run: |
-        export CC=${ { matrix.config.cc } }
+        export CC=${ { matrix.cc } }
         ./autogen.sh
         make
         make install
