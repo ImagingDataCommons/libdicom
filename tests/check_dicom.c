@@ -423,7 +423,6 @@ START_TEST(test_file_sm_image_file_meta)
     const char *file_path = "./data/test_files/sm_image.dcm";
 
     uint32_t tag;
-    char *value;
     DcmElement *element;
 
     DcmFile *file = dcm_file_create(file_path, 'r');
