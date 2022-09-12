@@ -41,7 +41,7 @@ Retrieved Data Sets are immutable (locked).
 When a Data Set is removed from a sequence, the Data Set is destroyed (i.e., the allocated memory is freed).
 When a Sequence is destroyed, all contained Data Sets are also automatically destroyed.
 
-A File (:c:type:`DcmFile`) enables access of a `DICOM file <http://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_3.html#glossentry_DICOMFile>`_, which contains an encoded Data Set representing an SOP Instance.
+A File (:c:type:`DcmFile`) enables access of a `DICOM file <http://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_3.html#glossentry_DICOMFile>`_, which contains an encoded Data Set representing a SOP Instance.
 A File can be created via :c:func:`dcm_file_create()` and destroyed via :c:func:`dcm_file_destroy()`, which opens a Part10 file stored on disk and closes it, respectively.
 The content of a Part10 file can be read using various functions.
 The `File Meta Information <http://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_3.html#glossentry_FileMetaInformation>`_ can be read via :c:func:`dcm_file_read_file_meta()`.
