@@ -1,0 +1,5 @@
+option(
+  'version_suffix',
+  type : 'string',
+  description : 'suffix to append to the package version string',
+)
