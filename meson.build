@@ -76,6 +76,14 @@ libdicom = library(
   install : true,
   version : '0.0.0',
 )
+import('pkgconfig').generate(
+  libdicom,
+  description : 'C library for reading DICOM files',
+  filebase : 'libdicom',
+  name : 'libdicom',
+  subdirs : 'dicom',
+  url : 'https://github.com/hackermd/libdicom',
+)
 
 # dcm-dump
 executable(
