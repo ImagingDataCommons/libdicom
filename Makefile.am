@@ -1,8 +1,6 @@
 EXTRA_DIST = README.md
 ACLOCAL_AMFLAGS = -I m4
 
-pkgconfigdir = $(libdir)/pkgconfig
-
 lib_LTLIBRARIES = src/libdicom.la
 
 src_libdicom_la_SOURCES = src/dicom.c src/dicom-data.c src/dicom-dict.c src/dicom-file.c lib/uthash.h lib/utarray.h
@@ -12,9 +10,6 @@ src_libdicom_la_CPPFLAGS = -g -Wall -Wformat -Wformat-security
 src_libdicom_la_LDFLAGS = -lm
 
 pkginclude_HEADERS =  src/dicom.h
-
-.rc.lo:
-	$(AM_V_GEN)$(LIBTOOL) $(AM_V_lt) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --tag=RC --mode=compile $(RC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) -i "$<" -o "$@"
 
 COMMON_CPPFLAGS = -I$(top_srcdir)/src
 COMMON_LDADD = src/libdicom.la

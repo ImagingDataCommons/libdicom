@@ -56,29 +56,7 @@ AC_DEFINE_UNQUOTED([SUFFIXED_VERSION], ["$SUFFIXED_VERSION"],
                    [Define to the package version string including any suffix.])
 AC_SUBST([SUFFIXED_VERSION])
 
-PKG_CHECK_MODULES([CHECK], [check >= 0.9.6], [
-  AC_DEFINE([HAVE_CHECK], [1], [Define if Check headers are present.])
-], [:])
-
-# Mac OS X proc_pidfdinfo()
-AC_MSG_CHECKING([for proc_pidfdinfo])
-AC_LINK_IFELSE([
-  AC_LANG_PROGRAM(
-    [#include <libproc.h>],
-    [proc_pidfdinfo(0, 0, PROC_PIDFDKQUEUEINFO, NULL, 0)]
-  )
-], [
-  AC_MSG_RESULT([yes])
-  AC_DEFINE([HAVE_PROC_PIDFDINFO], [1], [Define to 1 if you have the proc_pidfdinfo function.])
-], [
-  AC_MSG_RESULT([no])
-])
-
-# Compiler warnings
-WARN_CFLAGS="-Wall -Werror -Wextra -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wformat -Wformat-security"
-AC_SUBST([WARN_CFLAGS])
-
-AC_SUBST(FEATURE_FLAGS)
+PKG_CHECK_MODULES([CHECK], [check >= 0.9.6], [:], [:])
 
 AC_CONFIG_MACRO_DIRS([m4])
 AC_CONFIG_FILES([
