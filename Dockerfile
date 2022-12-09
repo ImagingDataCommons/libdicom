@@ -4,34 +4,28 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     export DEBCONF_NONINTERACTIVE_SEEN=true && \
     apt-get update && \
     apt-get install -y --no-install-suggests --no-install-recommends \
-    autogen \
-    dh-autoreconf \
     build-essential \
     check \
     dumb-init \
-    libtool \
+    meson \
     pkg-config \
-    shtool \
     valgrind && \
     apt-get clean
 
 COPY data ./data
-COPY lib ./lib
+COPY uthash ./uthash
 COPY src ./src
+COPY include ./include
 COPY tests ./tests
 COPY tools ./tools
 COPY supp ./supp
-COPY autogen.sh ./autogen.sh
-COPY configure.ac ./configure.ac
-COPY Makefile.am ./Makefile.am
+COPY meson.build meson_options.txt .
 
-ENV LD_PATH="/usr/local/bin:${LD_LIBRARY_PATH}"
-ENV LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}"
-RUN CFLAGS="-O0 -DDEBUG" ./autogen.sh --prefix=/usr/local
-RUN make && make install
+RUN CFLAGS="-O0 -DDEBUG -Werror" meson setup builddir
+RUN meson compile -C builddir && meson install -C builddir && ldconfig
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
-CMD make check; cat test-suite.log && \
+CMD meson test -C builddir; cat builddir/meson-logs/testlog.txt && \
     valgrind \
         --leak-check=full \
         dcm-dump ./data/test_files/sm_image.dcm > /dev/null
