@@ -6,11 +6,34 @@ project(
     'warning_level=2',
   ],
   license : 'MIT',
-  meson_version : '>=0.50',
+  meson_version : '>=0.54',
   version : '0.1.0',
 )
 
 # dependencies
+system_uthash = get_option('system_uthash')
+if system_uthash.enabled() or system_uthash.auto()
+  cc = meson.get_compiler('c')
+  found_uthash = cc.check_header(
+    'utarray.h',
+    required : system_uthash
+  )
+  found_uthash = found_uthash and cc.check_header(
+    'uthash.h',
+    required : system_uthash
+  )
+  if found_uthash
+    if system_uthash.auto()
+      message('Using system uthash')
+    endif
+    uthash = ''
+  else
+    message('Using bundled uthash')
+    uthash = 'uthash'
+  endif
+else
+  uthash = 'uthash'
+endif
 check = dependency(
   'check',
   required : false,
@@ -72,7 +95,7 @@ install_headers(
 libdicom = library(
   'dicom',
   lib_sources,
-  include_directories : 'lib',
+  include_directories : uthash,
   install : true,
   version : '0.0.0',
 )
