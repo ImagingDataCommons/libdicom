@@ -24,6 +24,11 @@ version_suffix = get_option('version_suffix')
 if version_suffix != ''
   suffixed_version += '-' + version_suffix
 endif
+cfg.set(
+  'HAVE_CHECK',
+  check.found(),
+  description : 'Define if the Check package is available.',
+)
 cfg.set_quoted(
   'SRCDIR',
   # escape backslashes for Windows paths without replace(), which doesn't
@@ -93,8 +98,8 @@ install_man(dcm_dump_man)
 check_dicom = executable(
   'check_dicom',
   'tests/check_dicom.c',
-  build_by_default : false,
   dependencies : check,
   include_directories : 'src',
   link_with : libdicom,
 )
+test('check_dicom', check_dicom)
