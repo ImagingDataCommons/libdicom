@@ -24,9 +24,3 @@ check_PROGRAMS = check_dicom
 check_dicom_SOURCES = tests/check_dicom.c $(top_builddir)/src/dicom.h
 check_dicom_CFLAGS = @CHECK_CFLAGS@
 check_dicom_LDADD = $(top_builddir)/src/libdicom.la @CHECK_LIBS@
-
-dist-hook:
-	cd $(distdir)/doc; make html
-
-docs:
-	cd doc && make html
