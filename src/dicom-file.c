@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "../lib/utarray.h"
+#include "utarray.h"
 
 #include "dicom.h"
 

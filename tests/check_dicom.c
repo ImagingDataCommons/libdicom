@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <check.h>
 
-#include "../src/dicom.h"
+#include "dicom.h"
 
 
 static size_t compute_length_of_string_value(char *value)

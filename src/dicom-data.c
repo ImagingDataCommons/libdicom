@@ -9,8 +9,8 @@
 #include <string.h>
 #include <inttypes.h>
 
-#include "../lib/utarray.h"
-#include "../lib/uthash.h"
+#include "utarray.h"
+#include "uthash.h"
 
 #include "dicom.h"
 
