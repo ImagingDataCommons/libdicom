@@ -802,6 +802,7 @@ DcmFile *dcm_file_create(const char *file_path, const char mode)
     file->fp = fopen(file_path, file_mode);
     if (file->fp == NULL) {
         dcm_log_error("Could not open file for reading: %s", file_path);
+        free(file);
         return NULL;
     }
 
