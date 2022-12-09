@@ -30,6 +30,3 @@ dist-hook:
 
 docs:
 	cd doc && make html
-
-EXTRA_DIST += $(man_MANS:=.in)
-
