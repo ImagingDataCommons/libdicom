@@ -1,8 +1,18 @@
+#include "config.h"
+
+#include <stdio.h>
 #include <stdlib.h>
 #include <check.h>
 
 #include "dicom.h"
 
+
+static char *fixture_path(const char *relpath)
+{
+    char *path = malloc(strlen(SRCDIR) + strlen(relpath) + 2);
+    sprintf(path, "%s/%s", SRCDIR, relpath);
+    return path;
+}
 
 static size_t compute_length_of_string_value(char *value)
 {
@@ -420,12 +430,12 @@ END_TEST
 
 START_TEST(test_file_sm_image_file_meta)
 {
-    const char *file_path = "./data/test_files/sm_image.dcm";
-
     uint32_t tag;
     DcmElement *element;
 
+    char *file_path = fixture_path("data/test_files/sm_image.dcm");
     DcmFile *file = dcm_file_create(file_path, 'r');
+    free(file_path);
 
     DcmDataSet *file_meta = dcm_file_read_file_meta(file);
 
@@ -451,9 +461,9 @@ END_TEST
 
 START_TEST(test_file_sm_image_metadata)
 {
-    const char *file_path = "./data/test_files/sm_image.dcm";
-
+    char *file_path = fixture_path("data/test_files/sm_image.dcm");
     DcmFile *file = dcm_file_create(file_path, 'r');
+    free(file_path);
 
     DcmDataSet *metadata = dcm_file_read_metadata(file);
 
@@ -473,9 +483,10 @@ END_TEST
 START_TEST(test_file_sm_image_frame)
 {
     const uint32_t frame_number = 1;
-    const char *file_path = "./data/test_files/sm_image.dcm";
 
+    char *file_path = fixture_path("data/test_files/sm_image.dcm");
     DcmFile *file = dcm_file_create(file_path, 'r');
+    free(file_path);
 
     DcmDataSet *metadata = dcm_file_read_metadata(file);
 

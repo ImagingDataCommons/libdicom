@@ -25,6 +25,13 @@ if version_suffix != ''
   suffixed_version += '-' + version_suffix
 endif
 cfg.set_quoted(
+  'SRCDIR',
+  # escape backslashes for Windows paths without replace(), which doesn't
+  # exist in 0.54
+  '\\\\'.join(meson.current_source_dir().split('\\')),
+  description : 'Define to the path to the source directory.',
+)
+cfg.set_quoted(
   'SUFFIXED_VERSION',
   suffixed_version,
   description : 'The package version string including any suffix.',
