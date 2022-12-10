@@ -76,3 +76,36 @@ jobs:
     - name: Print unit test logs
       if: always()
       run: cat builddir/meson-logs/testlog.txt
+
+  windows:
+    name: Build and run tests on Windows
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest]
+        cc: [clang]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install build and test dependencies
+      # Pin to Meson 0.60.1 for
+      # https://github.com/mesonbuild/meson/issues/10022
+      run: pip install meson==0.60.1
+
+    - name: Build and install library
+      shell: bash
+      run: |
+        export CC=${{ matrix.cc }}
+        # Ignore unused parameter warnings from check.h
+        export CFLAGS=-Wno-unused-parameter
+        meson setup builddir --werror
+        meson compile -C builddir
+        meson install -C builddir
+
+    - name: Run unit tests
+      # Don't run tests for private copy of Check
+      run: meson test -C builddir --suite libdicom
+
+    - name: Print unit test logs
+      if: always()
+      run: cat builddir/meson-logs/testlog.txt
