@@ -1,5 +1,10 @@
 #include "config.h"
 
+#ifdef _WIN32
+// the Windows CRT considers strncpy unsafe
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <check.h>
