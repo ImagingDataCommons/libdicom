@@ -1,6 +1,8 @@
 /*
  * Implementation of subroutines that are independent of the DICOM standard.
  */
+#include <assert.h>
+#include <errno.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -32,11 +34,21 @@ const char *dcm_get_version(void)
 DcmLogLevel dcm_log_level = DCM_LOG_NOTSET;
 
 
+#ifndef _WIN32
+static int ctime_s(char *buf, size_t size, const time_t *time)
+{
+    assert(size >= 26);
+    ctime_r(time, buf);
+    return errno;
+}
+#endif
+
 static void dcm_logf(const char *level, const char *format, va_list args)
 {
     time_t now;
     time(&now);
-    char *datetime = ctime(&now);
+    char datetime[26];
+    ctime_s(datetime, sizeof(datetime), &now);
     datetime[strcspn(datetime, "\n")] = '\0';
     fprintf(stderr, "%s [%s] - ", level, datetime);
     vfprintf(stderr, format, args);
