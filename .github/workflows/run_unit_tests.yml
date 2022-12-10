@@ -61,10 +61,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Install build and test dependencies
-      run: |
-        brew update
-        brew upgrade
-        brew install autoconf automake check libtool
+      run: brew install autoconf automake check libtool
 
     - name: Build and install library
       run: |
