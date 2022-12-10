@@ -69,6 +69,9 @@ add_project_arguments(
   ),
   language: 'c',
 )
+library_options = ['-DBUILDING_LIBDICOM'] + cc.get_supported_arguments(
+  '-fvisibility=hidden'
+)
 
 # libdicom
 lib_sources = [
@@ -84,6 +87,7 @@ install_headers(
 libdicom = library(
   'dicom',
   lib_sources,
+  c_args : library_options,
   dependencies: [uthash],
   include_directories : ['include'],
   install : true,
