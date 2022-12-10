@@ -1195,7 +1195,7 @@ DcmBOT *dcm_file_read_bot(const DcmFile *file, const DcmDataSet *metadata)
             offsets[i] = value;
         }
     } else {
-        dcm_log_info("Basic Offset Table is emtpy.");
+        dcm_log_info("Basic Offset Table is empty.");
         // Handle Extended Offset Table attribute
         const DcmElement *eot_element = dcm_dataset_get(metadata, 0x7FE00001);
         if (eot_element) {
@@ -1210,7 +1210,6 @@ DcmBOT *dcm_file_read_bot(const DcmFile *file, const DcmDataSet *metadata)
                                   "Failed to parse value of Extended Offset "
                                   "Table element for frame #%d.", i + 1);
                     free(offsets);
-                    iheader_destroy(iheader);
                     return NULL;
                 }
                 offsets[i] = value;
