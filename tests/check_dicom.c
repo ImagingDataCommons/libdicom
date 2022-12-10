@@ -503,7 +503,7 @@ START_TEST(test_file_sm_image_frame)
 END_TEST
 
 
-Suite *create_main_suite(void)
+static Suite *create_main_suite(void)
 {
     Suite *suite = suite_create("main");
 
@@ -522,7 +522,7 @@ Suite *create_main_suite(void)
 }
 
 
-Suite *create_data_suite(void)
+static Suite *create_data_suite(void)
 {
     Suite *suite = suite_create("data");
 
@@ -551,7 +551,7 @@ Suite *create_data_suite(void)
 }
 
 
-Suite *create_file_suite(void)
+static Suite *create_file_suite(void)
 {
     Suite *suite = suite_create("file");
 
