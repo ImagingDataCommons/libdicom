@@ -89,13 +89,13 @@ lib_sources = [
   'src/dicom-file.c',
 ]
 install_headers(
-  'src/dicom.h',
+  'include/dicom.h',
   subdir : 'dicom',
 )
 libdicom = library(
   'dicom',
   lib_sources,
-  include_directories : uthash,
+  include_directories : ['include', uthash],
   install : true,
   version : '0.0.0',
 )
@@ -107,14 +107,17 @@ import('pkgconfig').generate(
   subdirs : 'dicom',
   url : 'https://github.com/hackermd/libdicom',
 )
+libdicom_dep = declare_dependency(
+  include_directories : ['include'],
+  link_with : libdicom,
+)
 
 # dcm-dump
 executable(
   'dcm-dump',
   'tools/dcm-dump.c',
-  include_directories : 'src',
+  dependencies : [libdicom_dep],
   install : true,
-  link_with : libdicom,
 )
 dcm_dump_man = configure_file(
   input : 'tools/dcm-dump.1.in',
@@ -129,8 +132,6 @@ install_man(dcm_dump_man)
 check_dicom = executable(
   'check_dicom',
   'tests/check_dicom.c',
-  dependencies : check,
-  include_directories : 'src',
-  link_with : libdicom,
+  dependencies : [check, libdicom_dep],
 )
 test('check_dicom', check_dicom)
