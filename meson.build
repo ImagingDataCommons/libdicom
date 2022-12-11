@@ -11,9 +11,9 @@ project(
 )
 
 # dependencies
+cc = meson.get_compiler('c')
 system_uthash = get_option('system_uthash')
 if system_uthash.enabled() or system_uthash.auto()
-  cc = meson.get_compiler('c')
   found_uthash = cc.check_header(
     'utarray.h',
     required : system_uthash
@@ -70,16 +70,16 @@ configure_file(
 )
 
 # compiler options
-if meson.get_compiler('c').get_argument_syntax() == 'gcc'
-  add_project_arguments(
+add_project_arguments(
+  cc.get_supported_arguments(
     '-Wformat-security',
     '-Wmissing-declarations',
     '-Wmissing-prototypes',
     '-Wnested-externs',
     '-Wstrict-prototypes',
-    language: 'c',
-  )
-endif
+  ),
+  language: 'c',
+)
 
 # libdicom
 lib_sources = [
