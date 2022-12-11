@@ -5,19 +5,21 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
     apt-get install -y --no-install-suggests --no-install-recommends \
     build-essential \
+    ca-certificates \
     check \
     dumb-init \
+    git \
     meson \
     pkg-config \
     valgrind && \
     apt-get clean
 
 COPY data ./data
-COPY uthash ./uthash
 COPY src ./src
 COPY include ./include
 COPY tests ./tests
 COPY tools ./tools
+COPY subprojects/*.wrap ./subprojects/
 COPY supp ./supp
 COPY meson.build meson_options.txt .
 

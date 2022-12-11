@@ -22,13 +22,13 @@ On Debian-based Linux distributions:
 
 .. code:: bash
 
-    sudo apt install build-essential meson pkg-config
+    sudo apt install build-essential git meson pkg-config
 
 On macOS:
 
 .. code:: bash
 
-    brew install meson pkg-config
+    brew install git meson pkg-config
 
 
 Build configuration
