@@ -45,16 +45,18 @@ Build for development and debugging:
 Optional dependencies
 +++++++++++++++++++++
 
-This package uses `check <https://libcheck.github.io/check/>`_ for unit testing.
+This package uses `check <https://libcheck.github.io/check/>`_ for unit testing and `uthash <https://troydhanson.github.io/uthash/>`_ for data structures.
+It will automatically download and build both libraries, or can use system copies.
+To install system copies:
 
 On Debian-based Linux distributions:
 
 .. code:: bash
 
-    sudo apt install check
+    sudo apt install check uthash-dev
 
 On macOS:
 
 .. code:: bash
 
-    brew install check
+    brew install check uthash

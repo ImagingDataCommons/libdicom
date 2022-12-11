@@ -51,7 +51,7 @@ Implementation
 
 The ``dicom-data.c`` (Part 5), ``dicom-dict.c`` (Part 6), and ``dicom-file.c`` (Part 10) are implemented based on the C11 version of the standard.
 
-The Data Set and Sequence data structures are implemented using the battletested `uthash <https://troydhanson.github.io/uthash>`_ headers, which are included in the library.
+The Data Set and Sequence data structures are implemented using the battletested `uthash <https://troydhanson.github.io/uthash>`_ headers.
 
 
 Documentation
