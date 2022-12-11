@@ -73,9 +73,9 @@ Testing
 
 Unit test cases are defined and run using `check <https://github.com/libcheck/check>`_.
 
-Test files are located under ``/tests`` and can be build and run using ``meson`` (in the build directory)::
+Test files are located under ``/tests`` and can be built and run using ``meson``::
 
-    meson test
+    meson test -C builddir
 
 Dynamic analysis
 ++++++++++++++++
