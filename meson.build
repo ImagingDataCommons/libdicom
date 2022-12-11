@@ -28,7 +28,9 @@ else
 endif
 check = dependency(
   'check',
-  required : false,
+  default_options : [
+    'warning_level=0',
+  ],
   version : '>=0.9.6',
 )
 
@@ -39,11 +41,6 @@ version_suffix = get_option('version_suffix')
 if version_suffix != ''
   suffixed_version += '-' + version_suffix
 endif
-cfg.set(
-  'HAVE_CHECK',
-  check.found(),
-  description : 'Define if the Check package is available.',
-)
 cfg.set_quoted(
   'SRCDIR',
   # escape backslashes for Windows paths without replace(), which doesn't

@@ -1,5 +1,6 @@
 # Subprojects
 /subprojects/packagecache
+/subprojects/check-*
 /subprojects/uthash-*
 
 # Sphinx
