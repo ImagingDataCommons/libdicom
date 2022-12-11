@@ -16,38 +16,38 @@ jobs:
         os: [ubuntu-latest]
         cc: [gcc]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Install build and test dependencies
       run: |
         export DEBIAN_FRONTEND=noninteractive
         export DEBCONF_NONINTERACTIVE_SEEN=true
         sudo apt-get update
         sudo apt-get install -y --no-install-suggests --no-install-recommends \
-          autogen \
-          dh-autoreconf \
           build-essential \
           check \
           clang \
           llvm \
-          libtool \
+          meson \
           pkg-config \
-          shtool \
           valgrind
         sudo apt-get clean
 
     - name: Build and install library
       run: |
         export CC=${{ matrix.cc }}
-        ./autogen.sh
-        make
-        sudo make install
+        meson setup builddir --werror
+        meson compile -C builddir
+        sudo meson install -C builddir
 
     - name: Run unit tests
-      run: make check
+      run: meson test -C builddir
+
+    - name: Print unit test logs
+      if: always()
+      run: cat builddir/meson-logs/testlog.txt
 
     - name: Run valgrind
       run: |
-        export LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}"
         valgrind --leak-check=full dcm-dump ./data/test_files/sm_image.dcm > /dev/null
 
   macos:
@@ -59,19 +59,20 @@ jobs:
         os: [macos-latest]
         cc: [clang]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Install build and test dependencies
-      run: |
-        brew update
-        brew upgrade
-        brew install autoconf automake check libtool
+      run: brew install check meson
 
     - name: Build and install library
       run: |
         export CC=${{ matrix.cc }}
-        ./autogen.sh
-        make
-        make install
+        meson setup builddir --werror
+        meson compile -C builddir
+        meson install -C builddir
 
     - name: Run unit tests
-      run: make check
+      run: meson test -C builddir
+
+    - name: Print unit test logs
+      if: always()
+      run: cat builddir/meson-logs/testlog.txt

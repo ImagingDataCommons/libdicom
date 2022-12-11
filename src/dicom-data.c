@@ -9,8 +9,8 @@
 #include <string.h>
 #include <inttypes.h>
 
-#include "../lib/utarray.h"
-#include "../lib/uthash.h"
+#include "utarray.h"
+#include "uthash.h"
 
 #include "dicom.h"
 
@@ -2457,12 +2457,12 @@ DcmBOT *dcm_bot_create(ssize_t *offsets, uint32_t num_frames)
         return NULL;
     }
 
-    DcmBOT *bot = DCM_NEW(DcmBOT);
     if (offsets == NULL) {
         dcm_log_error("Constructing Basic Offset Table failed. "
                       "No offsets were provided.");
         return NULL;
     }
+    DcmBOT *bot = DCM_NEW(DcmBOT);
     if (bot == NULL) {
         dcm_log_error("Constructing Basic Offset Table failed. "
                       "Could not allocate memory.");

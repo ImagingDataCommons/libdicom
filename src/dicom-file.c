@@ -8,21 +8,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "../lib/utarray.h"
+#include "utarray.h"
 
 #include "dicom.h"
 
 
-enum SpecialTag {
-    TAG_ITEM = 0xFFFEE000,
-    TAG_ITEM_DELIM = 0xFFFEE00D,
-    TAG_SQ_DELIM = 0xFFFEE0DD,
-    TAG_TRAILING_PADDING = 0xFFFCFFFC,
-    TAG_EXTENDED_OFFSET_TABLE = 0x7FE00001,
-    TAG_PIXEL_DATA = 0x7FE00010,
-    TAG_FLOAT_PIXEL_DATA = 0x7FE00008,
-    TAG_DOUBLE_PIXEL_DATA = 0x7FE00009,
-};
+#define TAG_ITEM                  0xFFFEE000
+#define TAG_ITEM_DELIM            0xFFFEE00D
+#define TAG_SQ_DELIM              0xFFFEE0DD
+#define TAG_TRAILING_PADDING      0xFFFCFFFC
+#define TAG_EXTENDED_OFFSET_TABLE 0x7FE00001
+#define TAG_PIXEL_DATA            0x7FE00010
+#define TAG_FLOAT_PIXEL_DATA      0x7FE00008
+#define TAG_DOUBLE_PIXEL_DATA     0x7FE00009
 
 
 struct PixelDescription {
@@ -802,6 +800,7 @@ DcmFile *dcm_file_create(const char *file_path, const char mode)
     file->fp = fopen(file_path, file_mode);
     if (file->fp == NULL) {
         dcm_log_error("Could not open file for reading: %s", file_path);
+        free(file);
         return NULL;
     }
 
@@ -1194,7 +1193,7 @@ DcmBOT *dcm_file_read_bot(const DcmFile *file, const DcmDataSet *metadata)
             offsets[i] = value;
         }
     } else {
-        dcm_log_info("Basic Offset Table is emtpy.");
+        dcm_log_info("Basic Offset Table is empty.");
         // Handle Extended Offset Table attribute
         const DcmElement *eot_element = dcm_dataset_get(metadata, 0x7FE00001);
         if (eot_element) {
@@ -1209,7 +1208,6 @@ DcmBOT *dcm_file_read_bot(const DcmFile *file, const DcmDataSet *metadata)
                                   "Failed to parse value of Extended Offset "
                                   "Table element for frame #%d.", i + 1);
                     free(offsets);
-                    iheader_destroy(iheader);
                     return NULL;
                 }
                 offsets[i] = value;

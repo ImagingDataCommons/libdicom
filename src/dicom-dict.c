@@ -10,7 +10,7 @@
 
 #include "dicom.h"
 
-#include "../lib/uthash.h"
+#include "uthash.h"
 
 
 struct _DcmAttribute {

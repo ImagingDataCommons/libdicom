@@ -1,0 +1,10 @@
+option(
+  'system_uthash',
+  type : 'feature',
+  description : 'use system uthash instead of bundled copy',
+)
+option(
+  'version_suffix',
+  type : 'string',
+  description : 'suffix to append to the package version string',
+)

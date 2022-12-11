@@ -9,9 +9,9 @@ C library and executable tools for reading DICOM files.
 ### Building from source
 
 ```none
-./autogen.sh
-make
-make install
+meson setup --buildtype release builddir
+meson compile -C builddir
+meson install -C builddir
 ```
 See [the installation documentation](https://libdicom.readthedocs.io/en/latest/installation.html) for build dependencies and installation options.
 
