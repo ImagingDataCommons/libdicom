@@ -6,37 +6,31 @@ project(
     'warning_level=2',
   ],
   license : 'MIT',
-  meson_version : '>=0.54',
+  meson_version : '>=0.50',
   version : '0.1.0',
 )
 
 # dependencies
-system_uthash = get_option('system_uthash')
-if system_uthash.enabled() or system_uthash.auto()
-  cc = meson.get_compiler('c')
-  found_uthash = cc.check_header(
-    'utarray.h',
-    required : system_uthash
-  )
-  found_uthash = found_uthash and cc.check_header(
-    'uthash.h',
-    required : system_uthash
-  )
-  if found_uthash
-    if system_uthash.auto()
-      message('Using system uthash')
-    endif
-    uthash = ''
-  else
-    message('Using bundled uthash')
-    uthash = 'uthash'
-  endif
+cc = meson.get_compiler('c')
+found_uthash = cc.check_header(
+  'utarray.h',
+  required : false
+) and cc.check_header(
+  'uthash.h',
+  required : false
+)
+if found_uthash
+  uthash = declare_dependency()
 else
-  uthash = 'uthash'
+  # fall back to dependency() rather than subproject() so
+  # --wrap-mode=nofallback works
+  uthash = dependency('uthash')
 endif
 check = dependency(
   'check',
-  required : false,
+  default_options : [
+    'warning_level=0',
+  ],
   version : '>=0.9.6',
 )
 
@@ -47,11 +41,6 @@ version_suffix = get_option('version_suffix')
 if version_suffix != ''
   suffixed_version += '-' + version_suffix
 endif
-cfg.set(
-  'HAVE_CHECK',
-  check.found(),
-  description : 'Define if the Check package is available.',
-)
 cfg.set_quoted(
   'SRCDIR',
   # escape backslashes for Windows paths without replace(), which doesn't
@@ -70,16 +59,16 @@ configure_file(
 )
 
 # compiler options
-if meson.get_compiler('c').get_argument_syntax() == 'gcc'
-  add_project_arguments(
+add_project_arguments(
+  cc.get_supported_arguments(
     '-Wformat-security',
     '-Wmissing-declarations',
     '-Wmissing-prototypes',
     '-Wnested-externs',
     '-Wstrict-prototypes',
-    language: 'c',
-  )
-endif
+  ),
+  language: 'c',
+)
 
 # libdicom
 lib_sources = [
@@ -95,7 +84,8 @@ install_headers(
 libdicom = library(
   'dicom',
   lib_sources,
-  include_directories : ['include', uthash],
+  dependencies: [uthash],
+  include_directories : ['include'],
   install : true,
   version : '0.0.0',
 )

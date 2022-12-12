@@ -1,7 +1,5 @@
 #include "config.h"
 
-#ifdef HAVE_CHECK
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <check.h>
@@ -595,18 +593,3 @@ int main(void)
 
     return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
-
-#else // HAVE_CHECK
-
-#include <stdio.h>
-
-// we're compiled unconditionally because of
-// https://github.com/mesonbuild/meson/issues/2518, so ensure compile succeeds
-// and we fail at runtime
-int main(void)
-{
-    printf("Error: compiled without Check\n");
-    return 1;
-}
-
-#endif // HAVE_CHECK
