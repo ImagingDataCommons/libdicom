@@ -7,17 +7,24 @@ on:
     branches: [ master ]
 
 jobs:
-  linux:
-    name: Build and run tests on Linux
+  test:
+    name: Build and run tests
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
-        cc: [gcc]
+        include:
+          - os: ubuntu-latest
+            cc: gcc
+          - os: macos-latest
+            cc: clang
+          - os: windows-latest
+            cc: clang
     steps:
     - uses: actions/checkout@v3
-    - name: Install build and test dependencies
+
+    - name: Install build and test dependencies (Linux)
+      if: startsWith(matrix.os, 'ubuntu')
       run: |
         export DEBIAN_FRONTEND=noninteractive
         export DEBCONF_NONINTERACTIVE_SEEN=true
@@ -29,50 +36,47 @@ jobs:
           llvm \
           meson \
           pkg-config \
+          uthash-dev \
           valgrind
         sudo apt-get clean
 
+    - name: Install build and test dependencies (macOS)
+      if: startsWith(matrix.os, 'macos')
+      run: brew install check meson uthash
+
+    - name: Install build and test dependencies (Windows)
+      if: startsWith(matrix.os, 'windows')
+      # Pin to Meson 0.60.1 for
+      # https://github.com/mesonbuild/meson/issues/10022
+      run: pip install meson==0.60.1
+
     - name: Build and install library
+      shell: bash
       run: |
         export CC=${{ matrix.cc }}
+        sudo=
+        case "${{ matrix.os }}" in
+        ubuntu*)
+            sudo=sudo
+            ;;
+        windows*)
+            # Ignore unused parameter warnings from check.h
+            export CFLAGS=-Wno-unused-parameter
+            ;;
+        esac
         meson setup builddir --werror
         meson compile -C builddir
-        sudo meson install -C builddir
+        $sudo meson install -C builddir
 
     - name: Run unit tests
-      run: meson test -C builddir
+      # Don't run tests for private copy of Check
+      run: meson test -C builddir --suite libdicom
 
     - name: Print unit test logs
       if: always()
       run: cat builddir/meson-logs/testlog.txt
 
     - name: Run valgrind
+      if: startsWith(matrix.os, 'ubuntu')
       run: |
         valgrind --leak-check=full dcm-dump ./data/test_files/sm_image.dcm > /dev/null
-
-  macos:
-    name: Build and run tests on macOS
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest]
-        cc: [clang]
-    steps:
-    - uses: actions/checkout@v3
-    - name: Install build and test dependencies
-      run: brew install check meson
-
-    - name: Build and install library
-      run: |
-        export CC=${{ matrix.cc }}
-        meson setup builddir --werror
-        meson compile -C builddir
-        meson install -C builddir
-
-    - name: Run unit tests
-      run: meson test -C builddir
-
-    - name: Print unit test logs
-      if: always()
-      run: cat builddir/meson-logs/testlog.txt

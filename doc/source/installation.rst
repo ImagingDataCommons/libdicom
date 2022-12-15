@@ -30,6 +30,13 @@ On macOS:
 
     brew install git meson pkg-config
 
+On Windows:
+
+.. code:: bash
+
+    # Pin to Meson 0.60.1 for https://github.com/mesonbuild/meson/issues/10022
+    pip install meson==0.60.1
+
 
 Build configuration
 +++++++++++++++++++

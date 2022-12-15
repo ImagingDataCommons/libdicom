@@ -5,6 +5,21 @@
 #ifndef DCM_INCLUDED
 #define DCM_INCLUDED
 
+#if defined(_WIN32) && !defined(__GNUC__)
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#endif
+
+#ifdef _WIN32
+#ifdef BUILDING_LIBDICOM
+#define DCM_EXTERN __declspec(dllexport) extern
+#else
+#define DCM_EXTERN __declspec(dllimport) extern
+#endif
+#else
+#define DCM_EXTERN __attribute__((visibility("default"))) extern
+#endif
+
 #ifndef NDEBUG
 #  define DCM_DEBUG_ONLY( ... ) __VA_ARGS__
 #else
@@ -25,7 +40,8 @@
  *
  * :return: Pointer to allocated memory.
  */
-extern void *dcm_calloc(size_t n, size_t size);
+DCM_EXTERN
+void *dcm_calloc(size_t n, size_t size);
 
 
 /**
@@ -170,7 +186,8 @@ typedef enum _DcmLogLevel DcmLogLevel;
 /**
  * Global variable to set log level.
  */
-extern DcmLogLevel dcm_log_level;
+DCM_EXTERN
+DcmLogLevel dcm_log_level;
 
 /**
  * Write critical log message to stderr stream.
@@ -178,7 +195,8 @@ extern DcmLogLevel dcm_log_level;
  * :param format: Format string.
  * :param ...: Variable arguments
  */
-extern void dcm_log_critical(const char *format, ...);
+DCM_EXTERN
+void dcm_log_critical(const char *format, ...);
 
 /**
  * Write error log message to stderr stream.
@@ -186,7 +204,8 @@ extern void dcm_log_critical(const char *format, ...);
  * :param format: Format string.
  * :param ...: Variable arguments
  */
-extern void dcm_log_error(const char *format, ...);
+DCM_EXTERN
+void dcm_log_error(const char *format, ...);
 
 /**
  * Write warning log message to stderr stream.
@@ -194,7 +213,8 @@ extern void dcm_log_error(const char *format, ...);
  * :param format: Format string.
  * :param ...: Variable arguments
  */
-extern void dcm_log_warning(const char *format, ...);
+DCM_EXTERN
+void dcm_log_warning(const char *format, ...);
 
 /**
  * Write info log message to stderr stream.
@@ -202,7 +222,8 @@ extern void dcm_log_warning(const char *format, ...);
  * :param format: Format string
  * :param ...: Variable arguments
  */
-extern void dcm_log_info(const char *format, ...);
+DCM_EXTERN
+void dcm_log_info(const char *format, ...);
 
 /**
  * Write debug log message to stderr stream.
@@ -210,14 +231,16 @@ extern void dcm_log_info(const char *format, ...);
  * :param format: Format string
  * :param ...: Variable arguments
  */
-extern void dcm_log_debug(const char *format, ...);
+DCM_EXTERN
+void dcm_log_debug(const char *format, ...);
 
 /**
  * Get the version of the library.
  *
  * :return: semantic version string
  */
-extern const char *dcm_get_version(void);
+DCM_EXTERN
+const char *dcm_get_version(void);
 
 /**
  * Look up the Value Representation of an Attribute in the Dictionary.
@@ -226,7 +249,8 @@ extern const char *dcm_get_version(void);
  *
  * :return: name of attribute Value Representation
  */
-extern const char *dcm_dict_lookup_vr(uint32_t tag);
+DCM_EXTERN
+const char *dcm_dict_lookup_vr(uint32_t tag);
 
 /**
  * Look up the Keyword of an Attribute in the Dictionary.
@@ -235,7 +259,8 @@ extern const char *dcm_dict_lookup_vr(uint32_t tag);
  *
  * :return: attribute Keyword
  */
-extern const char *dcm_dict_lookup_keyword(uint32_t tag);
+DCM_EXTERN
+const char *dcm_dict_lookup_keyword(uint32_t tag);
 
 /**
  * Determine whether a Tag is public.
@@ -246,7 +271,8 @@ extern const char *dcm_dict_lookup_keyword(uint32_t tag);
  *
  * :return: Yes/no answer
  */
-extern bool dcm_is_public_tag(uint32_t tag);
+DCM_EXTERN
+bool dcm_is_public_tag(uint32_t tag);
 
 /**
  * Determine whether a Tag is private.
@@ -255,7 +281,8 @@ extern bool dcm_is_public_tag(uint32_t tag);
  *
  * :return: Yes/no answer
  */
-extern bool dcm_is_private_tag(uint32_t tag);
+DCM_EXTERN
+bool dcm_is_private_tag(uint32_t tag);
 
 /**
  * Determine whether a Tag is valid.
@@ -264,7 +291,8 @@ extern bool dcm_is_private_tag(uint32_t tag);
  *
  * :return: Yes/no answer
  */
-extern bool dcm_is_valid_tag(uint32_t tag);
+DCM_EXTERN
+bool dcm_is_valid_tag(uint32_t tag);
 
 /**
  * Determine whether a Value Representation is valid.
@@ -273,7 +301,8 @@ extern bool dcm_is_valid_tag(uint32_t tag);
  *
  * :return: Yes/no answer
  */
-extern bool dcm_is_valid_vr(const char *vr);
+DCM_EXTERN
+bool dcm_is_valid_vr(const char *vr);
 
 /**
  * Determine whether a Transfer Syntax is encapsulated.
@@ -282,7 +311,8 @@ extern bool dcm_is_valid_vr(const char *vr);
  *
  * :return: Yes/no answer
  */
-extern bool dcm_is_encapsulated_transfer_syntax(const char *transfer_syntax_uid);
+DCM_EXTERN
+bool dcm_is_encapsulated_transfer_syntax(const char *transfer_syntax_uid);
 
 
 /**
@@ -297,7 +327,8 @@ extern bool dcm_is_encapsulated_transfer_syntax(const char *transfer_syntax_uid)
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_AE(uint32_t tag, char *value);
+DCM_EXTERN
+DcmElement *dcm_element_create_AE(uint32_t tag, char *value);
 
 /**
  * Create a Data Element with Value Representation AE (Application Entity)
@@ -312,9 +343,9 @@ extern DcmElement *dcm_element_create_AE(uint32_t tag, char *value);
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_AE_multi(uint32_t tag,
-                                               char **values,
-                                               uint32_t vm);
+DCM_EXTERN
+DcmElement *dcm_element_create_AE_multi(uint32_t tag, char **values,
+                                        uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation AS (Age String).
@@ -324,7 +355,8 @@ extern DcmElement *dcm_element_create_AE_multi(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_AS(uint32_t tag, char *value);
+DCM_EXTERN
+DcmElement *dcm_element_create_AS(uint32_t tag, char *value);
 
 /**
  * Create a Data Element with Value Representation AS (Age String)
@@ -339,9 +371,9 @@ extern DcmElement *dcm_element_create_AS(uint32_t tag, char *value);
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_AS_multi(uint32_t tag,
-                                               char **values,
-                                               uint32_t vm);
+DCM_EXTERN
+DcmElement *dcm_element_create_AS_multi(uint32_t tag, char **values,
+                                        uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation AT (Attribute Tag).
@@ -351,7 +383,8 @@ extern DcmElement *dcm_element_create_AS_multi(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_AT(uint32_t tag, char *value);
+DCM_EXTERN
+DcmElement *dcm_element_create_AT(uint32_t tag, char *value);
 
 /**
  * Create a Data Element with Value Representation AT (Attribute Tag)
@@ -366,9 +399,9 @@ extern DcmElement *dcm_element_create_AT(uint32_t tag, char *value);
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_AT_multi(uint32_t tag,
-                                               char **values,
-                                               uint32_t vm);
+DCM_EXTERN
+DcmElement *dcm_element_create_AT_multi(uint32_t tag, char **values,
+                                        uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation CS (Code String).
@@ -378,7 +411,8 @@ extern DcmElement *dcm_element_create_AT_multi(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_CS(uint32_t tag, char *value);
+DCM_EXTERN
+DcmElement *dcm_element_create_CS(uint32_t tag, char *value);
 
 /**
  * Create a Data Element with Value Representation CS (Code String)
@@ -393,9 +427,9 @@ extern DcmElement *dcm_element_create_CS(uint32_t tag, char *value);
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_CS_multi(uint32_t tag,
-                                               char **values,
-                                               uint32_t vm);
+DCM_EXTERN
+DcmElement *dcm_element_create_CS_multi(uint32_t tag, char **values,
+                                        uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation DA (Date).
@@ -405,7 +439,8 @@ extern DcmElement *dcm_element_create_CS_multi(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_DA(uint32_t tag, char *value);
+DCM_EXTERN
+DcmElement *dcm_element_create_DA(uint32_t tag, char *value);
 
 /**
  * Create a Data Element with Value Representation DA (Date)
@@ -420,9 +455,9 @@ extern DcmElement *dcm_element_create_DA(uint32_t tag, char *value);
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_DA_multi(uint32_t tag,
-                                               char **values,
-                                               uint32_t vm);
+DCM_EXTERN
+DcmElement *dcm_element_create_DA_multi(uint32_t tag, char **values,
+                                        uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation DS (Decimal String).
@@ -432,7 +467,8 @@ extern DcmElement *dcm_element_create_DA_multi(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_DS(uint32_t tag, char *value);
+DCM_EXTERN
+DcmElement *dcm_element_create_DS(uint32_t tag, char *value);
 
 /**
  * Create a Data Element with Value Representation DS (Decimal String)
@@ -447,9 +483,9 @@ extern DcmElement *dcm_element_create_DS(uint32_t tag, char *value);
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_DS_multi(uint32_t tag,
-                                               char **values,
-                                               uint32_t vm);
+DCM_EXTERN
+DcmElement *dcm_element_create_DS_multi(uint32_t tag, char **values,
+                                        uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation DT (Date Time).
@@ -459,7 +495,8 @@ extern DcmElement *dcm_element_create_DS_multi(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_DT(uint32_t tag, char *value);
+DCM_EXTERN
+DcmElement *dcm_element_create_DT(uint32_t tag, char *value);
 
 /**
  * Create a Data Element with Value Representation DT (Date Time)
@@ -474,9 +511,9 @@ extern DcmElement *dcm_element_create_DT(uint32_t tag, char *value);
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_DT_multi(uint32_t tag,
-                                               char **values,
-                                               uint32_t vm);
+DCM_EXTERN
+DcmElement *dcm_element_create_DT_multi(uint32_t tag, char **values,
+                                        uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation FD (Floating Point Double).
@@ -486,7 +523,8 @@ extern DcmElement *dcm_element_create_DT_multi(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_FD(uint32_t tag, double value);
+DCM_EXTERN
+DcmElement *dcm_element_create_FD(uint32_t tag, double value);
 
 /**
  * Create a Data Element with Value Representation FD (Floating Point Double)
@@ -501,9 +539,9 @@ extern DcmElement *dcm_element_create_FD(uint32_t tag, double value);
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_FD_multi(uint32_t tag,
-                                               double *values,
-                                               uint32_t vm);
+DCM_EXTERN
+DcmElement *dcm_element_create_FD_multi(uint32_t tag, double *values,
+                                        uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation FL (Floating Point Single).
@@ -513,7 +551,8 @@ extern DcmElement *dcm_element_create_FD_multi(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_FL(uint32_t tag, float value);
+DCM_EXTERN
+DcmElement *dcm_element_create_FL(uint32_t tag, float value);
 
 /**
  * Create a Data Element with Value Representation FL (Floating Point Single)
@@ -528,9 +567,9 @@ extern DcmElement *dcm_element_create_FL(uint32_t tag, float value);
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_FL_multi(uint32_t tag,
-                                               float *values,
-                                               uint32_t vm);
+DCM_EXTERN
+DcmElement *dcm_element_create_FL_multi(uint32_t tag, float *values,
+                                        uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation IS (Integer String).
@@ -540,7 +579,8 @@ extern DcmElement *dcm_element_create_FL_multi(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_IS(uint32_t tag, char *value);
+DCM_EXTERN
+DcmElement *dcm_element_create_IS(uint32_t tag, char *value);
 
 /**
  * Create a Data Element with Value Representation IS (Integer String)
@@ -555,9 +595,9 @@ extern DcmElement *dcm_element_create_IS(uint32_t tag, char *value);
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_IS_multi(uint32_t tag,
-                                               char **values,
-                                               uint32_t vm);
+DCM_EXTERN
+DcmElement *dcm_element_create_IS_multi(uint32_t tag, char **values,
+                                        uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation LO (Long String).
@@ -567,7 +607,8 @@ extern DcmElement *dcm_element_create_IS_multi(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_LO(uint32_t tag, char *value);
+DCM_EXTERN
+DcmElement *dcm_element_create_LO(uint32_t tag, char *value);
 
 /**
  * Create a Data Element with Value Representation LO (Long String)
@@ -582,9 +623,9 @@ extern DcmElement *dcm_element_create_LO(uint32_t tag, char *value);
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_LO_multi(uint32_t tag,
-                                               char **values,
-                                               uint32_t vm);
+DCM_EXTERN
+DcmElement *dcm_element_create_LO_multi(uint32_t tag, char **values,
+                                        uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation PN (Person Name).
@@ -594,7 +635,8 @@ extern DcmElement *dcm_element_create_LO_multi(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_PN(uint32_t tag, char *value);
+DCM_EXTERN
+DcmElement *dcm_element_create_PN(uint32_t tag, char *value);
 
 /**
  * Create a Data Element with Value Representation PN (Person Name)
@@ -609,9 +651,9 @@ extern DcmElement *dcm_element_create_PN(uint32_t tag, char *value);
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_PN_multi(uint32_t tag,
-                                               char **values,
-                                               uint32_t vm);
+DCM_EXTERN
+DcmElement *dcm_element_create_PN_multi(uint32_t tag, char **values,
+                                        uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation SH (Short String).
@@ -621,7 +663,8 @@ extern DcmElement *dcm_element_create_PN_multi(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_SH(uint32_t tag, char *value);
+DCM_EXTERN
+DcmElement *dcm_element_create_SH(uint32_t tag, char *value);
 
 /**
  * Create a Data Element with Value Representation SH (Short String)
@@ -636,9 +679,9 @@ extern DcmElement *dcm_element_create_SH(uint32_t tag, char *value);
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_SH_multi(uint32_t tag,
-                                               char **values,
-                                               uint32_t vm);
+DCM_EXTERN
+DcmElement *dcm_element_create_SH_multi(uint32_t tag, char **values,
+                                        uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation TM (Time).
@@ -648,7 +691,8 @@ extern DcmElement *dcm_element_create_SH_multi(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_TM(uint32_t tag, char *value);
+DCM_EXTERN
+DcmElement *dcm_element_create_TM(uint32_t tag, char *value);
 
 /**
  * Create a Data Element with Value Representation TM (Time)
@@ -663,9 +707,9 @@ extern DcmElement *dcm_element_create_TM(uint32_t tag, char *value);
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_TM_multi(uint32_t tag,
-                                               char **values,
-                                               uint32_t vm);
+DCM_EXTERN
+DcmElement *dcm_element_create_TM_multi(uint32_t tag, char **values,
+                                        uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation UI (Unique Identifier).
@@ -675,7 +719,8 @@ extern DcmElement *dcm_element_create_TM_multi(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_UI(uint32_t tag, char *value);
+DCM_EXTERN
+DcmElement *dcm_element_create_UI(uint32_t tag, char *value);
 
 /**
  * Create a Data Element with Value Representation UI (Unique Identifier)
@@ -690,9 +735,9 @@ extern DcmElement *dcm_element_create_UI(uint32_t tag, char *value);
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_UI_multi(uint32_t tag,
-                                               char **values,
-                                               uint32_t vm);
+DCM_EXTERN
+DcmElement *dcm_element_create_UI_multi(uint32_t tag, char **values,
+                                        uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation SS (Signed Short)
@@ -703,7 +748,8 @@ extern DcmElement *dcm_element_create_UI_multi(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_SS(uint32_t tag, int16_t value);
+DCM_EXTERN
+DcmElement *dcm_element_create_SS(uint32_t tag, int16_t value);
 
 /**
  * Create a Data Element with Value Representation SS (Signed Short).
@@ -717,9 +763,9 @@ extern DcmElement *dcm_element_create_SS(uint32_t tag, int16_t value);
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_SS_multi(uint32_t tag,
-                                               int16_t *values,
-                                               uint32_t vm);
+DCM_EXTERN
+DcmElement *dcm_element_create_SS_multi(uint32_t tag, int16_t *values,
+                                        uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation SL (Signed Long).
@@ -729,7 +775,8 @@ extern DcmElement *dcm_element_create_SS_multi(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_SL(uint32_t tag, int32_t value);
+DCM_EXTERN
+DcmElement *dcm_element_create_SL(uint32_t tag, int32_t value);
 
 /**
  * Create a Data Element with Value Representation SL (Signed Long)
@@ -744,9 +791,9 @@ extern DcmElement *dcm_element_create_SL(uint32_t tag, int32_t value);
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_SL_multi(uint32_t tag,
-                                               int32_t *values,
-                                               uint32_t vm);
+DCM_EXTERN
+DcmElement *dcm_element_create_SL_multi(uint32_t tag, int32_t *values,
+                                        uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation SV (Signed Very Long).
@@ -756,7 +803,8 @@ extern DcmElement *dcm_element_create_SL_multi(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_SV(uint32_t tag, int64_t value);
+DCM_EXTERN
+DcmElement *dcm_element_create_SV(uint32_t tag, int64_t value);
 
 /**
  * Create a Data Element with Value Representation SV (Signed Very Long)
@@ -771,9 +819,9 @@ extern DcmElement *dcm_element_create_SV(uint32_t tag, int64_t value);
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_SV_multi(uint32_t tag,
-                                               int64_t *values,
-                                               uint32_t vm);
+DCM_EXTERN
+DcmElement *dcm_element_create_SV_multi(uint32_t tag, int64_t *values,
+                                        uint32_t vm);
 
 
 /**
@@ -784,7 +832,8 @@ extern DcmElement *dcm_element_create_SV_multi(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_UL(uint32_t tag, uint32_t value);
+DCM_EXTERN
+DcmElement *dcm_element_create_UL(uint32_t tag, uint32_t value);
 
 /**
  * Create a Data Element with Value Representation UL (Unsigned Long)
@@ -799,9 +848,9 @@ extern DcmElement *dcm_element_create_UL(uint32_t tag, uint32_t value);
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_UL_multi(uint32_t tag,
-                                               uint32_t *values,
-                                               uint32_t vm);
+DCM_EXTERN
+DcmElement *dcm_element_create_UL_multi(uint32_t tag, uint32_t *values,
+                                        uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation US (Unsigned Short).
@@ -811,7 +860,8 @@ extern DcmElement *dcm_element_create_UL_multi(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_US(uint32_t tag, uint16_t value);
+DCM_EXTERN
+DcmElement *dcm_element_create_US(uint32_t tag, uint16_t value);
 
 /**
  * Create a Data Element with Value Representation US (Unsigned Short)
@@ -826,9 +876,9 @@ extern DcmElement *dcm_element_create_US(uint32_t tag, uint16_t value);
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_US_multi(uint32_t tag,
-                                               uint16_t *values,
-                                               uint32_t vm);
+DCM_EXTERN
+DcmElement *dcm_element_create_US_multi(uint32_t tag, uint16_t *values,
+                                        uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation UV (Unsigned Very Long).
@@ -838,7 +888,8 @@ extern DcmElement *dcm_element_create_US_multi(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_UV(uint32_t tag, uint64_t value);
+DCM_EXTERN
+DcmElement *dcm_element_create_UV(uint32_t tag, uint64_t value);
 
 /**
  * Create a Data Element with Value Representation UV (Unsigned Very Long)
@@ -853,9 +904,9 @@ extern DcmElement *dcm_element_create_UV(uint32_t tag, uint64_t value);
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_UV_multi(uint32_t tag,
-                                               uint64_t *values,
-                                               uint32_t vm);
+DCM_EXTERN
+DcmElement *dcm_element_create_UV_multi(uint32_t tag, uint64_t *values,
+                                        uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation ST (Short Text).
@@ -868,7 +919,8 @@ extern DcmElement *dcm_element_create_UV_multi(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_ST(uint32_t tag, char *value);
+DCM_EXTERN
+DcmElement *dcm_element_create_ST(uint32_t tag, char *value);
 
 /**
  * Create a Data Element with Value Representation SQ (Sequence).
@@ -881,7 +933,8 @@ extern DcmElement *dcm_element_create_ST(uint32_t tag, char *value);
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_SQ(uint32_t tag, DcmSequence *value);
+DCM_EXTERN
+DcmElement *dcm_element_create_SQ(uint32_t tag, DcmSequence *value);
 
 /**
  * Create a Data Element with Value Representation LT (Long Text).
@@ -894,7 +947,8 @@ extern DcmElement *dcm_element_create_SQ(uint32_t tag, DcmSequence *value);
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_LT(uint32_t tag, char *value);
+DCM_EXTERN
+DcmElement *dcm_element_create_LT(uint32_t tag, char *value);
 
 /**
  * Create a Data Element with Value Representation OB (Other Byte).
@@ -908,9 +962,8 @@ extern DcmElement *dcm_element_create_LT(uint32_t tag, char *value);
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_OB(uint32_t tag,
-                                         char *value,
-                                         uint32_t length);
+DCM_EXTERN
+DcmElement *dcm_element_create_OB(uint32_t tag, char *value, uint32_t length);
 
 /**
  * Create a Data Element with Value Representation OD (Other Double).
@@ -924,9 +977,8 @@ extern DcmElement *dcm_element_create_OB(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_OD(uint32_t tag,
-                                         char *value,
-                                         uint32_t length);
+DCM_EXTERN
+DcmElement *dcm_element_create_OD(uint32_t tag, char *value, uint32_t length);
 
 /**
  * Create a Data Element with Value Representation OF (Other Float).
@@ -940,9 +992,8 @@ extern DcmElement *dcm_element_create_OD(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_OF(uint32_t tag,
-                                         char *value,
-                                         uint32_t length);
+DCM_EXTERN
+DcmElement *dcm_element_create_OF(uint32_t tag, char *value, uint32_t length);
 
 /**
  * Create a Data Element with Value Representation OL (Other Long).
@@ -956,9 +1007,8 @@ extern DcmElement *dcm_element_create_OF(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_OL(uint32_t tag,
-                                         char *value,
-                                         uint32_t length);
+DCM_EXTERN
+DcmElement *dcm_element_create_OL(uint32_t tag, char *value, uint32_t length);
 
 /**
  * Create a Data Element with Value Representation OV (Other Very Long).
@@ -972,9 +1022,8 @@ extern DcmElement *dcm_element_create_OL(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_OV(uint32_t tag,
-                                         char *value,
-                                         uint32_t length);
+DCM_EXTERN
+DcmElement *dcm_element_create_OV(uint32_t tag, char *value, uint32_t length);
 
 /**
  * Create a Data Element with Value Representation OW (Other Word).
@@ -988,9 +1037,8 @@ extern DcmElement *dcm_element_create_OV(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_OW(uint32_t tag,
-                                         char *value,
-                                         uint32_t length);
+DCM_EXTERN
+DcmElement *dcm_element_create_OW(uint32_t tag, char *value, uint32_t length);
 
 /**
  * Create a Data Element with Value Representation UC (Unlimited Characters).
@@ -1004,9 +1052,8 @@ extern DcmElement *dcm_element_create_OW(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_UC(uint32_t tag,
-                                         char *value,
-                                         uint32_t length);
+DCM_EXTERN
+DcmElement *dcm_element_create_UC(uint32_t tag, char *value, uint32_t length);
 
 /**
  * Create a Data Element with Value Representation UN (Unknown).
@@ -1020,9 +1067,8 @@ extern DcmElement *dcm_element_create_UC(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_UN(uint32_t tag,
-                                         char *value,
-                                         uint32_t length);
+DCM_EXTERN
+DcmElement *dcm_element_create_UN(uint32_t tag, char *value, uint32_t length);
 
 /**
  * Create a Data Element with Value Representation UR
@@ -1036,7 +1082,8 @@ extern DcmElement *dcm_element_create_UN(uint32_t tag,
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_UR(uint32_t tag, char *value);
+DCM_EXTERN
+DcmElement *dcm_element_create_UR(uint32_t tag, char *value);
 
 /**
  * Create a Data Element with Value Representation UT (Unlimited Text).
@@ -1049,7 +1096,8 @@ extern DcmElement *dcm_element_create_UR(uint32_t tag, char *value);
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_element_create_UT(uint32_t tag, char *value);
+DCM_EXTERN
+DcmElement *dcm_element_create_UT(uint32_t tag, char *value);
 
 /**
  * Get group number (first part of Tag) of a Data Element.
@@ -1058,7 +1106,8 @@ extern DcmElement *dcm_element_create_UT(uint32_t tag, char *value);
  *
  * :return: Tag group number
  */
-extern uint16_t dcm_element_get_group_number(const DcmElement *element);
+DCM_EXTERN
+uint16_t dcm_element_get_group_number(const DcmElement *element);
 
 /**
  * Get element number (second part of Tag) of a Data Element.
@@ -1067,7 +1116,8 @@ extern uint16_t dcm_element_get_group_number(const DcmElement *element);
  *
  * :return: Tag element number
  */
-extern uint16_t dcm_element_get_element_number(const DcmElement *element);
+DCM_EXTERN
+uint16_t dcm_element_get_element_number(const DcmElement *element);
 
 /**
  * Get Tag of a Data Element.
@@ -1076,7 +1126,8 @@ extern uint16_t dcm_element_get_element_number(const DcmElement *element);
  *
  * :return: Tag
  */
-extern uint32_t dcm_element_get_tag(const DcmElement *element);
+DCM_EXTERN
+uint32_t dcm_element_get_tag(const DcmElement *element);
 
 /**
  * Check Value Representation of a Data Element.
@@ -1086,7 +1137,8 @@ extern uint32_t dcm_element_get_tag(const DcmElement *element);
  *
  * :return: Whether Data Element has the specified Value Representation
  */
-extern bool dcm_element_check_vr(const DcmElement *element, const char *vr);
+DCM_EXTERN
+bool dcm_element_check_vr(const DcmElement *element, const char *vr);
 
 /**
  * Get length of the entire value of a Data Element.
@@ -1095,7 +1147,8 @@ extern bool dcm_element_check_vr(const DcmElement *element, const char *vr);
  *
  * :return: Length of value of Data Element
  */
-extern uint32_t dcm_element_get_length(const DcmElement *element);
+DCM_EXTERN
+uint32_t dcm_element_get_length(const DcmElement *element);
 
 /**
  * Get Value Multiplicity of a Data Element.
@@ -1104,7 +1157,8 @@ extern uint32_t dcm_element_get_length(const DcmElement *element);
  *
  * :return: Value Multiplicity
  */
-extern uint32_t dcm_element_get_vm(const DcmElement *element);
+DCM_EXTERN
+uint32_t dcm_element_get_vm(const DcmElement *element);
 
 /**
  * Determine whether a Data Element has a Value Multiplicity greater than one.
@@ -1113,7 +1167,8 @@ extern uint32_t dcm_element_get_vm(const DcmElement *element);
  *
  * :return: Yes/no answer
  */
-extern bool dcm_element_is_multivalued(const DcmElement *element);
+DCM_EXTERN
+bool dcm_element_is_multivalued(const DcmElement *element);
 
 /**
  * Clone (i.e., create a deep copy of) a Data Element.
@@ -1122,7 +1177,8 @@ extern bool dcm_element_is_multivalued(const DcmElement *element);
  *
  * :return: Pointer to clone of Data Element
  */
-extern DcmElement *dcm_element_clone(const DcmElement *element);
+DCM_EXTERN
+DcmElement *dcm_element_clone(const DcmElement *element);
 
 /**
  * Get value of a Data Element with Value Representation AE
@@ -1133,8 +1189,9 @@ extern DcmElement *dcm_element_clone(const DcmElement *element);
  *
  * :return: Pointer to memory location where value is stored
  */
-extern const char *dcm_element_get_value_AE(const DcmElement *element,
-                                            uint32_t index);
+DCM_EXTERN
+const char *dcm_element_get_value_AE(const DcmElement *element,
+                                     uint32_t index);
 
 /**
  * Get value of a Data Element with Value Representation AS (Age String).
@@ -1144,8 +1201,9 @@ extern const char *dcm_element_get_value_AE(const DcmElement *element,
  *
  * :return: Pointer to memory location where value is stored
  */
-extern const char *dcm_element_get_value_AS(const DcmElement *element,
-                                            uint32_t index);
+DCM_EXTERN
+const char *dcm_element_get_value_AS(const DcmElement *element,
+                                     uint32_t index);
 
 /**
  * Get value of a Data Element with Value Representation AT (Attribute Tag).
@@ -1155,8 +1213,9 @@ extern const char *dcm_element_get_value_AS(const DcmElement *element,
  *
  * :return: Pointer to memory location where value is stored
  */
-extern const char *dcm_element_get_value_AT(const DcmElement *element,
-                                            uint32_t index);
+DCM_EXTERN
+const char *dcm_element_get_value_AT(const DcmElement *element,
+                                     uint32_t index);
 
 /**
  * Get value of a Data Element with Value Representation CS (Code String).
@@ -1166,8 +1225,9 @@ extern const char *dcm_element_get_value_AT(const DcmElement *element,
  *
  * :return: Pointer to memory location where value is stored
  */
-extern const char *dcm_element_get_value_CS(const DcmElement *element,
-                                            uint32_t index);
+DCM_EXTERN
+const char *dcm_element_get_value_CS(const DcmElement *element,
+                                     uint32_t index);
 
 /**
  * Get value of a Data Element with Value Representation DA (Date).
@@ -1177,8 +1237,9 @@ extern const char *dcm_element_get_value_CS(const DcmElement *element,
  *
  * :return: Pointer to memory location where value is stored
  */
-extern const char *dcm_element_get_value_DA(const DcmElement *element,
-                                            uint32_t index);
+DCM_EXTERN
+const char *dcm_element_get_value_DA(const DcmElement *element,
+                                     uint32_t index);
 
 /**
  * Get value of a Data Element with Value Representation DS (Decimal String).
@@ -1188,8 +1249,9 @@ extern const char *dcm_element_get_value_DA(const DcmElement *element,
  *
  * :return: Pointer to memory location where value is stored
  */
-extern const char *dcm_element_get_value_DS(const DcmElement *element,
-                                            uint32_t index);
+DCM_EXTERN
+const char *dcm_element_get_value_DS(const DcmElement *element,
+                                     uint32_t index);
 
 /**
  * Get value of a Data Element with Value Representation DT (Date Time).
@@ -1199,8 +1261,9 @@ extern const char *dcm_element_get_value_DS(const DcmElement *element,
  *
  * :return: Pointer to memory location where value is stored
  */
-extern const char *dcm_element_get_value_DT(const DcmElement *element,
-                                            uint32_t index);
+DCM_EXTERN
+const char *dcm_element_get_value_DT(const DcmElement *element,
+                                     uint32_t index);
 
 /**
  * Get value of a Data Element with Value Representation FD
@@ -1211,8 +1274,9 @@ extern const char *dcm_element_get_value_DT(const DcmElement *element,
  *
  * :return: Value
  */
-extern double dcm_element_get_value_FD(const DcmElement *element,
-                                       uint32_t index);
+DCM_EXTERN
+double dcm_element_get_value_FD(const DcmElement *element,
+                                uint32_t index);
 
 /**
  * Get value of a Data Element with Value Representation FL (Floating Point).
@@ -1222,8 +1286,9 @@ extern double dcm_element_get_value_FD(const DcmElement *element,
  *
  * :return: Value
  */
-extern float dcm_element_get_value_FL(const DcmElement *element,
-                                      uint32_t index);
+DCM_EXTERN
+float dcm_element_get_value_FL(const DcmElement *element,
+                               uint32_t index);
 
 /**
  * Get value of a Data Element with Value Representation IS (Integer String).
@@ -1233,8 +1298,9 @@ extern float dcm_element_get_value_FL(const DcmElement *element,
  *
  * :return: Pointer to memory location where value is stored
  */
-extern const char *dcm_element_get_value_IS(const DcmElement *element,
-                                            uint32_t index);
+DCM_EXTERN
+const char *dcm_element_get_value_IS(const DcmElement *element,
+                                     uint32_t index);
 
 /**
  * Get value of a Data Element with Value Representation LO (Long String).
@@ -1243,7 +1309,8 @@ extern const char *dcm_element_get_value_IS(const DcmElement *element,
  *
  * :return: Pointer to memory location where value is stored
  */
-extern const char *dcm_element_get_value_LO(const DcmElement *element);
+DCM_EXTERN
+const char *dcm_element_get_value_LO(const DcmElement *element);
 
 /**
  * Get value of a Data Element with Value Representation PN (Person Name).
@@ -1252,7 +1319,8 @@ extern const char *dcm_element_get_value_LO(const DcmElement *element);
  *
  * :return: Pointer to memory location where value is stored
  */
-extern const char *dcm_element_get_value_PN(const DcmElement *element);
+DCM_EXTERN
+const char *dcm_element_get_value_PN(const DcmElement *element);
 
 /**
  * Get value of a Data Element with Value Representation SH (Short String).
@@ -1261,7 +1329,8 @@ extern const char *dcm_element_get_value_PN(const DcmElement *element);
  *
  * :return: Pointer to memory location where value is stored
  */
-extern const char *dcm_element_get_value_SH(const DcmElement *element);
+DCM_EXTERN
+const char *dcm_element_get_value_SH(const DcmElement *element);
 
 /**
  * Get value of a Data Element with Value Representation TM (Time).
@@ -1270,7 +1339,8 @@ extern const char *dcm_element_get_value_SH(const DcmElement *element);
  *
  * :return: Pointer to memory location where value is stored
  */
-extern const char *dcm_element_get_value_TM(const DcmElement *element);
+DCM_EXTERN
+const char *dcm_element_get_value_TM(const DcmElement *element);
 
 /**
  * Get value of a Data Element with Value Representation SL (Signed Long).
@@ -1280,8 +1350,8 @@ extern const char *dcm_element_get_value_TM(const DcmElement *element);
  *
  * :return: Value
  */
-extern int32_t dcm_element_get_value_SL(const DcmElement *element,
-                                        uint32_t index);
+DCM_EXTERN
+int32_t dcm_element_get_value_SL(const DcmElement *element, uint32_t index);
 
 /**
  * Get value of a Data Element with Value Representation SS (Signed Short).
@@ -1291,8 +1361,8 @@ extern int32_t dcm_element_get_value_SL(const DcmElement *element,
  *
  * :return: Value
  */
-extern int16_t dcm_element_get_value_SS(const DcmElement *element,
-                                        uint32_t index);
+DCM_EXTERN
+int16_t dcm_element_get_value_SS(const DcmElement *element, uint32_t index);
 
 /**
  * Get value of a Data Element with Value Representation SV (Signed Very Long).
@@ -1302,8 +1372,8 @@ extern int16_t dcm_element_get_value_SS(const DcmElement *element,
  *
  * :return: Value
  */
-extern int64_t dcm_element_get_value_SV(const DcmElement *element,
-                                        uint32_t index);
+DCM_EXTERN
+int64_t dcm_element_get_value_SV(const DcmElement *element, uint32_t index);
 
 /**
  * Get value of a Data Element with Value Representation ST (Short text).
@@ -1312,7 +1382,8 @@ extern int64_t dcm_element_get_value_SV(const DcmElement *element,
  *
  * :return: Pointer to memory location where value is stored
  */
-extern const char *dcm_element_get_value_ST(const DcmElement *element);
+DCM_EXTERN
+const char *dcm_element_get_value_ST(const DcmElement *element);
 
 /**
  * Get value of a Data Element with Value Representation UI (Unique Identifier).
@@ -1322,8 +1393,8 @@ extern const char *dcm_element_get_value_ST(const DcmElement *element);
  *
  * :return: Pointer to memory location where value is stored
  */
-extern const char *dcm_element_get_value_UI(const DcmElement *element,
-                                            uint32_t index);
+DCM_EXTERN
+const char *dcm_element_get_value_UI(const DcmElement *element, uint32_t index);
 
 /**
  * Get value of a Data Element with Value Representation UL (Unsigned Long).
@@ -1333,8 +1404,8 @@ extern const char *dcm_element_get_value_UI(const DcmElement *element,
  *
  * :return: Value
  */
-extern uint32_t dcm_element_get_value_UL(const DcmElement *element,
-                                         uint32_t index);
+DCM_EXTERN
+uint32_t dcm_element_get_value_UL(const DcmElement *element, uint32_t index);
 
 /**
  * Get value of a Data Element with Value Representation US (Unsigned Short).
@@ -1344,8 +1415,8 @@ extern uint32_t dcm_element_get_value_UL(const DcmElement *element,
  *
  * :return: Value
  */
-extern uint16_t dcm_element_get_value_US(const DcmElement *element,
-                                         uint32_t index);
+DCM_EXTERN
+uint16_t dcm_element_get_value_US(const DcmElement *element, uint32_t index);
 
 /**
  * Get value of a Data Element with Value Representation UV (Unsigned Very Long).
@@ -1355,8 +1426,8 @@ extern uint16_t dcm_element_get_value_US(const DcmElement *element,
  *
  * :return: Value
  */
-extern uint64_t dcm_element_get_value_UV(const DcmElement *element,
-                                         uint32_t index);
+DCM_EXTERN
+uint64_t dcm_element_get_value_UV(const DcmElement *element, uint32_t index);
 
 
 /**
@@ -1366,7 +1437,8 @@ extern uint64_t dcm_element_get_value_UV(const DcmElement *element,
  *
  * :return: Pointer to memory location where value is stored
  */
-extern const char *dcm_element_get_value_OB(const DcmElement *element);
+DCM_EXTERN
+const char *dcm_element_get_value_OB(const DcmElement *element);
 
 /**
  * Get value of a Data Element with Value Representation OD (Other Double).
@@ -1375,7 +1447,8 @@ extern const char *dcm_element_get_value_OB(const DcmElement *element);
  *
  * :return: Pointer to memory location where value is stored
  */
-extern const char *dcm_element_get_value_OD(const DcmElement *element);
+DCM_EXTERN
+const char *dcm_element_get_value_OD(const DcmElement *element);
 
 /**
  * Get value of a Data Element with Value Representation OF (Other Float).
@@ -1384,7 +1457,8 @@ extern const char *dcm_element_get_value_OD(const DcmElement *element);
  *
  * :return: Pointer to memory location where value is stored
  */
-extern const char *dcm_element_get_value_OF(const DcmElement *element);
+DCM_EXTERN
+const char *dcm_element_get_value_OF(const DcmElement *element);
 
 /**
  * Get value of a Data Element with Value Representation OL (Other Long).
@@ -1393,7 +1467,8 @@ extern const char *dcm_element_get_value_OF(const DcmElement *element);
  *
  * :return: Pointer to memory location where value is stored
  */
-extern const char *dcm_element_get_value_OL(const DcmElement *element);
+DCM_EXTERN
+const char *dcm_element_get_value_OL(const DcmElement *element);
 
 /**
  * Get value of a Data Element with Value Representation OV (Other Very Long).
@@ -1402,7 +1477,8 @@ extern const char *dcm_element_get_value_OL(const DcmElement *element);
  *
  * :return: Pointer to memory location where value is stored
  */
-extern const char *dcm_element_get_value_OV(const DcmElement *element);
+DCM_EXTERN
+const char *dcm_element_get_value_OV(const DcmElement *element);
 
 /**
  * Get value of a Data Element with Value Representation OW (Other Word).
@@ -1411,7 +1487,8 @@ extern const char *dcm_element_get_value_OV(const DcmElement *element);
  *
  * :return: Pointer to memory location where value is stored
  */
-extern const char *dcm_element_get_value_OW(const DcmElement *element);
+DCM_EXTERN
+const char *dcm_element_get_value_OW(const DcmElement *element);
 
 /**
  * Get value of a Data Element with Value Representation UC (Unlimited Characters).
@@ -1420,7 +1497,8 @@ extern const char *dcm_element_get_value_OW(const DcmElement *element);
  *
  * :return: Pointer to memory location where value is stored
  */
-extern const char *dcm_element_get_value_UC(const DcmElement *element);
+DCM_EXTERN
+const char *dcm_element_get_value_UC(const DcmElement *element);
 
 /**
  * Get value of a Data Element with Value Representation UN (Unknown).
@@ -1429,7 +1507,8 @@ extern const char *dcm_element_get_value_UC(const DcmElement *element);
  *
  * :return: Pointer to memory location where value is stored
  */
-extern const char *dcm_element_get_value_UN(const DcmElement *element);
+DCM_EXTERN
+const char *dcm_element_get_value_UN(const DcmElement *element);
 
 /**
  * Get value of a Data Element with Value Representation UR
@@ -1439,7 +1518,8 @@ extern const char *dcm_element_get_value_UN(const DcmElement *element);
  *
  * :return: Pointer to memory location where value is stored
  */
-extern const char *dcm_element_get_value_UR(const DcmElement *element);
+DCM_EXTERN
+const char *dcm_element_get_value_UR(const DcmElement *element);
 
 /**
  * Get value of a Data Element with Value Representation UT (Unlimited Text).
@@ -1448,10 +1528,12 @@ extern const char *dcm_element_get_value_UR(const DcmElement *element);
  *
  * :return: Pointer to memory location where value is stored
  */
-extern const char *dcm_element_get_value_UT(const DcmElement *element);
+DCM_EXTERN
+const char *dcm_element_get_value_UT(const DcmElement *element);
 
 
-extern DcmSequence *dcm_element_get_value_SQ(const DcmElement *element);
+DCM_EXTERN
+DcmSequence *dcm_element_get_value_SQ(const DcmElement *element);
 
 /**
  * Print a Data Element.
@@ -1459,14 +1541,16 @@ extern DcmSequence *dcm_element_get_value_SQ(const DcmElement *element);
  * :param element: Pointer to Data Element
  * :param indentation: Number of white spaces before text
  */
-extern void dcm_element_print(const DcmElement *element, uint8_t indentation);
+DCM_EXTERN
+void dcm_element_print(const DcmElement *element, uint8_t indentation);
 
 /**
  * Destroy a Data Element.
  *
  * :param element: Pointer to Data Element
  */
-extern void dcm_element_destroy(DcmElement *element);
+DCM_EXTERN
+void dcm_element_destroy(DcmElement *element);
 
 
 /**
@@ -1476,7 +1560,8 @@ extern void dcm_element_destroy(DcmElement *element);
 /**
  * Create an empty Data Set.
  */
-extern DcmDataSet *dcm_dataset_create(void);
+DCM_EXTERN
+DcmDataSet *dcm_dataset_create(void);
 
 /**
  * Clone (i.e., create a deep copy of) a Data Set.
@@ -1485,7 +1570,8 @@ extern DcmDataSet *dcm_dataset_create(void);
  *
  * :return: Pointer to clone of Data Set
  */
-extern DcmDataSet *dcm_dataset_clone(const DcmDataSet *dataset);
+DCM_EXTERN
+DcmDataSet *dcm_dataset_clone(const DcmDataSet *dataset);
 
 /**
  * Insert a Data Element into a Data Set.
@@ -1498,7 +1584,8 @@ extern DcmDataSet *dcm_dataset_clone(const DcmDataSet *dataset);
  *
  * :return: Whether insert operation was successful
  */
-extern bool dcm_dataset_insert(DcmDataSet *dataset, DcmElement *element);
+DCM_EXTERN
+bool dcm_dataset_insert(DcmDataSet *dataset, DcmElement *element);
 
 /**
  * Remove a Data Element from a Data Set.
@@ -1508,7 +1595,8 @@ extern bool dcm_dataset_insert(DcmDataSet *dataset, DcmElement *element);
  *
  * :return: Whether remove operation was successful
  */
-extern bool dcm_dataset_remove(DcmDataSet *dataset, uint32_t tag);
+DCM_EXTERN
+bool dcm_dataset_remove(DcmDataSet *dataset, uint32_t tag);
 
 /**
  * Get a Data Element from a Data Set.
@@ -1518,7 +1606,8 @@ extern bool dcm_dataset_remove(DcmDataSet *dataset, uint32_t tag);
  *
  * :return: Pointer to Data Element
  */
-extern DcmElement *dcm_dataset_get(const DcmDataSet *dataset, uint32_t tag);
+DCM_EXTERN
+DcmElement *dcm_dataset_get(const DcmDataSet *dataset, uint32_t tag);
 
 /**
  * Get a clone (deep copy) of a Data Element from a Data Set.
@@ -1528,8 +1617,8 @@ extern DcmElement *dcm_dataset_get(const DcmDataSet *dataset, uint32_t tag);
  *
  * :return: Pointer to clone of Data Element
  */
-extern DcmElement *dcm_dataset_get_clone(const DcmDataSet *dataset,
-                                         uint32_t tag);
+DCM_EXTERN
+DcmElement *dcm_dataset_get_clone(const DcmDataSet *dataset, uint32_t tag);
 
 /**
  * Iterate over Data Elements in a Data Set.
@@ -1540,8 +1629,9 @@ extern DcmElement *dcm_dataset_get_clone(const DcmDataSet *dataset,
  * :param dataset: Pointer to Data Set
  * :param fn: Pointer to function that should be called for each Data Element
  */
-extern void dcm_dataset_foreach(const DcmDataSet *dataset,
-                                void (*fn)(const DcmElement *element));
+DCM_EXTERN
+void dcm_dataset_foreach(const DcmDataSet *dataset,
+                         void (*fn)(const DcmElement *element));
 
 /**
  * Determine whether a Data Element is contained in a Data Set.
@@ -1551,7 +1641,8 @@ extern void dcm_dataset_foreach(const DcmDataSet *dataset,
  *
  * :return: Yes/no answer
  */
-extern bool dcm_dataset_contains(const DcmDataSet *dataset, uint32_t tag);
+DCM_EXTERN
+bool dcm_dataset_contains(const DcmDataSet *dataset, uint32_t tag);
 
 /**
  * Count the number of Data Elements in a Data Set.
@@ -1560,7 +1651,8 @@ extern bool dcm_dataset_contains(const DcmDataSet *dataset, uint32_t tag);
  *
  * :return: Number of Data Elements
  */
-extern uint32_t dcm_dataset_count(const DcmDataSet *dataset);
+DCM_EXTERN
+uint32_t dcm_dataset_count(const DcmDataSet *dataset);
 
 /**
  * Obtain a copy of the Tag of each Data Element in a Data Set.
@@ -1578,16 +1670,17 @@ extern uint32_t dcm_dataset_count(const DcmDataSet *dataset);
  * Specifically, the function does not free the memory allocated for `tags` if
  * the copy operation fails.
  */
-extern void dcm_dataset_copy_tags(const DcmDataSet *dataset,
-                                  uint32_t *tags,
-                                  uint32_t n);
+DCM_EXTERN
+void dcm_dataset_copy_tags(const DcmDataSet *dataset, uint32_t *tags,
+                           uint32_t n);
 
 /**
  * Lock a Data Set to prevent modification.
  *
  * :param dataset: Pointer to Data Set
  */
-extern void dcm_dataset_lock(DcmDataSet *dataset);
+DCM_EXTERN
+void dcm_dataset_lock(DcmDataSet *dataset);
 
 /**
  * Check whether a Data Set is locked.
@@ -1596,7 +1689,8 @@ extern void dcm_dataset_lock(DcmDataSet *dataset);
  *
  * :return: Yes/no answer
  */
-extern bool dcm_dataset_is_locked(const DcmDataSet *dataset);
+DCM_EXTERN
+bool dcm_dataset_is_locked(const DcmDataSet *dataset);
 
 /**
  * Print a Data Set.
@@ -1604,14 +1698,16 @@ extern bool dcm_dataset_is_locked(const DcmDataSet *dataset);
  * :param dataset: Pointer to Data Set
  * :param indentation: Number of white spaces before text
  */
-extern void dcm_dataset_print(const DcmDataSet *dataset, uint8_t indentation);
+DCM_EXTERN
+void dcm_dataset_print(const DcmDataSet *dataset, uint8_t indentation);
 
 /**
  * Destroy a Data Set.
  *
  * :param dataset: Pointer to Data Set
  */
-extern void dcm_dataset_destroy(DcmDataSet *dataset);
+DCM_EXTERN
+void dcm_dataset_destroy(DcmDataSet *dataset);
 
 
 /**
@@ -1627,7 +1723,8 @@ extern void dcm_dataset_destroy(DcmDataSet *dataset);
  *
  * :return: Pointer to Sequence
  */
-extern DcmSequence *dcm_sequence_create(void);
+DCM_EXTERN
+DcmSequence *dcm_sequence_create(void);
 
 /**
  * Append a Data Set item to a Sequence.
@@ -1640,7 +1737,8 @@ extern DcmSequence *dcm_sequence_create(void);
  *
  * :return: Whether append operation was successful
  */
-extern bool dcm_sequence_append(DcmSequence *seq, DcmDataSet *item);
+DCM_EXTERN
+bool dcm_sequence_append(DcmSequence *seq, DcmDataSet *item);
 
 /**
  * Get a Data Set item from a Sequence.
@@ -1650,7 +1748,8 @@ extern bool dcm_sequence_append(DcmSequence *seq, DcmDataSet *item);
  *
  * :return: Pointer to Data Set item
  */
-extern DcmDataSet *dcm_sequence_get(const DcmSequence *seq, uint32_t index);
+DCM_EXTERN
+DcmDataSet *dcm_sequence_get(const DcmSequence *seq, uint32_t index);
 
 /**
  * Iterate over Data Set items in a Sequence.
@@ -1658,8 +1757,9 @@ extern DcmDataSet *dcm_sequence_get(const DcmSequence *seq, uint32_t index);
  * :param seq: Pointer to Sequence
  * :param fn: Pointer to function that should be called for each Data Set item
  */
-extern void dcm_sequence_foreach(const DcmSequence *seq,
-                                 void (*fn)(const DcmDataSet *item));
+DCM_EXTERN
+void dcm_sequence_foreach(const DcmSequence *seq,
+                          void (*fn)(const DcmDataSet *item));
 
 /**
  * Remove a Data Set item from a Sequence.
@@ -1667,7 +1767,8 @@ extern void dcm_sequence_foreach(const DcmSequence *seq,
  * :param seq: Pointer to Sequence
  * :param index: Zero-based index of the Data Set item in the Sequence
  */
-extern void dcm_sequence_remove(DcmSequence *seq, uint32_t index);
+DCM_EXTERN
+void dcm_sequence_remove(DcmSequence *seq, uint32_t index);
 
 /**
  * Count the number of Data Set items in a Sequence.
@@ -1676,14 +1777,16 @@ extern void dcm_sequence_remove(DcmSequence *seq, uint32_t index);
  *
  * :return: number of Data Set items
  */
-extern uint32_t dcm_sequence_count(const DcmSequence *seq);
+DCM_EXTERN
+uint32_t dcm_sequence_count(const DcmSequence *seq);
 
 /**
  * Lock a Sequence to prevent modification.
  *
  * :param seq: Pointer to Sequence
  */
-extern void dcm_sequence_lock(DcmSequence *seq);
+DCM_EXTERN
+void dcm_sequence_lock(DcmSequence *seq);
 
 /**
  * Check whether a Sequence is locked.
@@ -1692,14 +1795,16 @@ extern void dcm_sequence_lock(DcmSequence *seq);
  *
  * :return: Yes/no answer
  */
-extern bool dcm_sequence_is_locked(const DcmSequence *seq);
+DCM_EXTERN
+bool dcm_sequence_is_locked(const DcmSequence *seq);
 
 /**
  * Destroy a Sequence.
  *
  * :param seq: Pointer to Sequence
  */
-extern void dcm_sequence_destroy(DcmSequence *seq);
+DCM_EXTERN
+void dcm_sequence_destroy(DcmSequence *seq);
 
 
 /**
@@ -1734,18 +1839,19 @@ extern void dcm_sequence_destroy(DcmSequence *seq);
  *
  * :return: Frame Item
  */
-extern DcmFrame *dcm_frame_create(uint32_t number,
-                                  const char *data,
-                                  uint32_t length,
-                                  uint16_t rows,
-                                  uint16_t columns,
-                                  uint16_t samples_per_pixel,
-                                  uint16_t bits_allocated,
-                                  uint16_t bits_stored,
-                                  uint16_t pixel_representation,
-                                  uint16_t planar_configuration,
-                                  const char *photometric_interpretation,
-                                  const char *transfer_syntax_uid);
+DCM_EXTERN
+DcmFrame *dcm_frame_create(uint32_t number,
+                           const char *data,
+                           uint32_t length,
+                           uint16_t rows,
+                           uint16_t columns,
+                           uint16_t samples_per_pixel,
+                           uint16_t bits_allocated,
+                           uint16_t bits_stored,
+                           uint16_t pixel_representation,
+                           uint16_t planar_configuration,
+                           const char *photometric_interpretation,
+                           const char *transfer_syntax_uid);
 
 /**
  * Get number of a Frame Item within the Pixel Data Element.
@@ -1754,7 +1860,8 @@ extern DcmFrame *dcm_frame_create(uint32_t number,
  *
  * :return: number (one-based index)
  */
-extern uint32_t dcm_frame_get_number(const DcmFrame *frame);
+DCM_EXTERN
+uint32_t dcm_frame_get_number(const DcmFrame *frame);
 
 /**
  * Get length of a Frame Item.
@@ -1763,7 +1870,8 @@ extern uint32_t dcm_frame_get_number(const DcmFrame *frame);
  *
  * :return: number of bytes
  */
-extern uint32_t dcm_frame_get_length(const DcmFrame *frame);
+DCM_EXTERN
+uint32_t dcm_frame_get_length(const DcmFrame *frame);
 
 /**
  * Get Rows of a Frame.
@@ -1772,7 +1880,8 @@ extern uint32_t dcm_frame_get_length(const DcmFrame *frame);
  *
  * :return: number of rows in pixel matrix
  */
-extern uint16_t dcm_frame_get_rows(const DcmFrame *frame);
+DCM_EXTERN
+uint16_t dcm_frame_get_rows(const DcmFrame *frame);
 
 /**
  * Get Columns of a Frame.
@@ -1781,7 +1890,8 @@ extern uint16_t dcm_frame_get_rows(const DcmFrame *frame);
  *
  * :return: number of columns in pixel matrix
  */
-extern uint16_t dcm_frame_get_columns(const DcmFrame *frame);
+DCM_EXTERN
+uint16_t dcm_frame_get_columns(const DcmFrame *frame);
 
 /**
  * Get Samples per Pixel of a Frame.
@@ -1790,7 +1900,8 @@ extern uint16_t dcm_frame_get_columns(const DcmFrame *frame);
  *
  * :return: number of samples (color channels) per pixel
  */
-extern uint16_t dcm_frame_get_samples_per_pixel(const DcmFrame *frame);
+DCM_EXTERN
+uint16_t dcm_frame_get_samples_per_pixel(const DcmFrame *frame);
 
 /**
  * Get Bits Allocated of a Frame.
@@ -1799,7 +1910,8 @@ extern uint16_t dcm_frame_get_samples_per_pixel(const DcmFrame *frame);
  *
  * :return: number of bits allocated per pixel
  */
-extern uint16_t dcm_frame_get_bits_allocated(const DcmFrame *frame);
+DCM_EXTERN
+uint16_t dcm_frame_get_bits_allocated(const DcmFrame *frame);
 
 /**
  * Get Bits Stored of a Frame.
@@ -1808,7 +1920,8 @@ extern uint16_t dcm_frame_get_bits_allocated(const DcmFrame *frame);
  *
  * :return: number of bits stored per pixel
  */
-extern uint16_t dcm_frame_get_bits_stored(const DcmFrame *frame);
+DCM_EXTERN
+uint16_t dcm_frame_get_bits_stored(const DcmFrame *frame);
 
 /**
  * Get High Bit of a Frame.
@@ -1817,7 +1930,8 @@ extern uint16_t dcm_frame_get_bits_stored(const DcmFrame *frame);
  *
  * :return: most significant bit of pixels
  */
-extern uint16_t dcm_frame_get_high_bit(const DcmFrame *frame);
+DCM_EXTERN
+uint16_t dcm_frame_get_high_bit(const DcmFrame *frame);
 
 /**
  * Get Pixel Representation of a Frame.
@@ -1826,7 +1940,8 @@ extern uint16_t dcm_frame_get_high_bit(const DcmFrame *frame);
  *
  * :return: representation of pixels (unsigned integers or 2's complement)
  */
-extern uint16_t dcm_frame_get_pixel_representation(const DcmFrame *frame);
+DCM_EXTERN
+uint16_t dcm_frame_get_pixel_representation(const DcmFrame *frame);
 
 /**
  * Get Planar Configuration of a Frame.
@@ -1835,7 +1950,8 @@ extern uint16_t dcm_frame_get_pixel_representation(const DcmFrame *frame);
  *
  * :return: configuration of samples (color-by-plane or color-by-pixel)
  */
-extern uint16_t dcm_frame_get_planar_configuration(const DcmFrame *frame);
+DCM_EXTERN
+uint16_t dcm_frame_get_planar_configuration(const DcmFrame *frame);
 
 /**
  * Get Photometric Interpretation of a Frame.
@@ -1844,7 +1960,8 @@ extern uint16_t dcm_frame_get_planar_configuration(const DcmFrame *frame);
  *
  * :return: interpretation of pixels (monochrome, RGB, etc.)
  */
-extern const char *dcm_frame_get_photometric_interpretation(const DcmFrame *frame);
+DCM_EXTERN
+const char *dcm_frame_get_photometric_interpretation(const DcmFrame *frame);
 
 /**
  * Get Transfer Syntax UID for a Frame.
@@ -1853,7 +1970,8 @@ extern const char *dcm_frame_get_photometric_interpretation(const DcmFrame *fram
  *
  * :return: UID of the transfer syntax in which frame is encoded
  */
-extern const char *dcm_frame_get_transfer_syntax_uid(const DcmFrame *frame);
+DCM_EXTERN
+const char *dcm_frame_get_transfer_syntax_uid(const DcmFrame *frame);
 
 /**
  * Get pixel data of a Frame.
@@ -1862,14 +1980,16 @@ extern const char *dcm_frame_get_transfer_syntax_uid(const DcmFrame *frame);
  *
  * :return: pixel data
  */
-extern const char *dcm_frame_get_value(const DcmFrame *frame);
+DCM_EXTERN
+const char *dcm_frame_get_value(const DcmFrame *frame);
 
 /**
  * Destroy a Frame.
  *
  * :param frame: Frame
  */
-extern void dcm_frame_destroy(DcmFrame *frame);
+DCM_EXTERN
+void dcm_frame_destroy(DcmFrame *frame);
 
 
 /**
@@ -1889,7 +2009,8 @@ extern void dcm_frame_destroy(DcmFrame *frame);
  *
  * :return: Basic Offset Table
  */
-extern DcmBOT *dcm_bot_create(ssize_t *offsets, uint32_t num_frames);
+DCM_EXTERN
+DcmBOT *dcm_bot_create(ssize_t *offsets, uint32_t num_frames);
 
 /**
  * Get number of Frame offsets in the Basic Offset Table.
@@ -1898,7 +2019,8 @@ extern DcmBOT *dcm_bot_create(ssize_t *offsets, uint32_t num_frames);
  *
  * :return: number of frames
  */
-extern uint32_t dcm_bot_get_num_frames(const DcmBOT *bot);
+DCM_EXTERN
+uint32_t dcm_bot_get_num_frames(const DcmBOT *bot);
 
 /**
  * Get Frame offset in the Basic Offset Table.
@@ -1908,21 +2030,24 @@ extern uint32_t dcm_bot_get_num_frames(const DcmBOT *bot);
  *
  * :return: offset
  */
-extern ssize_t dcm_bot_get_frame_offset(const DcmBOT *bot, uint32_t index);
+DCM_EXTERN
+ssize_t dcm_bot_get_frame_offset(const DcmBOT *bot, uint32_t index);
 
 /**
  * Print a Basic Offset Table.
  *
  * :param bot: Basic Offset Table
  */
-extern void dcm_bot_print(const DcmBOT *bot);
+DCM_EXTERN
+void dcm_bot_print(const DcmBOT *bot);
 
 /**
  * Destroy a Basic Offset Table.
  *
  * :param bot: Basic Offset Table
  */
-extern void dcm_bot_destroy(DcmBOT *bot);
+DCM_EXTERN
+void dcm_bot_destroy(DcmBOT *bot);
 
 
 /**
@@ -1937,7 +2062,8 @@ extern void dcm_bot_destroy(DcmBOT *bot);
  *
  * :return: file
  */
-extern DcmFile *dcm_file_create(const char *file_path, const char mode);
+DCM_EXTERN
+DcmFile *dcm_file_create(const char *file_path, const char mode);
 
 /**
  * Read File Metainformation from a File.
@@ -1950,7 +2076,8 @@ extern DcmFile *dcm_file_create(const char *file_path, const char mode);
  *
  * :return: File Metainformation
  */
-extern DcmDataSet *dcm_file_read_file_meta(DcmFile *file);
+DCM_EXTERN
+DcmDataSet *dcm_file_read_file_meta(DcmFile *file);
 
 /**
  * Read metadata from a File.
@@ -1962,7 +2089,8 @@ extern DcmDataSet *dcm_file_read_file_meta(DcmFile *file);
  *
  * :return: metadata
  */
-extern DcmDataSet *dcm_file_read_metadata(DcmFile *file);
+DCM_EXTERN
+DcmDataSet *dcm_file_read_metadata(DcmFile *file);
 
 /**
  * Read Basic Offset Table from a File.
@@ -1976,8 +2104,9 @@ extern DcmDataSet *dcm_file_read_metadata(DcmFile *file);
  *
  * :return: Basic Offset Table
  */
-extern DcmBOT *dcm_file_read_bot(const DcmFile *file,
-                                 const DcmDataSet *metadata);
+DCM_EXTERN
+DcmBOT *dcm_file_read_bot(const DcmFile *file,
+                          const DcmDataSet *metadata);
 
 /**
  * Build Basic Offset Table for a File.
@@ -1987,8 +2116,9 @@ extern DcmBOT *dcm_file_read_bot(const DcmFile *file,
  *
  * :return: Basic Offset Table
  */
-extern DcmBOT *dcm_file_build_bot(const DcmFile *file,
-                                  const DcmDataSet *metadata);
+DCM_EXTERN
+DcmBOT *dcm_file_build_bot(const DcmFile *file,
+                           const DcmDataSet *metadata);
 
 /**
  * Read an individual Frame from a File.
@@ -2000,16 +2130,18 @@ extern DcmBOT *dcm_file_build_bot(const DcmFile *file,
  *
  * :return: Frame
  */
-extern DcmFrame *dcm_file_read_frame(const DcmFile *file,
-                                     const DcmDataSet *metadata,
-                                     const DcmBOT *bot,
-                                     uint32_t index);
+DCM_EXTERN
+DcmFrame *dcm_file_read_frame(const DcmFile *file,
+                              const DcmDataSet *metadata,
+                              const DcmBOT *bot,
+                              uint32_t index);
 
 /**
  * Destroy a File.
  *
  * :param file: File
  */
-extern void dcm_file_destroy(DcmFile *file);
+DCM_EXTERN
+void dcm_file_destroy(DcmFile *file);
 
 #endif
