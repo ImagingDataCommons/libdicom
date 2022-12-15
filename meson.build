@@ -9,6 +9,9 @@ project(
   meson_version : '>=0.50',
   version : '0.1.0',
 )
+meson.add_dist_script(
+  'scripts/dist.py'
+)
 
 # dependencies
 cc = meson.get_compiler('c')
