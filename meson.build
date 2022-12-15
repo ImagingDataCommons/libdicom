@@ -122,6 +122,25 @@ dcm_dump_man = configure_file(
 )
 install_man(dcm_dump_man)
 
+# docs
+subdir('doc/env/bin')
+custom_target(
+  'html',
+  command : [sphinx_build, '@SOURCE_ROOT@/doc/source', '@OUTPUT@'],
+  input : [
+    'doc/source/api.rst',
+    'doc/source/conf.py',
+    'doc/source/contributing.rst',
+    'doc/source/index.rst',
+    'doc/source/installation.rst',
+    'doc/source/introduction.rst',
+    'doc/source/tools.rst',
+    'doc/source/usage.rst',
+    'include/dicom.h',
+  ],
+  output : 'html',
+)
+
 # tests
 check_dicom = executable(
   'check_dicom',
