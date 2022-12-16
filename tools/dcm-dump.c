@@ -17,8 +17,9 @@ int main(int argc, char *argv[]) {
     DcmDataSet *metadata = NULL;
     DcmDataSet *file_meta = NULL;
     DcmFile *file = NULL;
+    DcmError *error = NULL;
 
-    dcm_log_level = DCM_LOG_ERROR;
+    dcm_log_set_level(DCM_LOG_ERROR);
 
 
     for (i = 1; i < argc && argv[i][0] == '-'; i++) {
@@ -30,7 +31,7 @@ int main(int argc, char *argv[]) {
                 printf("%s\n", dcm_get_version());
                 return EXIT_SUCCESS;
             case 'v':
-                dcm_log_level = DCM_LOG_INFO;
+                dcm_log_set_level(DCM_LOG_INFO);
                 break;
             default:
                 fprintf(stderr, "%s\n", usage);
@@ -45,7 +46,7 @@ int main(int argc, char *argv[]) {
     file_path = argv[i];
 
     dcm_log_info("Read file '%s'", file_path);
-    file = dcm_file_create(file_path, 'r');
+    file = dcm_file_create(&error, file_path, 'r');
     if (file == NULL) {
         dcm_log_error("Reading file '%s' failed.", file_path);
         return EXIT_FAILURE;

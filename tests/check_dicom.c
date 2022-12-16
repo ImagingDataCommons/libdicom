@@ -47,10 +47,13 @@ static size_t compute_length_of_string_value_multi(char **values, uint32_t vm)
 
 START_TEST(test_log_level)
 {
-    ck_assert_int_eq(dcm_log_level, DCM_LOG_NOTSET);
+    DcmLogLevel previous_log_level;
 
-    dcm_log_level = DCM_LOG_INFO;
-    ck_assert_int_eq(dcm_log_level, DCM_LOG_INFO);
+    previous_log_level = dcm_log_set_level(DCM_LOG_INFO);
+    ck_assert_int_eq(previous_log_level, DCM_LOG_NOTSET);
+
+    previous_log_level = dcm_log_set_level(DCM_LOG_INFO);
+    ck_assert_int_eq(previous_log_level, DCM_LOG_INFO);
 }
 END_TEST
 

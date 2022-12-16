@@ -31,7 +31,21 @@ const char *dcm_get_version(void)
 }
 
 
-DcmLogLevel dcm_log_level = DCM_LOG_NOTSET;
+static DcmLogLevel dcm_log_level = DCM_LOG_NOTSET;
+
+DcmLogLevel dcm_log_set_level(DcmLogLevel log_level)
+{
+    DcmLogLevel previous_log_level;
+
+    previous_log_level = dcm_log_level;
+
+    if ((dcm_log_level >= DCM_LOG_NOTSET) &&
+        (dcm_log_level <= DCM_LOG_CRITICAL)) {
+        dcm_log_level = log_level;
+    }
+
+    return previous_log_level;
+}
 
 
 #ifndef _WIN32
@@ -43,7 +57,8 @@ static int ctime_s(char *buf, size_t size, const time_t *time)
 }
 #endif
 
-static void dcm_logf(const char *level, const char *format, va_list args)
+static void dcm_default_logf(const char *level, const char *format,
+    va_list args)
 {
     time_t now;
     time(&now);
@@ -53,6 +68,27 @@ static void dcm_logf(const char *level, const char *format, va_list args)
     fprintf(stderr, "%s [%s] - ", level, datetime);
     vfprintf(stderr, format, args);
     fprintf(stderr, "\n");
+}
+
+
+static DcmLogf dcm_current_logf = dcm_default_logf;
+
+DcmLogf dcm_log_set_logf(DcmLogf logf)
+{
+    DcmLogf previous_logf;
+
+    previous_logf = dcm_current_logf;
+    dcm_current_logf = logf;
+
+    return previous_logf;
+}
+
+
+static void dcm_logf(const char *level, const char *format, va_list args)
+{
+    if (dcm_current_logf) {
+        dcm_current_logf(level, format, args);
+    }
 }
 
 
@@ -108,4 +144,18 @@ void dcm_log_debug(const char *format, ...)
         dcm_logf("DEBUG   ", format, args);
         va_end(args);
     }
+}
+
+
+DcmError *dcm_error_newf(const char *domain, int code, const char *format,
+    va_list args) {
+    DcmError *error;
+
+    error = DCM_NEW (DcmError);
+    if (error == NULL) {
+    }
+}
+
+
+DcmError *dcm_error_new(const char *domain, int code, const char *format, ...) {
 }

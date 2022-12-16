@@ -32,17 +32,6 @@ typedef SSIZE_T ssize_t;
 #define DCM_ARRAY_ZEROS(N, TYPE) \
     (TYPE *) dcm_calloc(N, sizeof(TYPE))
 
-/**
- * Allocate and initialize a block of memory.
- *
- * :param n: Number of items.
- * :param size: Number of bytes per item.
- *
- * :return: Pointer to allocated memory.
- */
-DCM_EXTERN
-void *dcm_calloc(size_t n, size_t size);
-
 
 /**
  * Maximum number of characters in values with Value Representation AE.
@@ -159,6 +148,25 @@ typedef struct _DcmFrame DcmFrame;
  */
 typedef struct _DcmBOT DcmBOT;
 
+/**
+ * Log level
+ */
+typedef enum _DcmLogLevel DcmLogLevel;
+
+/**
+ * Log function. See dcm_log_set_logf().
+ */
+typedef void (*DcmLogf)(const char *level, const char *format, va_list args);
+
+/**
+ * An error object
+ */
+typedef struct _DcmError {
+    char *domain;
+    int code;
+    char *message;
+} DcmError;
+
 
 /**
  * Enumeration of log levels
@@ -179,15 +187,37 @@ enum _DcmLogLevel {
 };
 
 /**
- * Log level
- */
-typedef enum _DcmLogLevel DcmLogLevel;
-
-/**
- * Global variable to set log level.
+ * Allocate and initialize a block of memory.
+ *
+ * :param n: Number of items.
+ * :param size: Number of bytes per item.
+ *
+ * :return: Pointer to allocated memory.
  */
 DCM_EXTERN
-DcmLogLevel dcm_log_level;
+void *dcm_calloc(size_t n, size_t size);
+
+/**
+ * Set the log level.
+ *
+ * :param log_level: New log level.
+ * :return: previous log level
+ */
+DCM_EXTERN
+DcmLogLevel dcm_log_set_level(DcmLogLevel log_level);
+
+/**
+ * Set the log function.
+ *
+ * This function will be used to log any error or warning messages from the
+ * library. The default DcmLogf function prints messages to stderr. Set to
+ * NULL to disable all logging.
+ *
+ * :param logf: New log function.
+ * :return: previous log function
+ */
+DCM_EXTERN
+DcmLogf dcm_log_set_logf(DcmLogf logf);
 
 /**
  * Write critical log message to stderr stream.
