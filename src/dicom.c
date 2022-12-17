@@ -27,7 +27,7 @@ void *dcm_calloc(size_t n, size_t size)
 
 const char *dcm_get_version(void)
 {
-    return SUFFIXED_VERSION;
+    return DCM_SUFFIXED_VERSION;
 }
 
 

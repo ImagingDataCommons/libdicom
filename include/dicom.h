@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "version.h"
+
 #ifndef DCM_INCLUDED
 #define DCM_INCLUDED
 
