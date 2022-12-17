@@ -2,7 +2,3 @@
 /subprojects/packagecache
 /subprojects/check-*
 /subprojects/uthash-*
-
-# Sphinx
-/doc/build/
-/doc/env/
