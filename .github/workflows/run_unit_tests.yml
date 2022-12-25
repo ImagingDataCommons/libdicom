@@ -46,9 +46,7 @@ jobs:
 
     - name: Install build and test dependencies (Windows)
       if: startsWith(matrix.os, 'windows')
-      # Pin to Meson 0.60.1 for
-      # https://github.com/mesonbuild/meson/issues/10022
-      run: pip install meson==0.60.1
+      run: pip install meson
 
     - name: Build and install library
       shell: bash
@@ -62,6 +60,8 @@ jobs:
         windows*)
             # Ignore unused parameter warnings from check.h
             export CFLAGS=-Wno-unused-parameter
+            # https://github.com/mesonbuild/meson/issues/10022
+            export CC_LD=lld-link
             ;;
         esac
         meson setup builddir --werror
