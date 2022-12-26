@@ -9,9 +9,11 @@ project(
   meson_version : '>=0.54',
   version : '0.1.0',
 )
-meson.add_dist_script(
-  'scripts/dist.py'
-)
+if not meson.is_subproject()
+  meson.add_dist_script(
+    'scripts/dist.py'
+  )
+endif
 
 # project version
 version_parts = meson.project_version().split('.')
