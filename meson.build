@@ -144,7 +144,7 @@ import('pkgconfig').generate(
   filebase : 'libdicom',
   name : 'libdicom',
   subdirs : 'dicom',
-  url : 'https://github.com/hackermd/libdicom',
+  url : 'https://github.com/ImagingDataCommons/libdicom',
 )
 libdicom_dep = declare_dependency(
   include_directories : library_includes,

@@ -1,4 +1,4 @@
-[![Build Status](https://github.com/hackermd/libdicom/actions/workflows/run_unit_tests.yml/badge.svg)](https://github.com/hackermd/libdicom/actions)
+[![Build Status](https://github.com/ImagingDataCommons/libdicom/actions/workflows/run_unit_tests.yml/badge.svg)](https://github.com/ImagingDataCommons/libdicom/actions)
 
 # libdicom
 
