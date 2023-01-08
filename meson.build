@@ -6,12 +6,14 @@ project(
     'warning_level=2',
   ],
   license : 'MIT',
-  meson_version : '>=0.50',
+  meson_version : '>=0.54',
   version : '0.1.0',
 )
-meson.add_dist_script(
-  'scripts/dist.py'
-)
+if not meson.is_subproject()
+  meson.add_dist_script(
+    'scripts/dist.py'
+  )
+endif
 
 # project version
 version_parts = meson.project_version().split('.')
@@ -150,6 +152,7 @@ libdicom_dep = declare_dependency(
   include_directories : library_includes,
   link_with : libdicom,
 )
+meson.override_dependency('libdicom', libdicom_dep)
 
 # tools
 executable(
