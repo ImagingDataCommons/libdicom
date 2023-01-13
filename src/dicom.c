@@ -11,7 +11,7 @@
 
 #include "config.h"
 
-#include "dicom.h"
+#include <dicom/dicom.h>
 
 
 void *dcm_calloc(size_t n, size_t size)

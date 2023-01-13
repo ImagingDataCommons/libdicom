@@ -20,7 +20,7 @@
 #include "utarray.h"
 #include "uthash.h"
 
-#include "dicom.h"
+#include <dicom/dicom.h>
 
 
 struct _DcmElement {

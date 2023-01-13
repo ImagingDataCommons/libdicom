@@ -84,7 +84,7 @@ Below is an example for reading metadata from a DICOM Part10 file and printing i
 .. code:: c
 
     #include <stdlib.h>
-    #include <dicom.h>
+    #include <dicom/dicom.h>
 
     main() {
         const char *file_path = "/path/to/file.dcm";

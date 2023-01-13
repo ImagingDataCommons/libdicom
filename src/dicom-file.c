@@ -18,7 +18,7 @@
 
 #include "utarray.h"
 
-#include "dicom.h"
+#include <dicom/dicom.h>
 
 
 #define TAG_ITEM                  0xFFFEE000

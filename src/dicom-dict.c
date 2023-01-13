@@ -8,9 +8,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "dicom.h"
-
 #include "uthash.h"
+
+#include <dicom/dicom.h>
 
 
 struct _DcmAttribute {
