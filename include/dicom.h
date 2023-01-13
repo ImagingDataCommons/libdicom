@@ -163,6 +163,82 @@ typedef struct _DcmBOT DcmBOT;
 
 
 /**
+ * Error return object.
+ */
+typedef struct _DcmError DcmError;
+
+/**
+ * Set an error.
+ *
+ * Create a new DcmError object and store the pointer in error.
+ *
+ * You can't set error twice -- always check the error state and return 
+ * immediately if set.
+ *
+ * :param error: Pointer to store the new error object in
+ * :param domain: Module raising the error
+ * :param code: Numeric error code
+ * :param format: Format string
+ * :param ...: Variable arguments
+ */
+DCM_EXTERN
+void dcm_error_set(DcmError **error, 
+    const char *domain, int code, const char *format, ...);
+
+/**
+ * Clear an error, if set.
+ *
+ * :param error: Pointer to store the new error object in
+ */
+DCM_EXTERN
+void dcm_error_clear(DcmError **error);
+
+/**
+ * Get the message from a DcmError object.
+ *
+ * Do not free this result. The pointer will be valid as long as error is
+ * valid.
+ *
+ * :param error: DcmError to read the error from
+ *
+ * :return: Message stored in a dcm error object
+ */
+DCM_EXTERN
+const char *dcm_error_message(DcmError *error);
+
+/**
+ * Get the code from a DcmError object.
+ *
+ * :param error: DcmError to read the error from
+ *
+ * :return: Error code
+ */
+DCM_EXTERN
+int dcm_error_code(DcmError *error);
+
+/**
+ * Get the domain from a DcmError object.
+ *
+ * Do not free this result. The pointer will be valid as long as error is
+ * valid.
+ *
+ * :param error: DcmError to read the error from
+ *
+ * :return: Message domain
+ */
+DCM_EXTERN
+const char *dcm_error_domain(DcmError *error);
+
+/**
+ * Add a critial message to the log for a DcmError.
+ *
+ * :param error: DcmError to read the error from
+ */
+DCM_EXTERN
+void dcm_error_log(DcmError *error);
+
+
+/**
  * Enumeration of log levels
  */
 enum _DcmLogLevel {

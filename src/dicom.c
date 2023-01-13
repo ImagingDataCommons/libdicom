@@ -1,6 +1,14 @@
 /*
  * Implementation of subroutines that are independent of the DICOM standard.
  */
+
+#ifdef _WIN32
+// the Windows CRT considers strncpy unsafe
+#define _CRT_SECURE_NO_WARNINGS
+// and deprecates strdup
+#define strdup(v) _strdup(v)
+#endif
+
 #include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
@@ -29,6 +37,92 @@ const char *dcm_get_version(void)
 {
     return DCM_SUFFIXED_VERSION;
 }
+
+
+struct _DcmError {
+    const char *domain;
+    int code;
+    char *message;
+};
+
+static void dcm_error_free(DcmError *error)
+{
+    if (error) {
+        free(error->message);
+        error->message = NULL;
+        free(error);
+    }
+}
+
+
+static DcmError *dcm_error_newf(const char *domain, int code, 
+    const char *format, va_list ap)
+{
+    DcmError *error;
+    char txt[256];
+
+    error = DCM_NEW(DcmError);
+    error->domain = domain;
+    error->code = code;
+    vsnprintf(txt, sizeof(txt), format, ap);
+    error->message = strdup(txt);
+
+    return error;
+}
+
+void dcm_error_set(DcmError **error, 
+    const char *domain, int code, const char *format, ...)
+{
+    if (error) {
+        if (*error)
+        {
+            dcm_log_critical("DcmError set twice");
+            return;
+        }
+
+        va_list(ap);
+        va_start(ap, format);
+        *error = dcm_error_newf(domain, code, format, ap);
+        va_end(ap);
+    }
+}
+
+
+void dcm_error_clear(DcmError **error)
+{
+    if (error) {
+        dcm_error_free(*error);
+        *error = NULL;
+    }
+}
+
+
+const char *dcm_error_domain(DcmError *error)
+{
+    return error->domain;
+}
+
+
+int dcm_error_code(DcmError *error)
+{
+    return error->code;
+}
+
+
+const char *dcm_error_message(DcmError *error)
+{
+    return (const char *) error->message;
+}
+
+
+void dcm_error_log(DcmError *error)
+{
+    if (error) {
+        dcm_log_critical("%s: %s (%d)", 
+            error->domain, error->message, error->code);
+    }
+}
+
 
 
 DcmLogLevel dcm_log_level = DCM_LOG_NOTSET;
