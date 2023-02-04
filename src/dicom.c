@@ -22,11 +22,12 @@
 #include "dicom.h"
 
 
-void *dcm_calloc(size_t n, size_t size)
+void *dcm_calloc(DcmError **error, size_t n, size_t size)
 {
     void *result = calloc(n, size);
-    if(!result) {
-        dcm_log_error("Failed to allocate and initialize memory.");
+    if (!result) {
+        dcm_error_set(error, DCM_ERROR_CODE_NOMEM,
+                      "Failed to allocate %zd bytes.", n * size);
         return NULL;
     }
     return result;
@@ -39,9 +40,38 @@ const char *dcm_get_version(void)
 }
 
 
+const char *dcm_error_code_str(DcmErrorCode code)
+{
+    switch (code) {
+        case DCM_ERROR_CODE_NOMEM:
+            return "Out of memory";
+
+        case DCM_ERROR_CODE_INVALID:
+            return "Invalid parameter";
+
+        default:
+            return "Unknown error code";
+    }
+}
+
+
+const char *dcm_error_code_name(DcmErrorCode code)
+{
+    switch (code) {
+        case DCM_ERROR_CODE_NOMEM:
+            return "NOMEM";
+
+        case DCM_ERROR_CODE_INVALID:
+            return "INVALID";
+
+        default:
+            return "UNKNOWN";
+    }
+}
+
+
 struct _DcmError {
-    const char *domain;
-    int code;
+    DcmErrorCode code;
     char *message;
 };
 
@@ -55,34 +85,38 @@ static void dcm_error_free(DcmError *error)
 }
 
 
-static DcmError *dcm_error_newf(const char *domain, int code, 
+static DcmError *dcm_error_newf(DcmErrorCode code, 
     const char *format, va_list ap)
 {
     DcmError *error;
     char txt[256];
 
-    error = DCM_NEW(DcmError);
-    error->domain = domain;
+    error = DCM_NEW(NULL, DcmError);
+    if (!error) {
+        return NULL;
+    }
     error->code = code;
     vsnprintf(txt, sizeof(txt), format, ap);
     error->message = strdup(txt);
 
+    dcm_error_log(error);
+
     return error;
 }
 
+
 void dcm_error_set(DcmError **error, 
-    const char *domain, int code, const char *format, ...)
+    DcmErrorCode code, const char *format, ...)
 {
     if (error) {
-        if (*error)
-        {
+        if (*error) {
             dcm_log_critical("DcmError set twice");
             return;
         }
 
         va_list(ap);
         va_start(ap, format);
-        *error = dcm_error_newf(domain, code, format, ap);
+        *error = dcm_error_newf(code, format, ap);
         va_end(ap);
     }
 }
@@ -97,13 +131,7 @@ void dcm_error_clear(DcmError **error)
 }
 
 
-const char *dcm_error_domain(DcmError *error)
-{
-    return error->domain;
-}
-
-
-int dcm_error_code(DcmError *error)
+DcmErrorCode dcm_error_code(DcmError *error)
 {
     return error->code;
 }
@@ -118,11 +146,12 @@ const char *dcm_error_message(DcmError *error)
 void dcm_error_log(DcmError *error)
 {
     if (error) {
-        dcm_log_critical("%s: %s (%d)", 
-            error->domain, error->message, error->code);
+        dcm_log_critical("%s (%d): %s", 
+                         dcm_error_code_str(error->code),
+                         dcm_error_code_name(error->code),
+                         error->message);
     }
 }
-
 
 
 DcmLogLevel dcm_log_level = DCM_LOG_NOTSET;

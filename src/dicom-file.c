@@ -57,21 +57,20 @@ typedef struct ElementHeader {
 } EHeader;
 
 
-static IHeader *iheader_create(uint32_t tag, uint64_t length)
+static IHeader *iheader_create(DcmError **error, 
+    uint32_t tag, uint64_t length)
 {
     if (!(tag == TAG_ITEM ||
           tag == TAG_ITEM_DELIM ||
           tag == TAG_SQ_DELIM)) {
-        dcm_log_error("Constructing header of Item failed. "
-                      "Encountered invalid Item Tag '%08X'.",
+        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
+                      "Constructing header of Item failed. "
+                      "Invalid Item Tag '%08X'.",
                       tag);
         return NULL;
     }
-    IHeader *header = malloc(sizeof(struct ItemHeader));
+    IHeader *header = DCM_NEW(error, struct ItemHeader);
     if (header == NULL) {
-        dcm_log_error("Constructing header of Item failed. "
-                      "Failed to allocate memory for header of Item '%08X'.",
-                      tag);
         return NULL;
     }
     header->tag = tag;
@@ -103,32 +102,30 @@ static void iheader_destroy(IHeader *item)
 }
 
 
-static EHeader *eheader_create(uint32_t tag, const char *vr, uint64_t length)
+static EHeader *eheader_create(DcmError **error, 
+    uint32_t tag, const char *vr, uint64_t length)
 {
-    bool is_valid_tag = dcm_is_valid_tag(tag);
-    if (!is_valid_tag) {
-        dcm_log_error("Constructing header of Data Element failed. "
-                      "Encountered invalid Tag: '%08X'.",
+    if (!dcm_is_valid_tag(tag)) {
+        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
+                      "Constructing header of Data Element failed. "
+                      "Invalid Tag: '%08X'.",
                       tag);
         return NULL;
     }
-    EHeader *header = malloc(sizeof(struct ElementHeader));
+    if (!dcm_is_valid_vr(vr)) {
+        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
+                      "Constructing header of Data Element failed. "
+                      "Invalid Value Representation: '%s'.",
+                      vr);
+        return NULL;
+    }
+
+    EHeader *header = DCM_NEW(error, struct ElementHeader);
     if (header == NULL) {
-        dcm_log_error("Constructing header of Data Element failed. "
-                      "Could not allocate memory for "
-                      "header of Data Element '%08X'.",
-                      tag);
         return NULL;
     }
     header->tag = tag;
 
-    if (!dcm_is_valid_vr(vr)) {
-        dcm_log_error("Constructing header of Data Element failed. "
-                      "Encountered invalid Value Representation: '%s'.",
-                      vr);
-        free(header);
-        return NULL;
-    }
     strncpy(header->vr, vr, 3);
     header->vr[2] = '\0';
 
@@ -154,11 +151,7 @@ static uint32_t eheader_get_tag(EHeader *header)
 static bool eheader_check_vr(EHeader *header, const char *vr)
 {
     assert(header);
-    if (strcmp(header->vr, vr) == 0) {
-        return true;
-    } else {
-        return false;
-    }
+    return (strcmp(header->vr, vr) == 0)
 }
 
 
@@ -197,7 +190,8 @@ static uint32_t read_tag(FILE *fp, size_t *n)
 }
 
 
-static char **parse_character_string(char *string, uint32_t *vm)
+static char **parse_character_string(DcmError **error, 
+                                     char *string, uint32_t *vm)
 {
     uint32_t i;
     uint32_t n;
@@ -222,10 +216,8 @@ static char **parse_character_string(char *string, uint32_t *vm)
 
 finish:
     n = utarray_len(array);
-    parts = malloc(n * sizeof(char *));
+    parts = DCM_ARRAY_ZEROS(error, n, char *);
     if (parts == NULL) {
-        dcm_log_error("Failed to parse character string. "
-                      "Could not allocate memory for array of substrings.");
         free(string);
         utarray_free(array);
         return NULL;
@@ -233,11 +225,8 @@ finish:
 
     for (i = 0; i < n; i++) {
         token_ptr = utarray_eltptr(array, i);
-        parts[i] = malloc(strlen(*token_ptr) + 1);
+        parts[i] = DCM_MALLOC(error, strlen(*token_ptr) + 1);
         if (parts[i] == NULL) {
-            dcm_log_error("Failed to parse character string. "
-                          "Could not allocate memory for substring #%d.",
-                          i);
             free(parts);
             free(string);
             utarray_free(array);

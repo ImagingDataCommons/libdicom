@@ -92,7 +92,8 @@ struct SequenceItem {
 };
 
 
-static bool is_vr_string(const char *vr) {
+static bool is_vr_string(const char *vr) 
+{
     if (strcmp(vr, "AE") == 0 ||
         strcmp(vr, "AS") == 0 ||
         strcmp(vr, "AT") == 0 ||
@@ -117,7 +118,8 @@ static bool is_vr_string(const char *vr) {
 }
 
 
-static bool is_vr_bytes(const char *vr) {
+static bool is_vr_bytes(const char *vr) 
+{
     if (strcmp(vr, "OB") == 0 ||
         strcmp(vr, "OD") == 0 ||
         strcmp(vr, "OF") == 0 ||
@@ -137,8 +139,6 @@ static struct SequenceItem *create_sequence_item(DcmDataSet *dataset)
 
     struct SequenceItem *item = DCM_NEW(struct SequenceItem);
     if (item == NULL) {
-        dcm_log_error("Creation of Sequence Item failed."
-                      "Could not allocate memory.");
         return NULL;
     }
     item->dataset = dataset;
@@ -192,9 +192,6 @@ static DcmElement *create_element(uint32_t tag, const char *vr, uint32_t length)
     dcm_log_debug("Create Data Element '%08X'.", tag);
     DcmElement *element = DCM_NEW(DcmElement);
     if (element == NULL) {
-        dcm_log_error("Creation of Data Element failed."
-                      "Could not allocate memory for Data Element '%08X'.",
-                      tag);
         return NULL;
     }
     element->tag = tag;
@@ -284,9 +281,6 @@ DcmElement *dcm_element_clone(const DcmElement *element)
     dcm_log_debug("Clone Data Element '%08X'.", element->tag);
     DcmElement *clone = DCM_NEW(DcmElement);
     if (clone == NULL) {
-        dcm_log_error("Cloning of Data Element '%08X' failed."
-                      "Could not allocate memory for clone.",
-                      element->tag);
         return NULL;
     }
     clone->tag = element->tag;

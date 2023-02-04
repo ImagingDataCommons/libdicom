@@ -28,22 +28,14 @@ typedef SSIZE_T ssize_t;
 #  define DCM_DEBUG_ONLY( ... )
 #endif
 
-#define DCM_NEW(TYPE) \
-    (TYPE *) dcm_calloc(1, sizeof(TYPE))
+#define DCM_NEW(ERROR, TYPE) \
+    (TYPE *) dcm_calloc(ERROR, 1, sizeof(TYPE))
 
-#define DCM_ARRAY_ZEROS(N, TYPE) \
-    (TYPE *) dcm_calloc(N, sizeof(TYPE))
+#define DCM_MALLOC(ERROR, SIZE) \
+    dcm_calloc(ERROR, 1, SIZE)
 
-/**
- * Allocate and initialize a block of memory.
- *
- * :param n: Number of items.
- * :param size: Number of bytes per item.
- *
- * :return: Pointer to allocated memory.
- */
-DCM_EXTERN
-void *dcm_calloc(size_t n, size_t size);
+#define DCM_ARRAY_ZEROS(ERROR, N, TYPE) \
+    (TYPE *) dcm_calloc(ERROR, N, sizeof(TYPE))
 
 
 /**
@@ -163,6 +155,30 @@ typedef struct _DcmBOT DcmBOT;
 
 
 /**
+ * Enumeration of error codes.
+ */
+enum _DcmErrorCode {
+    /** Invalid parameter */
+    DCM_ERROR_CODE_NOMEM = 1,
+    DCM_ERROR_CODE_INVALID = 2,
+};
+
+/**
+ * Error codes
+ */
+typedef enum _DcmErrorCode DcmErrorCode;
+
+/** 
+ * Convert an error code to a human-readable string.
+ *
+ * :param code: The error code
+ * :return: A string that can be displayed to users
+ */
+DCM_EXTERN
+const char *dcm_error_code_str(DcmErrorCode code);
+
+
+/**
  * Error return object.
  */
 typedef struct _DcmError DcmError;
@@ -176,19 +192,17 @@ typedef struct _DcmError DcmError;
  * immediately if set.
  *
  * :param error: Pointer to store the new error object in
- * :param domain: Module raising the error
  * :param code: Numeric error code
  * :param format: Format string
  * :param ...: Variable arguments
  */
 DCM_EXTERN
-void dcm_error_set(DcmError **error, 
-    const char *domain, int code, const char *format, ...);
+void dcm_error_set(DcmError **error, int code, const char *format, ...);
 
 /**
  * Clear an error, if set.
  *
- * :param error: Pointer to store the new error object in
+ * :param error: Pointer holding the error object
  */
 DCM_EXTERN
 void dcm_error_clear(DcmError **error);
@@ -217,25 +231,24 @@ DCM_EXTERN
 int dcm_error_code(DcmError *error);
 
 /**
- * Get the domain from a DcmError object.
- *
- * Do not free this result. The pointer will be valid as long as error is
- * valid.
- *
- * :param error: DcmError to read the error from
- *
- * :return: Message domain
- */
-DCM_EXTERN
-const char *dcm_error_domain(DcmError *error);
-
-/**
  * Add a critial message to the log for a DcmError.
  *
  * :param error: DcmError to read the error from
  */
 DCM_EXTERN
 void dcm_error_log(DcmError *error);
+
+
+/**
+ * Allocate and initialize a block of memory.
+ *
+ * :param n: Number of items.
+ * :param size: Number of bytes per item.
+ *
+ * :return: Pointer to allocated memory.
+ */
+DCM_EXTERN
+void *dcm_calloc(DcmError **error, size_t n, size_t size);
 
 
 /**
