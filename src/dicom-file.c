@@ -216,7 +216,7 @@ static char **parse_character_string(DcmError **error,
 
 finish:
     n = utarray_len(array);
-    parts = DCM_ARRAY_ZEROS(error, n, char *);
+    parts = DCM_NEW_ARRAY(error, n, char *);
     if (parts == NULL) {
         free(string);
         utarray_free(array);
@@ -251,7 +251,8 @@ static IHeader *read_item_header(FILE *fp, size_t *n)
 }
 
 
-static EHeader *read_element_header(FILE *fp, size_t *n, bool implicit)
+static EHeader *read_element_header(DcmError **error, 
+    FILE *fp, size_t *n, bool implicit)
 {
     char vr[3];
     uint32_t length;
@@ -301,11 +302,11 @@ static EHeader *read_element_header(FILE *fp, size_t *n, bool implicit)
             // Other VRs have two reserved bytes before length of four bytes
             *n += fread(&reserved, 1, sizeof(reserved), fp);
             if (reserved != 0x0000) {
-                dcm_log_error("Reading of Data Element header failed. "
+                dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                              "Reading of Data Element header failed. "
                               "Unexpected value for reserved bytes "
                               "of Data Element %08X with VR '%s'.",
-                              tag,
-                              vr);
+                              tag, vr);
                 return NULL;
             }
             *n += fread(&length, 1, sizeof(length), fp);
@@ -317,7 +318,8 @@ static EHeader *read_element_header(FILE *fp, size_t *n, bool implicit)
 }
 
 
-static DcmElement *read_element(FILE *fp,
+static DcmElement *read_element(DcmError **error,
+                                FILE *fp,
                                 EHeader *header,
                                 size_t *n,
                                 bool implicit)
@@ -338,7 +340,7 @@ static DcmElement *read_element(FILE *fp,
     EHeader *item_eheader;
     DcmElement *item_element;
 
-    uint32_t tag =  eheader_get_tag(header);
+    uint32_t tag = eheader_get_tag(header);
     uint32_t length = eheader_get_length(header);
 
     n_seq = 0;
@@ -366,12 +368,8 @@ static DcmElement *read_element(FILE *fp,
         eheader_check_vr(header, "UI") ||
         eheader_check_vr(header, "UR") ||
         eheader_check_vr(header, "UT")) {
-        char *value = malloc(length + 1);
+        char *value = DCM_MALLOC(error, length + 1);
         if (value == NULL) {
-            dcm_log_error("Reading of Data Element failed. "
-                          "Could not allocate memory for "
-                          "value of Data Element '%08X'.",
-                          tag);
             return NULL;
         }
         *n += fread(value, 1, length, fp);
@@ -412,7 +410,8 @@ static DcmElement *read_element(FILE *fp,
         } else if (eheader_check_vr(header, "ST")) {
             // This VM shall always have VM 1.
             if (vm > 1) {
-                dcm_log_error("Reading of Data Element failed. "
+                dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                              "Reading of Data Element failed. "
                               "Encountered unexpected Value Multiplicity %d "
                               "for Data Element '%08X'.",
                               vm, tag);
@@ -432,7 +431,8 @@ static DcmElement *read_element(FILE *fp,
         } else if (eheader_check_vr(header, "LT")) {
             // This VM shall always have VM 1.
             if (vm > 1) {
-                dcm_log_error("Reading of Data Element failed. "
+                dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                              "Reading of Data Element failed. "
                               "Encountered unexpected Value Multiplicity %d "
                               "for Data Element '%08X'.",
                               vm, tag);
@@ -448,7 +448,8 @@ static DcmElement *read_element(FILE *fp,
         } else if (eheader_check_vr(header, "UR")) {
             // This VM shall always have VM 1.
             if (vm > 1) {
-                dcm_log_error("Reading of Data Element failed. "
+                dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                              "Reading of Data Element failed. "
                               "Encountered unexpected Value Multiplicity %d "
                               "for Data Element '%08X'.",
                               vm, tag);
@@ -464,7 +465,8 @@ static DcmElement *read_element(FILE *fp,
         } else if (eheader_check_vr(header, "UT")) {
             // This VM shall always have VM 1.
             if (vm > 1) {
-                dcm_log_error("Reading of Data Element failed. "
+                dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                              "Reading of Data Element failed. "
                               "Encountered unexpected Value Multiplicity %d "
                               "for Data Element '%08X'.",
                               vm, tag);
@@ -478,7 +480,8 @@ static DcmElement *read_element(FILE *fp,
             free(strings);
             return dcm_element_create_UT(tag, str);
         } else {
-            dcm_log_error("Reading of Data Element failed. "
+            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                          "Reading of Data Element failed. "
                           "Encountered unexpected Value Representation "
                           "for Data Element '%08X'.",
                           tag);
@@ -490,11 +493,8 @@ static DcmElement *read_element(FILE *fp,
         }
     } else if (eheader_check_vr(header, "SQ")) {
         vm = 1;
-        DcmSequence *value = dcm_sequence_create();
+        DcmSequence *value = dcm_sequence_create(error);
         if (value == NULL) {
-            dcm_log_error("Reading of Data Element failed. "
-                          "Could not construct Sequence for "
-                          "Data Element '%08X'.");
             return NULL;
         }
         if (length == 0) {
@@ -513,11 +513,8 @@ static DcmElement *read_element(FILE *fp,
         while (n_seq < length) {
             dcm_log_debug("Read Item #%d of Data Element '%08X'.",
                           item_index, tag);
-            item_iheader = read_item_header(fp, n_seq_ptr);
+            item_iheader = read_item_header(error, fp, n_seq_ptr);
             if (item_iheader == NULL) {
-                dcm_log_error("Reading of Data Element failed. "
-                              "Could not construct Item #%d of "
-                              "Data Element '%08X'.", item_index, tag);
                 iheader_destroy(item_iheader);
                 dcm_sequence_destroy(value);
                 return NULL;
@@ -532,7 +529,8 @@ static DcmElement *read_element(FILE *fp,
                 break;
             }
             if (item_tag != TAG_ITEM) {
-                dcm_log_error("Reading of Data Element failed. "
+                dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                              "Reading of Data Element failed. "
                               "Expected tag '%08X' instead of '%08X' "
                               "for Item #%d of Data Element '%08X'.",
                               TAG_ITEM,
@@ -552,13 +550,8 @@ static DcmElement *read_element(FILE *fp,
                               item_index, tag, item_length);
             }
 
-            item_dataset = dcm_dataset_create();
+            item_dataset = dcm_dataset_create(error);
             if (item_dataset == NULL) {
-                dcm_log_error("Reading of Data Element failed. "
-                              "Could not construct Data Set for "
-                              "Item #%d of Data Element '%08X'.",
-                              item_index,
-                              tag);
                 iheader_destroy(item_iheader);
                 dcm_sequence_destroy(value);
                 return NULL;
@@ -580,35 +573,27 @@ static DcmElement *read_element(FILE *fp,
                     n_item -= 4;
                 }
 
-                item_eheader = read_element_header(fp, n_item_ptr, implicit);
+                item_eheader = read_element_header(error, 
+                                                   fp, n_item_ptr, implicit);
                 if (item_eheader == NULL) {
-                    dcm_log_error("Reading of Data Element failed. "
-                                  "Could not read header of Item #%d "
-                                  "of Data Element '%08X'.",
-                                  item_index, tag);
                     iheader_destroy(item_iheader);
                     eheader_destroy(item_eheader);
                     dcm_sequence_destroy(value);
                     return NULL;
                 }
 
-                item_element = read_element(fp,
+                item_element = read_element(error,
+                                            fp,
                                             item_eheader,
                                             n_item_ptr,
                                             implicit);
                 if (item_element == NULL) {
-                    dcm_log_error("Reading of Data Element failed. "
-                                  "Could not read value of Item #%d of "
-                                  "Data Element '%08X'.",
-                                  item_index, tag);
                     iheader_destroy(item_iheader);
                     eheader_destroy(item_eheader);
                     dcm_sequence_destroy(value);
                     return NULL;
                 }
-                if (!dcm_dataset_insert(item_dataset, item_element)) {
-                    dcm_log_error("Inserting Item #%d of Data Element '%08X' "
-                                  "into Data Set failed.", item_index, tag);
+                if (!dcm_dataset_insert(error, item_dataset, item_element)) {
                     iheader_destroy(item_iheader);
                     eheader_destroy(item_eheader);
                     dcm_sequence_destroy(value);
@@ -625,10 +610,8 @@ static DcmElement *read_element(FILE *fp,
         return dcm_element_create_SQ(tag, value);
     } else if (eheader_check_vr(header, "FD")) {
         vm = length / sizeof(double);
-        double *values = malloc(vm * sizeof(double));
+        double *values = DCM_NEW_ARRAY(error, vm, double);
         if (values == NULL) {
-            dcm_log_error("Reading of Data Element failed. "
-                          "Could not allocate memory.");
             return NULL;
         }
         for (i = 0; i < vm; i++) {
@@ -639,10 +622,8 @@ static DcmElement *read_element(FILE *fp,
         return dcm_element_create_FD_multi(tag, values, vm);
     } else if (eheader_check_vr(header, "FL")) {
         vm = length / sizeof(float);
-        float *values = malloc(vm * sizeof(float));
+        float *values = DCM_NEW_ARRAY(error, vm, float);
         if (values == NULL) {
-            dcm_log_error("Reading of Data Element failed. "
-                          "Could not allocate memory.");
             return NULL;
         }
         for (i = 0; i < vm; i++) {
@@ -653,10 +634,8 @@ static DcmElement *read_element(FILE *fp,
         return dcm_element_create_FL_multi(tag, values, vm);
     } else if (eheader_check_vr(header, "SS")) {
         vm = length / sizeof(int16_t);
-        int16_t *values = malloc(vm * sizeof(int16_t));
+        int16_t *values = DCM_NEW_ARRAY(error, vm, int16_t);
         if (values == NULL) {
-            dcm_log_error("Reading of Data Element failed. "
-                          "Could not allocate memory.");
             return NULL;
         }
         for (i = 0; i < vm; i++) {
@@ -664,13 +643,11 @@ static DcmElement *read_element(FILE *fp,
             *n += fread(&val, 1, sizeof(int16_t), fp);
             values[i] = val;
         }
-        return dcm_element_create_SS_multi(tag, values, vm);
+        return dcm_element_create_SS_multi(error, tag, values, vm);
     } else if (eheader_check_vr(header, "SL")) {
         vm = length / sizeof(int32_t);
-        int32_t *values = malloc(vm * sizeof(int32_t));
+        int32_t *values = DCM_NEW_ARRAY(error, vm, int32_t);
         if (values == NULL) {
-            dcm_log_error("Reading of Data Element failed. "
-                          "Could not allocate memory.");
             return NULL;
         }
         for (i = 0; i < vm; i++) {
@@ -678,13 +655,11 @@ static DcmElement *read_element(FILE *fp,
             *n += fread(&val, 1, sizeof(int32_t), fp);
             values[i] = val;
         }
-        return dcm_element_create_SL_multi(tag, values, vm);
+        return dcm_element_create_SL_multi(error, tag, values, vm);
     } else if (eheader_check_vr(header, "SV")) {
         vm = length / sizeof(int64_t);
-        int64_t *values = malloc(vm * sizeof(int64_t));
+        int64_t *values = DCM_NEW_ARRAY(error, vm, int64_t);
         if (values == NULL) {
-            dcm_log_error("Reading of Data Element failed. "
-                          "Could not allocate memory.");
             return NULL;
         }
         for (i = 0; i < vm; i++) {
@@ -692,13 +667,11 @@ static DcmElement *read_element(FILE *fp,
             *n += fread(&val, 1, sizeof(int64_t), fp);
             values[i] = val;
         }
-        return dcm_element_create_SV_multi(tag, values, vm);
+        return dcm_element_create_SV_multi(error, tag, values, vm);
     } else if (eheader_check_vr(header, "UL")) {
         vm = length / sizeof(uint32_t);
-        uint32_t *values = malloc(vm * sizeof(uint32_t));
+        uint32_t *values = DCM_NEW_ARRAY(error, vm, uint32_t);
         if (values == NULL) {
-            dcm_log_error("Reading of Data Element failed. "
-                          "Could not allocate memory.");
             return NULL;
         }
         for (i = 0; i < vm; i++) {
@@ -706,13 +679,11 @@ static DcmElement *read_element(FILE *fp,
             *n += fread(&val, 1, sizeof(uint32_t), fp);
             values[i] = val;
         }
-        return dcm_element_create_UL_multi(tag, values, vm);
+        return dcm_element_create_UL_multi(error, tag, values, vm);
     } else if (eheader_check_vr(header, "US")) {
         vm = length / sizeof(uint16_t);
-        uint16_t *values = malloc(vm * sizeof(uint16_t));
+        uint16_t *values = DCM_NEW_ARRAY(error, vm, uint16_t);
         if (values == NULL) {
-            dcm_log_error("Reading of Data Element failed. "
-                          "Could not allocate memory.");
             return NULL;
         }
         for (i = 0; i < vm; i++) {
@@ -720,13 +691,11 @@ static DcmElement *read_element(FILE *fp,
             *n += fread(&val, 1, sizeof(uint16_t), fp);
             values[i] = val;
         }
-        return dcm_element_create_US_multi(tag, values, vm);
+        return dcm_element_create_US_multi(error, tag, values, vm);
     } else if (eheader_check_vr(header, "UV")) {
         vm = length / sizeof(uint64_t);
-        uint64_t *values = malloc(vm * sizeof(uint64_t));
+        uint64_t *values = DCM_NEW_ARRAY(error, vm, uint64_t);
         if (values == NULL) {
-            dcm_log_error("Reading of Data Element failed. "
-                          "Could not allocate memory.");
             return NULL;
         }
         for (i = 0; i < vm; i++) {
@@ -734,38 +703,35 @@ static DcmElement *read_element(FILE *fp,
             *n += fread(&val, 1, sizeof(uint64_t), fp);
             values[i] = val;
         }
-        return dcm_element_create_UV_multi(tag, values, vm);
+        return dcm_element_create_UV_multi(error, tag, values, vm);
     } else {
         vm = 1;
-        char *value = malloc(length);
+        char *value = DCM_MALLOC(error, length);
         if (value == NULL) {
-            dcm_log_error("Reading of Data Element failed. "
-                          "Could not allocate memory for "
-                          "value of Data Element '%08X'.",
-                          tag);
             return NULL;
         }
         *n += fread(value, 1, length, fp);
 
         if (eheader_check_vr(header, "OB")) {
-            return dcm_element_create_OB(tag, value, length);
+            return dcm_element_create_OB(error, tag, value, length);
         } else if (eheader_check_vr(header, "OD")) {
-            return dcm_element_create_OD(tag, value, length);
+            return dcm_element_create_OD(error, tag, value, length);
         } else if (eheader_check_vr(header, "OF")) {
-            return dcm_element_create_OF(tag, value, length);
+            return dcm_element_create_OF(error, tag, value, length);
         } else if (eheader_check_vr(header, "OL")) {
-            return dcm_element_create_OL(tag, value, length);
+            return dcm_element_create_OL(error, tag, value, length);
         } else if (eheader_check_vr(header, "OV")) {
-            return dcm_element_create_OV(tag, value, length);
+            return dcm_element_create_OV(error, tag, value, length);
         } else if (eheader_check_vr(header, "OW")) {
-            return dcm_element_create_OW(tag, value, length);
+            return dcm_element_create_OW(error, tag, value, length);
         } else if (eheader_check_vr(header, "UC")) {
-            return dcm_element_create_UC(tag, value, length);
+            return dcm_element_create_UC(error, tag, value, length);
         } else if (eheader_check_vr(header, "UN")) {
-            return dcm_element_create_UN(tag, value, length);
+            return dcm_element_create_UN(error, tag, value, length);
         } else {
             tag = eheader_get_tag(header);
-            dcm_log_error("Reading of Data Element failed. "
+            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                          "Reading of Data Element failed. "
                           "Data Element '%08X' has unexpected "
                           "Value Representation.", tag);
             return NULL;
@@ -775,18 +741,18 @@ static DcmElement *read_element(FILE *fp,
 }
 
 
-DcmFile *dcm_file_create(const char *file_path, const char mode)
+DcmFile *dcm_file_create(DcmError **error, 
+                         const char *file_path, const char mode)
 {
     if (mode != 'r' && mode != 'w') {
-        dcm_log_error("Creation of file failed. "
+        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
+                      "Creation of file failed. "
                       "Wrong file mode specified.");
-        exit(1);
+        return NULL;
     }
 
     DcmFile *file = DCM_NEW(DcmFile);
     if (file == NULL) {
-        dcm_log_error("Creation of file failed. "
-                      "Could not allocate memory for file.");
         return NULL;
     }
 
@@ -796,7 +762,8 @@ DcmFile *dcm_file_create(const char *file_path, const char mode)
     file_mode[2] = '\0';
     file->fp = fopen(file_path, file_mode);
     if (file->fp == NULL) {
-        dcm_log_error("Could not open file for reading: %s", file_path);
+        dcm_error_set(error, DCM_ERROR_CODE_IO,
+                      "Could not open file for reading: %s", file_path);
         free(file);
         return NULL;
     }
@@ -809,7 +776,7 @@ DcmFile *dcm_file_create(const char *file_path, const char mode)
 }
 
 
-DcmDataSet *dcm_file_read_file_meta(DcmFile *file)
+DcmDataSet *dcm_file_read_file_meta(DcmError **error, DcmFile *file)
 {
     const bool implicit = false;
 
@@ -821,10 +788,8 @@ DcmDataSet *dcm_file_read_file_meta(DcmFile *file)
     EHeader *header;
     DcmElement *element;
 
-    DcmDataSet *file_meta = dcm_dataset_create();
+    DcmDataSet *file_meta = dcm_dataset_create(error);
     if (file_meta == NULL) {
-        dcm_log_error("Reading of File Meta Information failed. "
-                      "Could not construct Data Set.");
         return NULL;
     }
 
@@ -840,7 +805,8 @@ DcmDataSet *dcm_file_read_file_meta(DcmFile *file)
     size += fread(prefix, 1, sizeof(prefix) - 1, file->fp);
     prefix[4] = '\0';
     if (strcmp(prefix, "DICM") != 0) {
-        dcm_log_error("Reading of File Meta Information failed. "
+        dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                      "Reading of File Meta Information failed. "
                       "Prefix 'DICM' not found.");
         dcm_dataset_destroy(file_meta);
         return NULL;
@@ -849,19 +815,13 @@ DcmDataSet *dcm_file_read_file_meta(DcmFile *file)
     size = 0;
 
     // File Meta Information Group Length
-    header = read_element_header(file->fp, n, implicit);
+    header = read_element_header(error, file->fp, n, implicit);
     if (header == NULL) {
-        dcm_log_error("Reading of File Meta Information failed. "
-                      "Header of Data Element 'Group Length' "
-                      "could not be read.");
         dcm_dataset_destroy(file_meta);
         return NULL;
     }
-    element = read_element(file->fp, header, n, implicit);
+    element = read_element(error, file->fp, header, n, implicit);
     if (element == NULL) {
-        dcm_log_error("Reading of File Meta Information failed. "
-                      "Value of Data Element 'Group Length' "
-                      "could not be read.");
         eheader_destroy(header);
         dcm_dataset_destroy(file_meta);
         return NULL;
@@ -872,19 +832,13 @@ DcmDataSet *dcm_file_read_file_meta(DcmFile *file)
     dcm_element_destroy(element);
 
     // File Meta Information Version
-    header = read_element_header(file->fp, n, implicit);
+    header = read_element_header(error, file->fp, n, implicit);
     if (header == NULL) {
-        dcm_log_error("Reading of File Meta Information failed. "
-                      "Header of Data Element 'File Meta Information Version' "
-                      "could not be read.");
         dcm_dataset_destroy(file_meta);
         return NULL;
     }
-    element = read_element(file->fp, header, n, implicit);
+    element = read_element(error, file->fp, header, n, implicit);
     if (element == NULL) {
-        dcm_log_error("Reading of File Meta Information failed. "
-                      "Value of Data Element 'File Meta Information Version' "
-                      "could not be read.");
         eheader_destroy(header);
         dcm_dataset_destroy(file_meta);
         return NULL;
@@ -894,11 +848,8 @@ DcmDataSet *dcm_file_read_file_meta(DcmFile *file)
 
     n_elem = 0;
     while(true) {
-        header = read_element_header(file->fp, n, implicit);
+        header = read_element_header(error, file->fp, n, implicit);
         if (header == NULL) {
-            dcm_log_error("Reading of File Meta Information failed. "
-                          "Could not read header of Data Element #%d.",
-                          n_elem);
             dcm_element_destroy(element);
             dcm_dataset_destroy(file_meta);
             return NULL;
@@ -910,17 +861,16 @@ DcmDataSet *dcm_file_read_file_meta(DcmFile *file)
             break;
         }
 
-        element = read_element(file->fp, header, n, implicit);
+        element = read_element(error, file->fp, header, n, implicit);
         if (element == NULL) {
-            dcm_log_error("Reading File Meta Information failed. "
-                          "Could not read value of Data Element '%08X'.", tag);
             eheader_destroy(header);
             dcm_dataset_destroy(file_meta);
             return NULL;
         }
 
-        if (!dcm_dataset_insert(file_meta, element)) {
-            dcm_log_error("Reading File Meta Information failed. "
+        if (!dcm_dataset_insert(error, file_meta, element)) {
+            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                          "Reading File Meta Information failed. "
                           "Could not insert Data Element '%08X' into "
                           "Data Set.", tag);
             eheader_destroy(header);
@@ -942,7 +892,8 @@ DcmDataSet *dcm_file_read_file_meta(DcmFile *file)
     const char *transfer_syntax_uid = dcm_element_get_value_UI(element, 0);
     file->transfer_syntax_uid = strdup(transfer_syntax_uid);
     if (file->transfer_syntax_uid == NULL) {
-        dcm_log_error("Reading of File Meta Information failed. "
+        dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                      "Reading of File Meta Information failed. "
                       "Could not allocate memory for data element "
                       "'Transfer Syntax UID'.");
         file->offset = 0;  // reset state

@@ -28,13 +28,13 @@ typedef SSIZE_T ssize_t;
 #  define DCM_DEBUG_ONLY( ... )
 #endif
 
-#define DCM_NEW(ERROR, TYPE) \
-    (TYPE *) dcm_calloc(ERROR, 1, sizeof(TYPE))
-
 #define DCM_MALLOC(ERROR, SIZE) \
     dcm_calloc(ERROR, 1, SIZE)
 
-#define DCM_ARRAY_ZEROS(ERROR, N, TYPE) \
+#define DCM_NEW(ERROR, TYPE) \
+    (TYPE *) dcm_calloc(ERROR, 1, sizeof(TYPE))
+
+#define DCM_NEW_ARRAY(ERROR, N, TYPE) \
     (TYPE *) dcm_calloc(ERROR, N, sizeof(TYPE))
 
 
@@ -158,9 +158,14 @@ typedef struct _DcmBOT DcmBOT;
  * Enumeration of error codes.
  */
 enum _DcmErrorCode {
-    /** Invalid parameter */
+    /** Out of memory */
     DCM_ERROR_CODE_NOMEM = 1,
+    /** Invalid parameter */
     DCM_ERROR_CODE_INVALID = 2,
+    /** Parse error */
+    DCM_ERROR_CODE_PARSE = 3,
+    /** IO error */
+    DCM_ERROR_CODE_IO = 4,
 };
 
 /**
@@ -249,6 +254,17 @@ void dcm_error_log(DcmError *error);
  */
 DCM_EXTERN
 void *dcm_calloc(DcmError **error, size_t n, size_t size);
+
+
+/**
+ * Allocate a copy of a string.
+ *
+ * :param str: String to copy.
+ *
+ * :return: Pointer to copy of string.
+ */
+DCM_EXTERN
+char *dcm_strdup(DcmError **error, const char *str);
 
 
 /**

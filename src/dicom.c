@@ -34,6 +34,21 @@ void *dcm_calloc(DcmError **error, size_t n, size_t size)
 }
 
 
+char *dcm_strdup(DcmError **error, const char *str)
+{
+    if (str == NULL)
+        return NULL;
+
+    size_t length = strlen(str);
+    char *new_str = DCM_MALLOC(error, length);
+    if (new_str == NULL) {
+        return NULL;
+    }
+
+    return new_str;
+}
+
+
 const char *dcm_get_version(void)
 {
     return DCM_SUFFIXED_VERSION;
@@ -49,6 +64,9 @@ const char *dcm_error_code_str(DcmErrorCode code)
         case DCM_ERROR_CODE_INVALID:
             return "Invalid parameter";
 
+        case DCM_ERROR_CODE_PARSE:
+            return "Parse error";
+
         default:
             return "Unknown error code";
     }
@@ -63,6 +81,9 @@ const char *dcm_error_code_name(DcmErrorCode code)
 
         case DCM_ERROR_CODE_INVALID:
             return "INVALID";
+
+        case DCM_ERROR_CODE_PARSE:
+            return "PARSE";
 
         default:
             return "UNKNOWN";
