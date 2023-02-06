@@ -35,6 +35,8 @@
 - remove dcm_dataset_copy_tags() etc should not use uint32_t? what about
   dcm_dataset_count()?
 
+	get_num_frames() uses strtol(), so it's a long
+
   does utarray_len() really return uint32?
 
 - dcm_dataset_print() should not use uint8_t
@@ -43,6 +45,21 @@
 
 - should the foreach funcs take two params? are they used?
 
+- wrappers for read() / seek() / etc. that include error checks 
 
+  part of allowing your own read funcs
+
+- we very often have eg.:
+
+	            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                          "Reading Frame Item failed. "
+                          "No Item Tag found for Frame Item #%d.",
+                          number);
+
+  perhaps have separate "summary" and "detail" fields in error?
+
+- check we use dcm_strdup() everywhere
+
+- check use of dcm_sequence_get() ... use dcm_sequence_contains() instead
 
 	

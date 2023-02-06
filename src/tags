@@ -47,93 +47,93 @@ columns	dicom-data.c	/^    uint16_t columns;$/;"	m	struct:_DcmFrame	file:
 columns	dicom-file.c	/^    uint16_t columns;$/;"	m	struct:PixelDescription	file:
 compare_tags	dicom-data.c	/^static int compare_tags(const void *a, const void *b)$/;"	f	file:
 copy_sequence_item_icd	dicom-data.c	/^static void copy_sequence_item_icd(void *_dst_item, const void *_src_item)$/;"	f	file:
-create_element	dicom-data.c	/^static DcmElement *create_element(uint32_t tag, const char *vr, uint32_t length)$/;"	f	file:
-create_element_str	dicom-data.c	/^static DcmElement *create_element_str(uint32_t tag,$/;"	f	file:
-create_element_str_multi	dicom-data.c	/^static DcmElement *create_element_str_multi(uint32_t tag,$/;"	f	file:
+create_element	dicom-data.c	/^static DcmElement *create_element(DcmError **error, $/;"	f	file:
+create_element_str	dicom-data.c	/^static DcmElement *create_element_str(DcmError **error,$/;"	f	file:
+create_element_str_multi	dicom-data.c	/^static DcmElement *create_element_str_multi(DcmError **error,$/;"	f	file:
 create_pixel_description	dicom-file.c	/^static struct PixelDescription *create_pixel_description(const DcmDataSet *metadata)$/;"	f	file:
-create_sequence_item	dicom-data.c	/^static struct SequenceItem *create_sequence_item(DcmDataSet *dataset)$/;"	f	file:
+create_sequence_item	dicom-data.c	/^static struct SequenceItem *create_sequence_item(DcmError **error,$/;"	f	file:
 ctime_s	dicom.c	/^static int ctime_s(char *buf, size_t size, const time_t *time)$/;"	f	file:
 data	dicom-data.c	/^    const char *data;$/;"	m	struct:_DcmFrame	file:
 dataset	dicom-data.c	/^    DcmDataSet *dataset;$/;"	m	struct:SequenceItem	file:
-dcm_bot_create	dicom-data.c	/^DcmBOT *dcm_bot_create(ssize_t *offsets, uint32_t num_frames)$/;"	f
+dcm_bot_create	dicom-data.c	/^DcmBOT *dcm_bot_create(DcmError **error, ssize_t *offsets, uint32_t num_frames)$/;"	f
 dcm_bot_destroy	dicom-data.c	/^void dcm_bot_destroy(DcmBOT *bot)$/;"	f
 dcm_bot_get_frame_offset	dicom-data.c	/^ssize_t dcm_bot_get_frame_offset(const DcmBOT *bot, uint32_t number)$/;"	f
 dcm_bot_get_num_frames	dicom-data.c	/^uint32_t dcm_bot_get_num_frames(const DcmBOT *bot)$/;"	f
 dcm_bot_print	dicom-data.c	/^void dcm_bot_print(const DcmBOT *bot)$/;"	f
 dcm_calloc	dicom.c	/^void *dcm_calloc(DcmError **error, size_t n, size_t size)$/;"	f
-dcm_dataset_clone	dicom-data.c	/^DcmDataSet *dcm_dataset_clone(const DcmDataSet *dataset)$/;"	f
-dcm_dataset_contains	dicom-data.c	/^bool dcm_dataset_contains(const DcmDataSet *dataset, uint32_t tag)$/;"	f
-dcm_dataset_copy_tags	dicom-data.c	/^void dcm_dataset_copy_tags(const DcmDataSet *dataset, uint32_t *tags, uint32_t n)$/;"	f
+dcm_dataset_clone	dicom-data.c	/^DcmDataSet *dcm_dataset_clone(DcmError **error, const DcmDataSet *dataset)$/;"	f
+dcm_dataset_contains	dicom-data.c	/^DcmElement *dcm_dataset_contains(const DcmDataSet *dataset, uint32_t tag)$/;"	f
+dcm_dataset_copy_tags	dicom-data.c	/^void dcm_dataset_copy_tags(const DcmDataSet *dataset, $/;"	f
 dcm_dataset_count	dicom-data.c	/^uint32_t dcm_dataset_count(const DcmDataSet *dataset)$/;"	f
-dcm_dataset_create	dicom-data.c	/^DcmDataSet *dcm_dataset_create(void)$/;"	f
+dcm_dataset_create	dicom-data.c	/^DcmDataSet *dcm_dataset_create(DcmError **error)$/;"	f
 dcm_dataset_destroy	dicom-data.c	/^void dcm_dataset_destroy(DcmDataSet *dataset)$/;"	f
 dcm_dataset_foreach	dicom-data.c	/^void dcm_dataset_foreach(const DcmDataSet *dataset,$/;"	f
-dcm_dataset_get	dicom-data.c	/^DcmElement *dcm_dataset_get(const DcmDataSet *dataset, uint32_t tag)$/;"	f
+dcm_dataset_get	dicom-data.c	/^DcmElement *dcm_dataset_get(DcmError **error, $/;"	f
 dcm_dataset_get_clone	dicom-data.c	/^DcmElement *dcm_dataset_get_clone(const DcmDataSet *dataset, uint32_t tag)$/;"	f
-dcm_dataset_insert	dicom-data.c	/^bool dcm_dataset_insert(DcmDataSet *dataset, DcmElement *element)$/;"	f
+dcm_dataset_insert	dicom-data.c	/^bool dcm_dataset_insert(DcmError **error, $/;"	f
 dcm_dataset_is_locked	dicom-data.c	/^bool dcm_dataset_is_locked(const DcmDataSet *dataset)$/;"	f
 dcm_dataset_lock	dicom-data.c	/^void dcm_dataset_lock(DcmDataSet *dataset)$/;"	f
-dcm_dataset_print	dicom-data.c	/^void dcm_dataset_print(const DcmDataSet *dataset, uint8_t indentation)$/;"	f
-dcm_dataset_remove	dicom-data.c	/^bool dcm_dataset_remove(DcmDataSet *dataset, uint32_t tag)$/;"	f
+dcm_dataset_print	dicom-data.c	/^void dcm_dataset_print(DcmError **error, $/;"	f
+dcm_dataset_remove	dicom-data.c	/^bool dcm_dataset_remove(DcmError **error, DcmDataSet *dataset, uint32_t tag)$/;"	f
 dcm_dict_lookup_keyword	dicom-dict.c	/^const char *dcm_dict_lookup_keyword(uint32_t tag)$/;"	f
 dcm_dict_lookup_vr	dicom-dict.c	/^const char *dcm_dict_lookup_vr(uint32_t tag)$/;"	f
 dcm_element_check_vr	dicom-data.c	/^bool dcm_element_check_vr(const DcmElement *element, const char *vr)$/;"	f
-dcm_element_clone	dicom-data.c	/^DcmElement *dcm_element_clone(const DcmElement *element)$/;"	f
-dcm_element_create_AE	dicom-data.c	/^DcmElement *dcm_element_create_AE(uint32_t tag, char *value)$/;"	f
-dcm_element_create_AE_multi	dicom-data.c	/^DcmElement *dcm_element_create_AE_multi(uint32_t tag,$/;"	f
-dcm_element_create_AS	dicom-data.c	/^DcmElement *dcm_element_create_AS(uint32_t tag, char *value)$/;"	f
-dcm_element_create_AS_multi	dicom-data.c	/^DcmElement *dcm_element_create_AS_multi(uint32_t tag,$/;"	f
-dcm_element_create_AT	dicom-data.c	/^DcmElement *dcm_element_create_AT(uint32_t tag, char *value)$/;"	f
-dcm_element_create_AT_multi	dicom-data.c	/^DcmElement *dcm_element_create_AT_multi(uint32_t tag,$/;"	f
-dcm_element_create_CS	dicom-data.c	/^DcmElement *dcm_element_create_CS(uint32_t tag, char *value)$/;"	f
-dcm_element_create_CS_multi	dicom-data.c	/^DcmElement *dcm_element_create_CS_multi(uint32_t tag,$/;"	f
-dcm_element_create_DA	dicom-data.c	/^DcmElement *dcm_element_create_DA(uint32_t tag, char *value)$/;"	f
-dcm_element_create_DA_multi	dicom-data.c	/^DcmElement *dcm_element_create_DA_multi(uint32_t tag,$/;"	f
-dcm_element_create_DS	dicom-data.c	/^DcmElement *dcm_element_create_DS(uint32_t tag, char *value)$/;"	f
-dcm_element_create_DS_multi	dicom-data.c	/^DcmElement *dcm_element_create_DS_multi(uint32_t tag,$/;"	f
-dcm_element_create_DT	dicom-data.c	/^DcmElement *dcm_element_create_DT(uint32_t tag, char *value)$/;"	f
-dcm_element_create_DT_multi	dicom-data.c	/^DcmElement *dcm_element_create_DT_multi(uint32_t tag,$/;"	f
-dcm_element_create_FD	dicom-data.c	/^DcmElement *dcm_element_create_FD(uint32_t tag, double value)$/;"	f
-dcm_element_create_FD_multi	dicom-data.c	/^DcmElement *dcm_element_create_FD_multi(uint32_t tag,$/;"	f
-dcm_element_create_FL	dicom-data.c	/^DcmElement *dcm_element_create_FL(uint32_t tag, float value)$/;"	f
-dcm_element_create_FL_multi	dicom-data.c	/^DcmElement *dcm_element_create_FL_multi(uint32_t tag,$/;"	f
-dcm_element_create_IS	dicom-data.c	/^DcmElement *dcm_element_create_IS(uint32_t tag, char *value)$/;"	f
-dcm_element_create_IS_multi	dicom-data.c	/^DcmElement *dcm_element_create_IS_multi(uint32_t tag,$/;"	f
-dcm_element_create_LO	dicom-data.c	/^DcmElement *dcm_element_create_LO(uint32_t tag, char *value)$/;"	f
-dcm_element_create_LO_multi	dicom-data.c	/^DcmElement *dcm_element_create_LO_multi(uint32_t tag,$/;"	f
-dcm_element_create_LT	dicom-data.c	/^DcmElement *dcm_element_create_LT(uint32_t tag, char *value)$/;"	f
-dcm_element_create_OB	dicom-data.c	/^DcmElement *dcm_element_create_OB(uint32_t tag, char *value, uint32_t length)$/;"	f
-dcm_element_create_OD	dicom-data.c	/^DcmElement *dcm_element_create_OD(uint32_t tag, char *value, uint32_t length)$/;"	f
-dcm_element_create_OF	dicom-data.c	/^DcmElement *dcm_element_create_OF(uint32_t tag, char *value, uint32_t length)$/;"	f
-dcm_element_create_OL	dicom-data.c	/^DcmElement *dcm_element_create_OL(uint32_t tag, char *value, uint32_t length)$/;"	f
-dcm_element_create_OV	dicom-data.c	/^DcmElement *dcm_element_create_OV(uint32_t tag, char *value, uint32_t length)$/;"	f
-dcm_element_create_OW	dicom-data.c	/^DcmElement *dcm_element_create_OW(uint32_t tag, char *value, uint32_t length)$/;"	f
-dcm_element_create_PN	dicom-data.c	/^DcmElement *dcm_element_create_PN(uint32_t tag, char *value)$/;"	f
-dcm_element_create_PN_multi	dicom-data.c	/^DcmElement *dcm_element_create_PN_multi(uint32_t tag,$/;"	f
-dcm_element_create_SH	dicom-data.c	/^DcmElement *dcm_element_create_SH(uint32_t tag, char *value)$/;"	f
-dcm_element_create_SH_multi	dicom-data.c	/^DcmElement *dcm_element_create_SH_multi(uint32_t tag,$/;"	f
-dcm_element_create_SL	dicom-data.c	/^DcmElement *dcm_element_create_SL(uint32_t tag, int32_t value)$/;"	f
-dcm_element_create_SL_multi	dicom-data.c	/^DcmElement *dcm_element_create_SL_multi(uint32_t tag,$/;"	f
-dcm_element_create_SQ	dicom-data.c	/^DcmElement *dcm_element_create_SQ(uint32_t tag, DcmSequence *value)$/;"	f
-dcm_element_create_SS	dicom-data.c	/^DcmElement *dcm_element_create_SS(uint32_t tag, int16_t value)$/;"	f
-dcm_element_create_SS_multi	dicom-data.c	/^DcmElement *dcm_element_create_SS_multi(uint32_t tag,$/;"	f
-dcm_element_create_ST	dicom-data.c	/^DcmElement *dcm_element_create_ST(uint32_t tag, char *value)$/;"	f
-dcm_element_create_SV	dicom-data.c	/^DcmElement *dcm_element_create_SV(uint32_t tag, int64_t value)$/;"	f
-dcm_element_create_SV_multi	dicom-data.c	/^DcmElement *dcm_element_create_SV_multi(uint32_t tag,$/;"	f
-dcm_element_create_TM	dicom-data.c	/^DcmElement *dcm_element_create_TM(uint32_t tag, char *value)$/;"	f
-dcm_element_create_TM_multi	dicom-data.c	/^DcmElement *dcm_element_create_TM_multi(uint32_t tag,$/;"	f
-dcm_element_create_UC	dicom-data.c	/^DcmElement *dcm_element_create_UC(uint32_t tag, char *value, uint32_t length)$/;"	f
-dcm_element_create_UI	dicom-data.c	/^DcmElement *dcm_element_create_UI(uint32_t tag, char *value)$/;"	f
-dcm_element_create_UI_multi	dicom-data.c	/^DcmElement *dcm_element_create_UI_multi(uint32_t tag,$/;"	f
+dcm_element_clone	dicom-data.c	/^DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)$/;"	f
+dcm_element_create_AE	dicom-data.c	/^DcmElement *dcm_element_create_AE(DcmError **error, uint32_t tag, char *value)$/;"	f
+dcm_element_create_AE_multi	dicom-data.c	/^DcmElement *dcm_element_create_AE_multi(DcmError **error, $/;"	f
+dcm_element_create_AS	dicom-data.c	/^DcmElement *dcm_element_create_AS(DcmError **error, uint32_t tag, char *value)$/;"	f
+dcm_element_create_AS_multi	dicom-data.c	/^DcmElement *dcm_element_create_AS_multi(DcmError **error, $/;"	f
+dcm_element_create_AT	dicom-data.c	/^DcmElement *dcm_element_create_AT(DcmError **error, uint32_t tag, char *value)$/;"	f
+dcm_element_create_AT_multi	dicom-data.c	/^DcmElement *dcm_element_create_AT_multi(DcmError **error, $/;"	f
+dcm_element_create_CS	dicom-data.c	/^DcmElement *dcm_element_create_CS(DcmError **error, uint32_t tag, char *value)$/;"	f
+dcm_element_create_CS_multi	dicom-data.c	/^DcmElement *dcm_element_create_CS_multi(DcmError **error,$/;"	f
+dcm_element_create_DA	dicom-data.c	/^DcmElement *dcm_element_create_DA(DcmError **error, uint32_t tag, char *value)$/;"	f
+dcm_element_create_DA_multi	dicom-data.c	/^DcmElement *dcm_element_create_DA_multi(DcmError **error,$/;"	f
+dcm_element_create_DS	dicom-data.c	/^DcmElement *dcm_element_create_DS(DcmError **error, uint32_t tag, char *value)$/;"	f
+dcm_element_create_DS_multi	dicom-data.c	/^DcmElement *dcm_element_create_DS_multi(DcmError **error,$/;"	f
+dcm_element_create_DT	dicom-data.c	/^DcmElement *dcm_element_create_DT(DcmError **error, uint32_t tag, char *value)$/;"	f
+dcm_element_create_DT_multi	dicom-data.c	/^DcmElement *dcm_element_create_DT_multi(DcmError *error, $/;"	f
+dcm_element_create_FD	dicom-data.c	/^DcmElement *dcm_element_create_FD(DcmError **error, uint32_t tag, double value)$/;"	f
+dcm_element_create_FD_multi	dicom-data.c	/^DcmElement *dcm_element_create_FD_multi(DcmError **error, $/;"	f
+dcm_element_create_FL	dicom-data.c	/^DcmElement *dcm_element_create_FL(DcmError **error, uint32_t tag, float value)$/;"	f
+dcm_element_create_FL_multi	dicom-data.c	/^DcmElement *dcm_element_create_FL_multi(DcmError **error,$/;"	f
+dcm_element_create_IS	dicom-data.c	/^DcmElement *dcm_element_create_IS(DcmError **error, uint32_t tag, char *value)$/;"	f
+dcm_element_create_IS_multi	dicom-data.c	/^DcmElement *dcm_element_create_IS_multi(DcmError **error, $/;"	f
+dcm_element_create_LO	dicom-data.c	/^DcmElement *dcm_element_create_LO(DcmError **error, uint32_t tag, char *value)$/;"	f
+dcm_element_create_LO_multi	dicom-data.c	/^DcmElement *dcm_element_create_LO_multi(DcmError **error,$/;"	f
+dcm_element_create_LT	dicom-data.c	/^DcmElement *dcm_element_create_LT(DcmError **error, uint32_t tag, char *value)$/;"	f
+dcm_element_create_OB	dicom-data.c	/^DcmElement *dcm_element_create_OB(DcmError **error, $/;"	f
+dcm_element_create_OD	dicom-data.c	/^DcmElement *dcm_element_create_OD(DcmError **error, $/;"	f
+dcm_element_create_OF	dicom-data.c	/^DcmElement *dcm_element_create_OF(DcmError **error,$/;"	f
+dcm_element_create_OL	dicom-data.c	/^DcmElement *dcm_element_create_OL(DcmError **error, $/;"	f
+dcm_element_create_OV	dicom-data.c	/^DcmElement *dcm_element_create_OV(DcmError **error,$/;"	f
+dcm_element_create_OW	dicom-data.c	/^DcmElement *dcm_element_create_OW(DcmError **error,$/;"	f
+dcm_element_create_PN	dicom-data.c	/^DcmElement *dcm_element_create_PN(DcmError **error, uint32_t tag, char *value)$/;"	f
+dcm_element_create_PN_multi	dicom-data.c	/^DcmElement *dcm_element_create_PN_multi(DcmError **error, $/;"	f
+dcm_element_create_SH	dicom-data.c	/^DcmElement *dcm_element_create_SH(DcmError **error, uint32_t tag, char *value)$/;"	f
+dcm_element_create_SH_multi	dicom-data.c	/^DcmElement *dcm_element_create_SH_multi(DcmError **error, $/;"	f
+dcm_element_create_SL	dicom-data.c	/^DcmElement *dcm_element_create_SL(DcmError **error,$/;"	f
+dcm_element_create_SL_multi	dicom-data.c	/^DcmElement *dcm_element_create_SL_multi(DcmError **error,$/;"	f
+dcm_element_create_SQ	dicom-data.c	/^DcmElement *dcm_element_create_SQ(DcmError **error, $/;"	f
+dcm_element_create_SS	dicom-data.c	/^DcmElement *dcm_element_create_SS(DcmError **error, uint32_t tag, int16_t value)$/;"	f
+dcm_element_create_SS_multi	dicom-data.c	/^DcmElement *dcm_element_create_SS_multi(DcmError **error, $/;"	f
+dcm_element_create_ST	dicom-data.c	/^DcmElement *dcm_element_create_ST(DcmError **error, uint32_t tag, char *value)$/;"	f
+dcm_element_create_SV	dicom-data.c	/^DcmElement *dcm_element_create_SV(DcmError **error, uint32_t tag, int64_t value)$/;"	f
+dcm_element_create_SV_multi	dicom-data.c	/^DcmElement *dcm_element_create_SV_multi(DcmError **error,$/;"	f
+dcm_element_create_TM	dicom-data.c	/^DcmElement *dcm_element_create_TM(DcmError **error, uint32_t tag, char *value)$/;"	f
+dcm_element_create_TM_multi	dicom-data.c	/^DcmElement *dcm_element_create_TM_multi(DcmError **error, $/;"	f
+dcm_element_create_UC	dicom-data.c	/^DcmElement *dcm_element_create_UC(DcmError **error, $/;"	f
+dcm_element_create_UI	dicom-data.c	/^DcmElement *dcm_element_create_UI(DcmError **error, uint32_t tag, char *value)$/;"	f
+dcm_element_create_UI_multi	dicom-data.c	/^DcmElement *dcm_element_create_UI_multi(DcmError **error, $/;"	f
 dcm_element_create_UL	dicom-data.c	/^DcmElement *dcm_element_create_UL(uint32_t tag, uint32_t value)$/;"	f
-dcm_element_create_UL_multi	dicom-data.c	/^DcmElement *dcm_element_create_UL_multi(uint32_t tag,$/;"	f
-dcm_element_create_UN	dicom-data.c	/^DcmElement *dcm_element_create_UN(uint32_t tag, char *value, uint32_t length)$/;"	f
-dcm_element_create_UR	dicom-data.c	/^DcmElement *dcm_element_create_UR(uint32_t tag, char *value)$/;"	f
-dcm_element_create_US	dicom-data.c	/^DcmElement *dcm_element_create_US(uint32_t tag, uint16_t value)$/;"	f
-dcm_element_create_US_multi	dicom-data.c	/^DcmElement *dcm_element_create_US_multi(uint32_t tag,$/;"	f
-dcm_element_create_UT	dicom-data.c	/^DcmElement *dcm_element_create_UT(uint32_t tag, char *value)$/;"	f
-dcm_element_create_UV	dicom-data.c	/^DcmElement *dcm_element_create_UV(uint32_t tag, uint64_t value)$/;"	f
-dcm_element_create_UV_multi	dicom-data.c	/^DcmElement *dcm_element_create_UV_multi(uint32_t tag,$/;"	f
+dcm_element_create_UL_multi	dicom-data.c	/^DcmElement *dcm_element_create_UL_multi(DcmError **error,$/;"	f
+dcm_element_create_UN	dicom-data.c	/^DcmElement *dcm_element_create_UN(DcmError **error, $/;"	f
+dcm_element_create_UR	dicom-data.c	/^DcmElement *dcm_element_create_UR(DcmError **error, uint32_t tag, char *value)$/;"	f
+dcm_element_create_US	dicom-data.c	/^DcmElement *dcm_element_create_US(DcmError **error, $/;"	f
+dcm_element_create_US_multi	dicom-data.c	/^DcmElement *dcm_element_create_US_multi(DcmError **error,$/;"	f
+dcm_element_create_UT	dicom-data.c	/^DcmElement *dcm_element_create_UT(DcmError **error, uint32_t tag, char *value)$/;"	f
+dcm_element_create_UV	dicom-data.c	/^DcmElement *dcm_element_create_UV(DcmError **error, $/;"	f
+dcm_element_create_UV_multi	dicom-data.c	/^DcmElement *dcm_element_create_UV_multi(DcmError **error,$/;"	f
 dcm_element_destroy	dicom-data.c	/^void dcm_element_destroy(DcmElement *element)$/;"	f
 dcm_element_get_element_number	dicom-data.c	/^uint16_t dcm_element_get_element_number(const DcmElement *element)$/;"	f
 dcm_element_get_group_number	dicom-data.c	/^uint16_t dcm_element_get_group_number(const DcmElement *element)$/;"	f
@@ -185,13 +185,13 @@ dcm_error_message	dicom.c	/^const char *dcm_error_message(DcmError *error)$/;"	f
 dcm_error_newf	dicom.c	/^static DcmError *dcm_error_newf(DcmErrorCode code, $/;"	f	file:
 dcm_error_set	dicom.c	/^void dcm_error_set(DcmError **error, $/;"	f
 dcm_file_build_bot	dicom-file.c	/^DcmBOT *dcm_file_build_bot(const DcmFile *file, const DcmDataSet *metadata)$/;"	f
-dcm_file_create	dicom-file.c	/^DcmFile *dcm_file_create(const char *file_path, const char mode)$/;"	f
+dcm_file_create	dicom-file.c	/^DcmFile *dcm_file_create(DcmError **error, $/;"	f
 dcm_file_destroy	dicom-file.c	/^void dcm_file_destroy(DcmFile *file)$/;"	f
 dcm_file_read_bot	dicom-file.c	/^DcmBOT *dcm_file_read_bot(const DcmFile *file, const DcmDataSet *metadata)$/;"	f
-dcm_file_read_file_meta	dicom-file.c	/^DcmDataSet *dcm_file_read_file_meta(DcmFile *file)$/;"	f
+dcm_file_read_file_meta	dicom-file.c	/^DcmDataSet *dcm_file_read_file_meta(DcmError **error, DcmFile *file)$/;"	f
 dcm_file_read_frame	dicom-file.c	/^DcmFrame *dcm_file_read_frame(const DcmFile *file,$/;"	f
 dcm_file_read_metadata	dicom-file.c	/^DcmDataSet *dcm_file_read_metadata(DcmFile *file)$/;"	f
-dcm_frame_create	dicom-data.c	/^DcmFrame *dcm_frame_create(uint32_t number,$/;"	f
+dcm_frame_create	dicom-data.c	/^DcmFrame *dcm_frame_create(DcmError **error, $/;"	f
 dcm_frame_destroy	dicom-data.c	/^void dcm_frame_destroy(DcmFrame *frame)$/;"	f
 dcm_frame_get_bits_allocated	dicom-data.c	/^uint16_t dcm_frame_get_bits_allocated(const DcmFrame *frame)$/;"	f
 dcm_frame_get_bits_stored	dicom-data.c	/^uint16_t dcm_frame_get_bits_stored(const DcmFrame *frame)$/;"	f
@@ -207,7 +207,7 @@ dcm_frame_get_samples_per_pixel	dicom-data.c	/^uint16_t dcm_frame_get_samples_pe
 dcm_frame_get_transfer_syntax_uid	dicom-data.c	/^const char *dcm_frame_get_transfer_syntax_uid(const DcmFrame *frame)$/;"	f
 dcm_frame_get_value	dicom-data.c	/^const char *dcm_frame_get_value(const DcmFrame *frame)$/;"	f
 dcm_get_version	dicom.c	/^const char *dcm_get_version(void)$/;"	f
-dcm_is_encapsulated_transfer_syntax	dicom-data.c	/^bool dcm_is_encapsulated_transfer_syntax(const char *transfer_syntax_uid) {$/;"	f
+dcm_is_encapsulated_transfer_syntax	dicom-data.c	/^bool dcm_is_encapsulated_transfer_syntax(const char *transfer_syntax_uid) $/;"	f
 dcm_is_private_tag	dicom-dict.c	/^bool dcm_is_private_tag(uint32_t tag)$/;"	f
 dcm_is_public_tag	dicom-dict.c	/^bool dcm_is_public_tag(uint32_t tag)$/;"	f
 dcm_is_valid_tag	dicom-dict.c	/^bool dcm_is_valid_tag(uint32_t tag)$/;"	f
@@ -219,15 +219,16 @@ dcm_log_info	dicom.c	/^void dcm_log_info(const char *format, ...)$/;"	f
 dcm_log_level	dicom.c	/^DcmLogLevel dcm_log_level = DCM_LOG_NOTSET;$/;"	v
 dcm_log_warning	dicom.c	/^void dcm_log_warning(const char *format, ...)$/;"	f
 dcm_logf	dicom.c	/^static void dcm_logf(const char *level, const char *format, va_list args)$/;"	f	file:
-dcm_sequence_append	dicom-data.c	/^bool dcm_sequence_append(DcmSequence *seq, DcmDataSet *item)$/;"	f
+dcm_sequence_append	dicom-data.c	/^bool dcm_sequence_append(DcmError **error, DcmSequence *seq, DcmDataSet *item)$/;"	f
 dcm_sequence_count	dicom-data.c	/^uint32_t dcm_sequence_count(const DcmSequence *seq)$/;"	f
-dcm_sequence_create	dicom-data.c	/^DcmSequence *dcm_sequence_create(void)$/;"	f
+dcm_sequence_create	dicom-data.c	/^DcmSequence *dcm_sequence_create(DcmError **error)$/;"	f
 dcm_sequence_destroy	dicom-data.c	/^void dcm_sequence_destroy(DcmSequence *seq)$/;"	f
 dcm_sequence_foreach	dicom-data.c	/^void dcm_sequence_foreach(const DcmSequence *seq,$/;"	f
-dcm_sequence_get	dicom-data.c	/^DcmDataSet *dcm_sequence_get(const DcmSequence *seq, uint32_t index)$/;"	f
+dcm_sequence_get	dicom-data.c	/^DcmDataSet *dcm_sequence_get(DcmError **error, $/;"	f
 dcm_sequence_is_locked	dicom-data.c	/^bool dcm_sequence_is_locked(const DcmSequence *seq)$/;"	f
 dcm_sequence_lock	dicom-data.c	/^void dcm_sequence_lock(DcmSequence *seq)$/;"	f
-dcm_sequence_remove	dicom-data.c	/^void dcm_sequence_remove(DcmSequence *seq, uint32_t index)$/;"	f
+dcm_sequence_remove	dicom-data.c	/^void dcm_sequence_remove(DcmError **error, DcmSequence *seq, uint32_t index)$/;"	f
+dcm_strdup	dicom.c	/^char *dcm_strdup(DcmError **error, const char *str)$/;"	f
 destroy_pixel_description	dicom-file.c	/^static void destroy_pixel_description(struct PixelDescription *desc)$/;"	f	file:
 destroy_sequence_item_icd	dicom-data.c	/^static void destroy_sequence_item_icd(void *_item)$/;"	f	file:
 eheader_check_vr	dicom-file.c	/^static bool eheader_check_vr(EHeader *header, const char *vr)$/;"	f	file:

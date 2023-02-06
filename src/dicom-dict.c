@@ -4937,13 +4937,10 @@ static const struct _DcmAttribute *attribute_from_tag(uint32_t tag)
         for (i = 0; i < n_attributes; i++) {
             HASH_FIND_INT(dictionary, &attribute_table[i].tag, entry);
             if (entry) {
-                dcm_log_critical("Encoutered duplicate entry in Data "
-                                 "Dictionary for Attribute '%08x'.",
-                                 attribute_table[i].tag);
-                exit(1);
+                return NULL;
             }
 
-            entry = DCM_NEW(struct _DcmAttribute_hash_entry);
+            entry = DCM_NEW(NULL, struct _DcmAttribute_hash_entry);
             *((struct _DcmAttribute *)entry) = attribute_table[i];
             HASH_ADD_INT(dictionary, tag, entry);
         }
@@ -4968,7 +4965,7 @@ static const struct _DcmAttribute *attribute_from_vr(const char *vr)
             HASH_FIND_STR(dictionary, attribute_table[i].vr, entry);
 
             if (!entry) {
-                entry = DCM_NEW(struct _DcmAttribute_hash_entry);
+                entry = DCM_NEW(NULL, struct _DcmAttribute_hash_entry);
                 *((struct _DcmAttribute *)entry) = attribute_table[i];
                 HASH_ADD_STR(dictionary, vr, entry);
             }
@@ -5012,8 +5009,7 @@ const char *dcm_dict_lookup_vr(uint32_t tag)
 {
     const struct _DcmAttribute *attribute = attribute_from_tag(tag);
     if (!attribute) {
-        dcm_log_critical("Lookup of VR for Attribute '%08x' failed.", tag);
-        exit(1);
+        return NULL;
     }
     return attribute->vr;
 }
@@ -5023,8 +5019,7 @@ const char *dcm_dict_lookup_keyword(uint32_t tag)
 {
     const struct _DcmAttribute *attribute = attribute_from_tag(tag);
     if (!attribute) {
-        dcm_log_critical("Lookup of Keyword for Attribute '%08x' failed.", tag);
-        exit(1);
+        return NULL;
     }
     return attribute->keyword;
 }

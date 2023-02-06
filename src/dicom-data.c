@@ -261,11 +261,7 @@ uint32_t dcm_element_get_tag(const DcmElement *element)
 bool dcm_element_check_vr(const DcmElement *element, const char *vr)
 {
     assert(element);
-    if (strcmp(element->vr, vr) == 0) {
-        return true;
-    } else {
-        return false;
-    }
+    return strcmp(element->vr, vr) == 0;
 }
 
 
@@ -297,14 +293,19 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
             DcmDataSet *item;
             DcmDataSet *cloned_item;
             for (i = 0; i < dcm_sequence_count(element->value.sq); i++) {
-                item = dcm_sequence_get(element->value.sq, i);
+                item = dcm_sequence_get(error, element->value.sq, i);
+                if (item == NULL) {
+                    dcm_sequence_destroy(seq);
+                    dcm_element_destroy(clone);
+                    return NULL;
+                }
                 cloned_item = dcm_dataset_clone(error, item);
                 if (cloned_item == NULL) {
                     dcm_sequence_destroy(seq);
                     dcm_element_destroy(clone);
                     return NULL;
                 }
-                dcm_sequence_append(seq, cloned_item);
+                dcm_sequence_append(error, seq, cloned_item);
                 dcm_dataset_destroy(cloned_item);
             }
             clone->value.sq = seq;
@@ -320,7 +321,7 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
             for (i = 0; i < element->vm; i++) {
                 clone->value.str_multi[i] = dcm_strdup(error, 
                                                        element->
-                                                        value.str_multi[i]);
+                                                       value.str_multi[i]);
                 if (clone->value.str_multi[i] == NULL) {
                     // FIXME: free memory allocated for previous values
                     free(clone->value.str_multi);
@@ -691,7 +692,7 @@ DcmElement *dcm_element_create_DT(DcmError **error, uint32_t tag, char *value)
 }
 
 
-DcmElement *dcm_element_create_DT_multi(DcmError *error, 
+DcmElement *dcm_element_create_DT_multi(DcmError **error, 
                                         uint32_t tag,
                                         char **values,
                                         uint32_t vm)
@@ -1347,7 +1348,8 @@ DcmElement *dcm_element_create_SV_multi(DcmError **error,
 }
 
 
-DcmElement *dcm_element_create_UL(uint32_t tag, uint32_t value)
+DcmElement *dcm_element_create_UL(DcmError **error, 
+                                  uint32_t tag, uint32_t value)
 {
     uint32_t length = sizeof(uint32_t);
     uint32_t *values = DCM_NEW_ARRAY(error, 1, uint32_t);
@@ -1833,7 +1835,7 @@ void dcm_element_print(const DcmElement *element, uint8_t indentation)
                    num_indent_next,
                    "                                   ",
                    i + 1);
-            DcmDataSet *item = dcm_sequence_get(sequence, i);
+            DcmDataSet *item = dcm_sequence_get(NULL, sequence, i);
             dcm_dataset_print(item, indentation+1);
         }
         printf("%*.*s]\n",
@@ -1931,12 +1933,8 @@ bool dcm_dataset_remove(DcmError **error, DcmDataSet *dataset, uint32_t tag)
         return false;
     }
 
-    DcmElement *matched_element = dcm_dataset_get(dataset, tag);
+    DcmElement *matched_element = dcm_dataset_get(error, dataset, tag);
     if (matched_element == NULL) {
-        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Removing Data Element '%08X' from Data Set failed. "
-                      "Could not find Data Element.",
-                      tag);
         return false;
     }
 
@@ -1947,7 +1945,8 @@ bool dcm_dataset_remove(DcmError **error, DcmDataSet *dataset, uint32_t tag)
 }
 
 
-DcmElement *dcm_dataset_get_clone(const DcmDataSet *dataset, uint32_t tag)
+DcmElement *dcm_dataset_get_clone(DcmError **error,
+                                  const DcmDataSet *dataset, uint32_t tag)
 {
     assert(dataset);
     DcmElement *element;
@@ -1961,7 +1960,7 @@ DcmElement *dcm_dataset_get_clone(const DcmDataSet *dataset, uint32_t tag)
                       tag);
         return NULL;
     }
-    return dcm_element_clone(element);
+    return dcm_element_clone(error, element);
 }
 
 
@@ -2033,23 +2032,23 @@ void dcm_dataset_copy_tags(const DcmDataSet *dataset,
 }
 
 
-void dcm_dataset_print(DcmError **error, 
-                       const DcmDataSet *dataset, uint8_t indentation)
+void dcm_dataset_print(const DcmDataSet *dataset, uint8_t indentation)
 {
     assert(dataset);
     uint32_t i;
     DcmElement *element;
 
     uint32_t n = dcm_dataset_count(dataset);
-    uint32_t *tags = DCM_NEW_ARRAY(error, n, uint32_t);
+    uint32_t *tags = DCM_NEW_ARRAY(NULL, n, uint32_t);
     if (tags == NULL) {
         return;
     }
     dcm_dataset_copy_tags(dataset, tags, n);
 
     for(i = 0; i < n; i++) {
-        element = dcm_dataset_get(error, dataset, tags[i]);
+        element = dcm_dataset_get(NULL, dataset, tags[i]);
         if (element == NULL) {
+            dcm_log_warning("Missing tag.");
             free(tags);
             return;
         }
