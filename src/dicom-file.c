@@ -6,6 +6,8 @@
 #ifdef _WIN32
 // the Windows CRT considers strncpy unsafe
 #define _CRT_SECURE_NO_WARNINGS
+// and deprecates strdup
+#define strdup(v) _strdup(v)
 #endif
 
 #include <assert.h>
