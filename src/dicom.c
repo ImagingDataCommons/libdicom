@@ -67,6 +67,9 @@ const char *dcm_error_code_str(DcmErrorCode code)
         case DCM_ERROR_CODE_PARSE:
             return "Parse error";
 
+        case DCM_ERROR_CODE_IO:
+            return "IO error";
+
         default:
             return "Unknown error code";
     }
@@ -84,6 +87,9 @@ const char *dcm_error_code_name(DcmErrorCode code)
 
         case DCM_ERROR_CODE_PARSE:
             return "PARSE";
+
+        case DCM_ERROR_CODE_IO:
+            return "IO";
 
         default:
             return "UNKNOWN";
@@ -124,8 +130,6 @@ static DcmError *dcm_error_newf(DcmErrorCode code,
     vsnprintf(txt, sizeof(txt), format, ap);
     error->message = dcm_strdup(NULL, txt);
 
-    dcm_error_log(error);
-
     return error;
 }
 
@@ -133,16 +137,26 @@ static DcmError *dcm_error_newf(DcmErrorCode code,
 void dcm_error_set(DcmError **error, DcmErrorCode code, 
     const char *summary, const char *format, ...)
 {
-    if (error) {
-        if (*error) {
-            dcm_log_critical("DcmError set twice");
-            return;
-        }
+    if (error && *error) {
+        dcm_log_critical("DcmError set twice");
+        return;
+    }
 
+    if (error) {
         va_list(ap);
         va_start(ap, format);
         *error = dcm_error_newf(code, summary, format, ap);
         va_end(ap);
+    } else {
+        va_list(ap);
+
+        va_start(ap, format);
+        DcmError *local_error = dcm_error_newf(code, summary, format, ap);
+        va_end(ap);
+
+        dcm_error_log(local_error);
+
+        dcm_error_free(local_error);
     }
 }
 
@@ -177,10 +191,10 @@ const char *dcm_error_summary(DcmError *error)
 void dcm_error_log(DcmError *error)
 {
     if (error) {
-        dcm_log_critical("%s: %s - %s", 
-                         dcm_error_code_str(error->code),
-                         error->summary,
-                         error->message);
+        dcm_log_error("%s: %s - %s", 
+                      dcm_error_code_str(error->code),
+                      error->summary,
+                      error->message);
     }
 }
 

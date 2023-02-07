@@ -271,7 +271,7 @@ DCM_EXTERN
 const char *dcm_error_code_name(DcmErrorCode code);
 
 /**
- * Add a critial message to the log for a DcmError.
+ * Add an error message to the log for a DcmError.
  *
  * :param error: DcmError to read the error from
  */

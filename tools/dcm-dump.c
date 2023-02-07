@@ -14,7 +14,6 @@ int main(int argc, char *argv[]) {
 
     int i;
     const char *file_path = NULL;
-    DcmError *error = NULL;
     DcmDataSet *metadata = NULL;
     DcmDataSet *file_meta = NULL;
     DcmFile *file = NULL;
@@ -45,17 +44,13 @@ int main(int argc, char *argv[]) {
     file_path = argv[i];
 
     dcm_log_info("Read file '%s'", file_path);
-    file = dcm_file_create(&error, file_path, 'r');
+    file = dcm_file_create(NULL, file_path, 'r');
     if (file == NULL) {
-        dcm_error_log(error);
-        dcm_error_clear(&error);
         return EXIT_FAILURE;
     }
     dcm_log_info("Read File Meta Information");
-    file_meta = dcm_file_read_file_meta(&error, file);
+    file_meta = dcm_file_read_file_meta(NULL, file);
     if (file_meta == NULL) {
-        dcm_error_log(error);
-        dcm_error_clear(&error);
         dcm_file_destroy(file);
         return EXIT_FAILURE;
     }
@@ -64,10 +59,8 @@ int main(int argc, char *argv[]) {
     dcm_dataset_print(file_meta, 0);
 
     dcm_log_info("Read metadata");
-    metadata = dcm_file_read_metadata(&error, file);
+    metadata = dcm_file_read_metadata(NULL, file);
     if (metadata == NULL) {
-        dcm_error_log(error);
-        dcm_error_clear(&error);
         dcm_file_destroy(file);
         dcm_dataset_destroy(file_meta);
         return EXIT_FAILURE;

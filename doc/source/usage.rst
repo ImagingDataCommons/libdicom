@@ -125,9 +125,8 @@ call :c:func:`dcm_error_clear()` to clear the error pointer and free any
 allocated memory.
 
 You can pass `NULL` instead of an error pointer if you are not interested in
-error messages.
-
-Any errors set by the library are also logged.
+error messages. In this case, any errors will be logged instead, see
+:c:func:`dcm_log_error()`.
 
 For example:
 

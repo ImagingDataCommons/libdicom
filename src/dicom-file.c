@@ -744,7 +744,7 @@ DcmFile *dcm_file_create(DcmError **error,
 {
     if (mode != 'r' && mode != 'w') {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Creation of file failed",
+                      "Open of file failed",
                       "Wrong file mode specified");
         return NULL;
     }
@@ -761,7 +761,7 @@ DcmFile *dcm_file_create(DcmError **error,
     file->fp = fopen(file_path, file_mode);
     if (file->fp == NULL) {
         dcm_error_set(error, DCM_ERROR_CODE_IO,
-                      "Creation of file failed",
+                      "Open of file failed",
                       "Could not open file for reading: %s", file_path);
         free(file);
         return NULL;
