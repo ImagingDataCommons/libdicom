@@ -45,6 +45,25 @@ static size_t compute_length_of_string_value_multi(char **values, uint32_t vm)
 }
 
 
+START_TEST(test_error)
+{
+    DcmError *error = NULL;
+
+    DcmFile *file = dcm_file_create(&error, "banana", 'r');
+    ck_assert_ptr_null(file);
+    ck_assert_ptr_nonnull(error);
+
+    ck_assert_int_eq(dcm_error_code(error), DCM_ERROR_CODE_IO);
+    ck_assert_ptr_nonnull(dcm_error_message(error));
+    ck_assert_ptr_nonnull(dcm_error_summary(error));
+
+    dcm_error_clear(&error);
+    ck_assert_ptr_null(error);
+
+}
+END_TEST
+
+
 START_TEST(test_log_level)
 {
     ck_assert_int_eq(dcm_log_level, DCM_LOG_NOTSET);
@@ -543,6 +562,10 @@ END_TEST
 static Suite *create_main_suite(void)
 {
     Suite *suite = suite_create("main");
+
+    TCase *error_case = tcase_create("error");
+    tcase_add_test(error_case, test_error);
+    suite_add_tcase(suite, error_case);
 
     TCase *log_case = tcase_create("log");
     tcase_add_test(log_case, test_log_level);

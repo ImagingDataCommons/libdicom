@@ -5,8 +5,6 @@
 #ifdef _WIN32
 // the Windows CRT considers strncpy unsafe
 #define _CRT_SECURE_NO_WARNINGS
-// and deprecates strdup
-#define strdup(v) _strdup(v)
 #endif
 
 #include <assert.h>
@@ -1896,8 +1894,8 @@ bool dcm_dataset_insert(DcmError **error,
     dcm_log_debug("Insert Data Element '%08X' into Data Set.", element->tag);
     if (dataset->is_locked) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Inserting Data Element '%08X' into Data Set failed. "
-                      "Data Set is locked and cannot be modified.",
+                      "Data Set is locked and cannot be modified",
+                      "Inserting Data Element '%08X' into Data Set failed",
                       element->tag);
         dcm_element_destroy(element);
         return false;
@@ -1907,8 +1905,8 @@ bool dcm_dataset_insert(DcmError **error,
     HASH_FIND_INT(dataset->elements, &element->tag, matched_element);
     if (matched_element) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Inserting Data Element '%08X' into Data Set failed. "
-                      "Element already exists.",
+                      "Element already exists",
+                      "Inserting Data Element '%08X' into Data Set failed",
                       element->tag);
         dcm_element_destroy(element);
         return false;
@@ -1927,8 +1925,8 @@ bool dcm_dataset_remove(DcmError **error, DcmDataSet *dataset, uint32_t tag)
     dcm_log_debug("Remove Data Element '%08X' from Data Set.", tag);
     if (dataset->is_locked) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Removing Data Element '%08X' from Data Set failed. "
-                      "Data Set is locked and cannot be modified.",
+                      "Data Set is locked and cannot be modified",
+                      "Removing Data Element '%08X' from Data Set failed",
                       tag);
         return false;
     }
@@ -1955,8 +1953,8 @@ DcmElement *dcm_dataset_get_clone(DcmError **error,
     HASH_FIND_INT(dataset->elements, &tag, element);
     if (element == NULL) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Getting Data Element '%08X' from Data Set failed. "
-                      "Could not find Data Element.",
+                      "Could not find Data Element",
+                      "Getting Data Element '%08X' from Data Set failed",
                       tag);
         return NULL;
     }
@@ -1974,8 +1972,8 @@ DcmElement *dcm_dataset_get(DcmError **error,
     element = dcm_dataset_contains(dataset, tag);
     if (element == NULL) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Getting Data Element '%08X' from Data Set failed. "
-                      "Could not find Data Element.",
+                      "Could not find Data Element",
+                      "Getting Data Element '%08X' from Data Set failed",
                       tag);
     }
 
@@ -2099,8 +2097,8 @@ DcmSequence *dcm_sequence_create(DcmError **error)
     utarray_new(items, &sequence_item_icd);
     if (items == NULL) {
         dcm_error_set(error, DCM_ERROR_CODE_NOMEM,
-                      "Creation of Sequence failed. "
-                      "Could not allocate memory.");
+                      "Out of memory",
+                      "Creation of Sequence failed");
         free(seq);
         return NULL;
     }
@@ -2119,7 +2117,7 @@ bool dcm_sequence_append(DcmError **error, DcmSequence *seq, DcmDataSet *item)
     dcm_log_debug("Append item to Sequence.");
     if (seq->is_locked) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Appending item to Sequence failed. "
+                      "Appending item to Sequence failed",
                       "Sequence is locked and cannot be modified.");
         dcm_dataset_destroy(item);
         return false;
@@ -2149,8 +2147,8 @@ DcmDataSet *dcm_sequence_get(DcmError **error,
     uint32_t length = utarray_len(seq->items);
     if (index >= length) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Getting item #%i of Sequence failed. "
-                      "Index %i exceeds length of sequence %i.",
+                      "Getting item of Sequence failed",
+                      "Index %i exceeds length of sequence %i",
                       index, length);
         return NULL;
     }
@@ -2158,12 +2156,14 @@ DcmDataSet *dcm_sequence_get(DcmError **error,
     struct SequenceItem *item_handle = utarray_eltptr(seq->items, index);
     if (item_handle == NULL) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Getting item #%i of Sequence failed.", index);
+                      "Getting item of Sequence failed",
+                      "Getting item #%i of Sequence failed", index);
         return NULL;
     }
     if (item_handle->dataset == NULL) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Getting item #%i of Sequence failed.", index);
+                      "Getting item of Sequence failed",
+                      "Getting item #%i of Sequence failed", index);
         return NULL;
     }
     item_handle->dataset->is_locked = true;
@@ -2193,7 +2193,7 @@ void dcm_sequence_remove(DcmError **error, DcmSequence *seq, uint32_t index)
     assert(seq);
     if (seq->is_locked) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Removing item from Sequence failed. "
+                      "Removing item from Sequence failed",
                       "Sequence is locked and cannot be modified.");
         return;
     }
@@ -2201,8 +2201,8 @@ void dcm_sequence_remove(DcmError **error, DcmSequence *seq, uint32_t index)
     uint32_t length = utarray_len(seq->items);
     if (index >= length) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Removing item from Sequence failed. "
-                      "Index %i exceeds length of sequence %i.",
+                      "Removing item from Sequence failed",
+                      "Index %i exceeds length of sequence %i",
                       index, length);
         return;
     }
@@ -2258,36 +2258,36 @@ DcmFrame *dcm_frame_create(DcmError **error,
 {
     if (data == NULL || length == 0) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Constructing Frame Item failed. "
-                      "Pixel data cannot be empty.");
+                      "Constructing Frame Item failed",
+                      "Pixel data cannot be empty");
         free((char *)data);
         return NULL;
     }
     if (!(bits_allocated == 1 || bits_allocated % 8 == 0)) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Constructing Frame Item failed. "
-                      "Wrong number of bits allocated.");
+                      "Constructing Frame Item failed",
+                      "Wrong number of bits allocated");
         free((char *)data);
         return NULL;
     }
     if (!(bits_stored == 1 || bits_stored % 8 == 0)) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Constructing Frame Item failed. "
-                      "Wrong number of bits stored.");
+                      "Constructing Frame Item failed",
+                      "Wrong number of bits stored");
         free((char *)data);
         return NULL;
     }
     if (!(pixel_representation == 0 || pixel_representation == 1)) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Constructing Frame Item failed. "
-                      "Wrong pixel representation.");
+                      "Constructing Frame Item failed",
+                      "Wrong pixel representation");
         free((char *)data);
         return NULL;
     }
     if (!(planar_configuration == 0 || planar_configuration == 1)) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Constructing Frame Item failed. "
-                      "Wrong planar configuration.");
+                      "Constructing Frame Item failed",
+                      "Wrong planar configuration");
         free((char *)data);
         return NULL;
     }
@@ -2419,8 +2419,8 @@ DcmBOT *dcm_bot_create(DcmError **error, ssize_t *offsets, uint32_t num_frames)
 {
     if (num_frames == 0) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Constructing Basic Offset Table failed. "
-                      "Expected offsets of %ld Frame Items.",
+                      "Constructing Basic Offset Table failed",
+                      "Expected offsets of %ld Frame Items",
                       num_frames);
         free(offsets);
         return NULL;
@@ -2428,8 +2428,8 @@ DcmBOT *dcm_bot_create(DcmError **error, ssize_t *offsets, uint32_t num_frames)
 
     if (offsets == NULL) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Constructing Basic Offset Table failed. "
-                      "No offsets were provided.");
+                      "Constructing Basic Offset Table failed",
+                      "No offsets were provided");
         return NULL;
     }
     DcmBOT *bot = DCM_NEW(error, DcmBOT);

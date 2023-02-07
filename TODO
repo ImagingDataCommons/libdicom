@@ -49,21 +49,24 @@
 
   part of allowing your own read funcs
 
-- we very often have eg.:
-
-	            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                          "Reading Frame Item failed. "
-                          "No Item Tag found for Frame Item #%d.",
-                          number);
-
-  perhaps have separate "summary" and "detail" fields in error?
-
-- check we use dcm_strdup() everywhere
-
-- check use of dcm_sequence_get() ... use dcm_sequence_contains() instead
-
 - debug failing test with eg.
 
 	CK_FORK=no CK_RUN_CASE=frame gdb ./check_dicom
 
-	
+- docs for DcmError
+
+- add tests for error handling
+
+- seeing:
+
+	$ dcm-dump sm_image.dcm 
+	===File Meta Information===
+	(0002,0002) MediaStorageSOPClassUID | UI | 30 | 1.2.840.10008.5.1.4.1.1.77.1.6
+	(0002,0003) MediaStorageSOPInstanceUID | UI | 64 | 1.2.826.0.1.3680043.9.7433.3.12857516184849951143044513877282227
+	(0002,0010) TransferSyntaxUID | UI | 20 | 1.2.840.10008.1.2.1
+	(0002,0012) ImplementationClassUID | UI | 28 | 1.2.826.0.1.3680043.9.7433.1
+	(0002,0013) ImplementationVersionName | SH | 14 | wsiget v0.0.1
+	CRITICAL [Tue Feb  7 15:39:10 2023] - Parse error: Stop reading Data Set - Encountered Tag of Pixel Data Element
+
+
+

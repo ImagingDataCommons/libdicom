@@ -5,8 +5,6 @@
 #ifdef _WIN32
 // the Windows CRT considers strncpy unsafe
 #define _CRT_SECURE_NO_WARNINGS
-// and deprecates strdup
-#define strdup(v) _strdup(v)
 #endif
 
 #include <assert.h>
@@ -27,7 +25,8 @@ void *dcm_calloc(DcmError **error, size_t n, size_t size)
     void *result = calloc(n, size);
     if (!result) {
         dcm_error_set(error, DCM_ERROR_CODE_NOMEM,
-                      "Failed to allocate %zd bytes.", n * size);
+                      "Out of memory",
+                      "Failed to allocate %zd bytes", n * size);
         return NULL;
     }
     return result;
@@ -94,12 +93,15 @@ const char *dcm_error_code_name(DcmErrorCode code)
 
 struct _DcmError {
     DcmErrorCode code;
+    char *summary;
     char *message;
 };
 
 static void dcm_error_free(DcmError *error)
 {
     if (error) {
+        free(error->summary);
+        error->summary = NULL;
         free(error->message);
         error->message = NULL;
         free(error);
@@ -108,7 +110,7 @@ static void dcm_error_free(DcmError *error)
 
 
 static DcmError *dcm_error_newf(DcmErrorCode code, 
-    const char *format, va_list ap)
+    const char *summary, const char *format, va_list ap)
 {
     DcmError *error;
     char txt[256];
@@ -118,8 +120,9 @@ static DcmError *dcm_error_newf(DcmErrorCode code,
         return NULL;
     }
     error->code = code;
+    error->summary = dcm_strdup(NULL, summary);
     vsnprintf(txt, sizeof(txt), format, ap);
-    error->message = strdup(txt);
+    error->message = dcm_strdup(NULL, txt);
 
     dcm_error_log(error);
 
@@ -127,8 +130,8 @@ static DcmError *dcm_error_newf(DcmErrorCode code,
 }
 
 
-void dcm_error_set(DcmError **error, 
-    DcmErrorCode code, const char *format, ...)
+void dcm_error_set(DcmError **error, DcmErrorCode code, 
+    const char *summary, const char *format, ...)
 {
     if (error) {
         if (*error) {
@@ -138,7 +141,7 @@ void dcm_error_set(DcmError **error,
 
         va_list(ap);
         va_start(ap, format);
-        *error = dcm_error_newf(code, format, ap);
+        *error = dcm_error_newf(code, summary, format, ap);
         va_end(ap);
     }
 }
@@ -165,12 +168,18 @@ const char *dcm_error_message(DcmError *error)
 }
 
 
+const char *dcm_error_summary(DcmError *error)
+{
+    return (const char *) error->summary;
+}
+
+
 void dcm_error_log(DcmError *error)
 {
     if (error) {
-        dcm_log_critical("%s (%d): %s", 
+        dcm_log_critical("%s: %s - %s", 
                          dcm_error_code_str(error->code),
-                         dcm_error_code_name(error->code),
+                         error->summary,
                          error->message);
     }
 }

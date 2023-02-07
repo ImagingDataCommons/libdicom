@@ -208,11 +208,13 @@ typedef struct _DcmError DcmError;
  *
  * :param error: Pointer to store the new error object in
  * :param code: Numeric error code
+ * :param summary: Summary of error
  * :param format: Format string
  * :param ...: Variable arguments
  */
 DCM_EXTERN
-void dcm_error_set(DcmError **error, DcmErrorCode code, const char *format, ...);
+void dcm_error_set(DcmError **error, DcmErrorCode code, 
+    const char *summary, const char *format, ...);
 
 /**
  * Clear an error, if set.
@@ -221,6 +223,19 @@ void dcm_error_set(DcmError **error, DcmErrorCode code, const char *format, ...)
  */
 DCM_EXTERN
 void dcm_error_clear(DcmError **error);
+
+/**
+ * Get the summary from a DcmError object.
+ *
+ * Do not free this result. The pointer will be valid as long as error is
+ * valid.
+ *
+ * :param error: DcmError to read the error from
+ *
+ * :return: Summary stored in a dcm error object
+ */
+DCM_EXTERN
+const char *dcm_error_summary(DcmError *error);
 
 /**
  * Get the message from a DcmError object.

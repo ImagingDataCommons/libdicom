@@ -6,8 +6,6 @@
 #ifdef _WIN32
 // the Windows CRT considers strncpy unsafe
 #define _CRT_SECURE_NO_WARNINGS
-// and deprecates strdup
-#define strdup(v) _strdup(v)
 #endif
 
 #include <assert.h>
@@ -64,8 +62,8 @@ static IHeader *iheader_create(DcmError **error,
         tag != TAG_ITEM_DELIM &&
         tag != TAG_SQ_DELIM) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Constructing header of Item failed. "
-                      "Invalid Item Tag '%08X'.",
+                      "Constructing header of Item failed",
+                      "Invalid Item Tag '%08X'",
                       tag);
         return NULL;
     }
@@ -107,15 +105,15 @@ static EHeader *eheader_create(DcmError **error,
 {
     if (!dcm_is_valid_tag(tag)) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Constructing header of Data Element failed. "
-                      "Invalid Tag: '%08X'.",
+                      "Constructing header of Data Element failed",
+                      "Invalid Tag: '%08X'",
                       tag);
         return NULL;
     }
     if (!dcm_is_valid_vr(vr)) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Constructing header of Data Element failed. "
-                      "Invalid Value Representation: '%s'.",
+                      "Constructing header of Data Element failed",
+                      "Invalid Value Representation: '%s'",
                       vr);
         return NULL;
     }
@@ -303,7 +301,7 @@ static EHeader *read_element_header(DcmError **error,
             *n += fread(&reserved, 1, sizeof(reserved), fp);
             if (reserved != 0x0000) {
                 dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                              "Reading of Data Element header failed. "
+                              "Reading of Data Element header failed",
                               "Unexpected value for reserved bytes "
                               "of Data Element %08X with VR '%s'.",
                               tag, vr);
@@ -411,9 +409,9 @@ static DcmElement *read_element(DcmError **error,
             // This VM shall always have VM 1.
             if (vm > 1) {
                 dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                              "Reading of Data Element failed. "
+                              "Reading of Data Element failed",
                               "Encountered unexpected Value Multiplicity %d "
-                              "for Data Element '%08X'.",
+                              "for Data Element '%08X'",
                               vm, tag);
                 for (i = 0; i < vm; i++) {
                     free(strings[i]);
@@ -432,7 +430,7 @@ static DcmElement *read_element(DcmError **error,
             // This VM shall always have VM 1.
             if (vm > 1) {
                 dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                              "Reading of Data Element failed. "
+                              "Reading of Data Element failed",
                               "Encountered unexpected Value Multiplicity %d "
                               "for Data Element '%08X'.",
                               vm, tag);
@@ -449,7 +447,7 @@ static DcmElement *read_element(DcmError **error,
             // This VM shall always have VM 1.
             if (vm > 1) {
                 dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                              "Reading of Data Element failed. "
+                              "Reading of Data Element failed",
                               "Encountered unexpected Value Multiplicity %d "
                               "for Data Element '%08X'.",
                               vm, tag);
@@ -466,9 +464,9 @@ static DcmElement *read_element(DcmError **error,
             // This VM shall always have VM 1.
             if (vm > 1) {
                 dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                              "Reading of Data Element failed. "
+                              "Reading of Data Element failed",
                               "Encountered unexpected Value Multiplicity %d "
-                              "for Data Element '%08X'.",
+                              "for Data Element '%08X'",
                               vm, tag);
                 for (i = 0; i < vm; i++) {
                     free(strings[i]);
@@ -481,9 +479,9 @@ static DcmElement *read_element(DcmError **error,
             return dcm_element_create_UT(error, tag, str);
         } else {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                          "Reading of Data Element failed. "
+                          "Reading of Data Element failed",
                           "Encountered unexpected Value Representation "
-                          "for Data Element '%08X'.",
+                          "for Data Element '%08X'",
                           tag);
             for (i = 0; i < vm; i++) {
                 free(strings[i]);
@@ -530,9 +528,9 @@ static DcmElement *read_element(DcmError **error,
             }
             if (item_tag != TAG_ITEM) {
                 dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                              "Reading of Data Element failed. "
+                              "Reading of Data Element failed",
                               "Expected tag '%08X' instead of '%08X' "
-                              "for Item #%d of Data Element '%08X'.",
+                              "for Item #%d of Data Element '%08X'",
                               TAG_ITEM,
                               item_tag,
                               item_index,
@@ -731,9 +729,9 @@ static DcmElement *read_element(DcmError **error,
         } else {
             tag = eheader_get_tag(header);
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                          "Reading of Data Element failed. "
+                          "Reading of Data Element failed",
                           "Data Element '%08X' has unexpected "
-                          "Value Representation.", tag);
+                          "Value Representation", tag);
             return NULL;
         }
     }
@@ -746,8 +744,8 @@ DcmFile *dcm_file_create(DcmError **error,
 {
     if (mode != 'r' && mode != 'w') {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Creation of file failed. "
-                      "Wrong file mode specified.");
+                      "Creation of file failed",
+                      "Wrong file mode specified");
         return NULL;
     }
 
@@ -763,6 +761,7 @@ DcmFile *dcm_file_create(DcmError **error,
     file->fp = fopen(file_path, file_mode);
     if (file->fp == NULL) {
         dcm_error_set(error, DCM_ERROR_CODE_IO,
+                      "Creation of file failed",
                       "Could not open file for reading: %s", file_path);
         free(file);
         return NULL;
@@ -806,7 +805,7 @@ DcmDataSet *dcm_file_read_file_meta(DcmError **error, DcmFile *file)
     prefix[4] = '\0';
     if (strcmp(prefix, "DICM") != 0) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                      "Reading of File Meta Information failed. "
+                      "Reading of File Meta Information failed",
                       "Prefix 'DICM' not found.");
         dcm_dataset_destroy(file_meta);
         return NULL;
@@ -870,9 +869,9 @@ DcmDataSet *dcm_file_read_file_meta(DcmError **error, DcmFile *file)
 
         if (!dcm_dataset_insert(error, file_meta, element)) {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                          "Reading File Meta Information failed. "
+                          "Reading File Meta Information failed",
                           "Could not insert Data Element '%08X' into "
-                          "Data Set.", tag);
+                          "Data Set", tag);
             eheader_destroy(header);
             dcm_dataset_destroy(file_meta);
             return NULL;
@@ -965,8 +964,8 @@ DcmDataSet *dcm_file_read_metadata(DcmError **error, DcmFile *file)
         group_number = eheader_get_group_number(header);
         if (tag == TAG_TRAILING_PADDING) {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                          "Stop reading Data Set. "
-                          "Encountered Data Set Trailing Tag.");
+                          "Stop reading Data Set",
+                          "Encountered Data Set Trailing Tag");
             eheader_destroy(header);
             break;
         } else if (tag == TAG_PIXEL_DATA ||
@@ -982,15 +981,15 @@ DcmDataSet *dcm_file_read_metadata(DcmError **error, DcmFile *file)
             }
             file->pixel_data_offset = ftell(file->fp);
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                          "Stop reading Data Set. "
-                          "Encountered Tag of Pixel Data Element.");
+                          "Stop reading Data Set",
+                          "Encountered Tag of Pixel Data Element");
             eheader_destroy(header);
             break;
         }
         if (group_number == 0x0002) {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                          "Reading of Data Set failed. "
-                          "Encountered File Meta Information group.");
+                          "Reading of Data Set failed",
+                          "Encountered File Meta Information group");
             eheader_destroy(header);
             dcm_dataset_destroy(dataset);
             return NULL;
@@ -1046,9 +1045,9 @@ DcmBOT *dcm_file_read_bot(DcmError **error,
 
     if (!dcm_is_encapsulated_transfer_syntax(file->transfer_syntax_uid)) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                      "Reading Basic Offset Table failed. "
+                      "Reading Basic Offset Table failed",
                       "Data Set with transfer syntax '%s' should not contain "
-                      "a Basic Offset Table because it is not encapsulated.",
+                      "a Basic Offset Table because it is not encapsulated",
                       file->transfer_syntax_uid);
         return NULL;
     }
@@ -1059,16 +1058,17 @@ DcmBOT *dcm_file_read_bot(DcmError **error,
     }
     if (num_frames == 0) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                      "Reading Basic Offset Table failed. "
-                      "Value of Data Element 'Number of Frames' is malformed.");
+                      "Reading Basic Offset Table failed",
+                      "Value of Data Element 'Number of Frames' is "
+                      "malformed");
         return NULL;
     }
 
     if (file->pixel_data_offset == 0) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                      "Reading Basic Offset Table failed. "
+                      "Reading Basic Offset Table failed",
                       "Could not determine offset of Pixel Data Element. "
-                      "Read metadata first.");
+                      "Read metadata first");
         return NULL;
     }
     fseek(file->fp, file->pixel_data_offset, SEEK_SET);
@@ -1081,8 +1081,8 @@ DcmBOT *dcm_file_read_bot(DcmError **error,
           eheader_tag == TAG_FLOAT_PIXEL_DATA ||
           eheader_tag == TAG_DOUBLE_PIXEL_DATA)) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                      "Reading Basic Offset Table failed. "
-                      "File pointer not positioned at Pixel Data Element.");
+                      "Reading Basic Offset Table failed",
+                      "File pointer not positioned at Pixel Data Element");
         return NULL;
     }
 
@@ -1095,8 +1095,8 @@ DcmBOT *dcm_file_read_bot(DcmError **error,
     uint32_t item_tag = iheader_get_tag(iheader);
     if (item_tag != TAG_ITEM) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                      "Reading Basic Offset Table failed. "
-                      "Unexpected Tag found for Basic Offset Table Item.");
+                      "Reading Basic Offset Table failed",
+                      "Unexpected Tag found for Basic Offset Table Item");
         iheader_destroy(iheader);
         return NULL;
     }
@@ -1118,9 +1118,9 @@ DcmBOT *dcm_file_read_bot(DcmError **error,
             value = (uint64_t) tmp_value;
             if (value == TAG_ITEM) {
                 dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                              "Reading Basic Offset Table failed. "
+                              "Reading Basic Offset Table failed",
                               "Encountered unexpected Item Tag "
-                              "in Basic Offset Table.");
+                              "in Basic Offset Table");
                 free(offsets);
                 return NULL;
             }
@@ -1140,9 +1140,9 @@ DcmBOT *dcm_file_read_bot(DcmError **error,
                 // strtoull returns 0 in case of error
                 if (value == 0 && i > 0) {
                     dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                                  "Reading Basic Offset Table failed. "
+                                  "Reading Basic Offset Table failed",
                                   "Failed to parse value of Extended Offset "
-                                  "Table element for frame #%d.", i + 1);
+                                  "Table element for frame #%d", i + 1);
                     free(offsets);
                     return NULL;
                 }
@@ -1259,16 +1259,17 @@ DcmBOT *dcm_file_build_bot(DcmError **error,
     }
     if (num_frames == 0) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                      "Building Basic Offset Table failed. "
-                      "Value of Data Element 'Number of Frames' is malformed.");
+                      "Building Basic Offset Table failed",
+                      "Value of Data Element 'Number of Frames' is "
+                      "malformed.");
         return NULL;
     }
 
     if (file->pixel_data_offset == 0) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                      "Reading Basic Offset Table failed. "
+                      "Reading Basic Offset Table failed",
                       "Could not determine offset of Pixel Data Element. "
-                      "Read metadata first.");
+                      "Read metadata first");
         return NULL;
     }
     fseek(file->fp, file->pixel_data_offset, SEEK_SET);
@@ -1282,8 +1283,8 @@ DcmBOT *dcm_file_build_bot(DcmError **error,
         eheader_tag != TAG_FLOAT_PIXEL_DATA &&
         eheader_tag != TAG_DOUBLE_PIXEL_DATA) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                      "Building Basic Offset Table failed. "
-                      "File pointer not positioned at Pixel Data Element.");
+                      "Building Basic Offset Table failed",
+                      "File pointer not positioned at Pixel Data Element");
         return NULL;
     }
 
@@ -1303,8 +1304,8 @@ DcmBOT *dcm_file_build_bot(DcmError **error,
         item_tag = iheader_get_tag(iheader);
         if (item_tag != TAG_ITEM) {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                          "Building Basic Offset Table failed. "
-                          "Unexpected Tag found for Basic Offset Table Item.");
+                          "Building Basic Offset Table failed",
+                          "Unexpected Tag found for Basic Offset Table Item");
             free(offsets);
             iheader_destroy(iheader);
             return NULL;
@@ -1330,8 +1331,8 @@ DcmBOT *dcm_file_build_bot(DcmError **error,
             }
             if (iheader_tag != TAG_ITEM) {
                 dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                              "Building Basic Offset Table failed. "
-                              "Frame Item #%d has wrong Tag '%08X'.",
+                              "Building Basic Offset Table failed",
+                              "Frame Item #%d has wrong Tag '%08X'",
                               i + 1,
                               iheader_tag);
                 free(offsets);
@@ -1351,8 +1352,8 @@ DcmBOT *dcm_file_build_bot(DcmError **error,
 
         if (i != num_frames) {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                          "Building Basic Offset Table failed. "
-                          "Found incorrect number of Frame Items.");
+                          "Building Basic Offset Table failed",
+                          "Found incorrect number of Frame Items");
             free(offsets);
             return NULL;
         }
@@ -1388,8 +1389,8 @@ DcmFrame *dcm_file_read_frame(DcmError **error,
     dcm_log_debug("Read Frame Item #%d.", number);
     if (number == 0) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                      "Reading Frame Item failed. "
-                      "Frame Number must be positive.");
+                      "Reading Frame Item failed",
+                      "Frame Number must be positive");
         return NULL;
     }
     ssize_t frame_offset = dcm_bot_get_frame_offset(bot, number);
@@ -1421,8 +1422,8 @@ DcmFrame *dcm_file_read_frame(DcmError **error,
         uint32_t iheader_tag = iheader_get_tag(iheader);
         if (iheader_tag != TAG_ITEM) {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                          "Reading Frame Item failed. "
-                          "No Item Tag found for Frame Item #%d.",
+                          "Reading Frame Item failed",
+                          "No Item Tag found for Frame Item #%d",
                           number);
             destroy_pixel_description(desc);
             iheader_destroy(iheader);
