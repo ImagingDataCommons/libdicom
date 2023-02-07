@@ -1,36 +1,14 @@
+# TODO
+
 - replace copy-paste code over types with a table
 	dcm_element_clone()
 
 - element->vr should be an enum (not "UL" etc.)
 	- swap all the strcmps for ==
 
-- what does DCM_DEBUG_ONLY() mean? is this sanity checking?
-
-- have a thing to free an array of strings, plus the arraee eg.
-	create_element_str_multi()
-
 - use a table for dcm_element_create_* as well
 
-- disable assert in production builds
-	there's eg. assert_vr() too, check this
-
 - should create_element() take a size_t for length?
-
-- dcm_element_create_SS_multi() is not copying the argument, is this correct?
-	dcm_element_create_FL_multi()
-	dcm_element_create_SL_multi
-	etc.
-
-  maybe it should be called _steal 
-
-- create_element_str() will free value on error, is this correct? fix it?
-
-- likewise, dcm_element_create_SQ() destroys the value if sq create fails
-
-- what does is_locked do? when do we unlock? looks bad
-
-- dcm_dataset_contains() should be the base operation, dcm_dataset_get()
-  should flag an error if missing
 
 - remove dcm_dataset_copy_tags() etc should not use uint32_t? what about
   dcm_dataset_count()?
@@ -41,21 +19,28 @@
 
 - dcm_dataset_print() should not use uint8_t
 
-- call dcm_dataset_lock() everywhere, don't set lock by hand
-
 - should the foreach funcs take two params? are they used?
 
 - wrappers for read() / seek() / etc. that include error checks 
 
   part of allowing your own read funcs
 
+- call dcm_dataset_lock() everywhere, don't set lock by hand
+
+- disable assert in production builds
+	there's eg. assert_vr() too, check this
+	what does DCM_DEBUG_ONLY() mean? is this sanity checking?
+
+- have a thing to free an array of strings, plus the array eg.
+	create_element_str_multi()
+
+# Tips
+
 - debug failing test with eg.
 
 	CK_FORK=no CK_RUN_CASE=frame gdb ./check_dicom
 
-- docs for DcmError
-
-- add tests for error handling
+# Bugs
 
 - seeing:
 
@@ -67,6 +52,4 @@
 	(0002,0012) ImplementationClassUID | UI | 28 | 1.2.826.0.1.3680043.9.7433.1
 	(0002,0013) ImplementationVersionName | SH | 14 | wsiget v0.0.1
 	CRITICAL [Tue Feb  7 15:39:10 2023] - Parse error: Stop reading Data Set - Encountered Tag of Pixel Data Element
-
-
 
