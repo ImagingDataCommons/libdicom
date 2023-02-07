@@ -2,7 +2,8 @@ project(
   'libdicom',
   'c',
   default_options : [
-    'buildtype=debugoptimized',
+    # turn off asserts etc. in release mode
+    'b_ndebug=if-release',
     'warning_level=2',
   ],
   license : 'MIT',

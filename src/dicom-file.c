@@ -60,9 +60,9 @@ typedef struct ElementHeader {
 static IHeader *iheader_create(DcmError **error, 
     uint32_t tag, uint64_t length)
 {
-    if (!(tag == TAG_ITEM ||
-          tag == TAG_ITEM_DELIM ||
-          tag == TAG_SQ_DELIM)) {
+    if (tag != TAG_ITEM &&
+        tag != TAG_ITEM_DELIM &&
+        tag != TAG_SQ_DELIM) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                       "Constructing header of Item failed. "
                       "Invalid Item Tag '%08X'.",

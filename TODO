@@ -62,4 +62,8 @@
 
 - check use of dcm_sequence_get() ... use dcm_sequence_contains() instead
 
+- debug failing test with eg.
+
+	CK_FORK=no CK_RUN_CASE=frame gdb ./check_dicom
+
 	
