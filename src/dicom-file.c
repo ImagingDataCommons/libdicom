@@ -781,7 +781,6 @@ DcmDataSet *dcm_file_read_file_meta(DcmError **error, DcmFile *file)
 
     size_t size;
     size_t *n = &size;
-    uint8_t n_elem;
     uint32_t tag;
     uint16_t group_number;
     EHeader *header;
@@ -845,7 +844,6 @@ DcmDataSet *dcm_file_read_file_meta(DcmError **error, DcmFile *file)
     eheader_destroy(header);
     dcm_element_destroy(element);
 
-    n_elem = 0;
     while(true) {
         header = read_element_header(error, file->fp, n, implicit);
         if (header == NULL) {
@@ -881,7 +879,6 @@ DcmDataSet *dcm_file_read_file_meta(DcmError **error, DcmFile *file)
             eheader_destroy(header);
             break;
         }
-        n_elem += 1;
         eheader_destroy(header);
     }
 
@@ -920,7 +917,6 @@ DcmDataSet *dcm_file_read_metadata(DcmError **error, DcmFile *file)
     uint16_t group_number;
     size_t size = 0;
     size_t *n = &size;
-    uint32_t n_elem;
     bool implicit;
     char tmp[1];
     DcmElement *element;
@@ -946,7 +942,6 @@ DcmDataSet *dcm_file_read_metadata(DcmError **error, DcmFile *file)
         return NULL;
     }
 
-    n_elem = 0;
     while (!feof(file->fp)) {
         if (fread(tmp, 1, 1, file->fp) == 0) {
             dcm_log_info("Stop reading Data Set. Reached end of file.");
@@ -1007,8 +1002,6 @@ DcmDataSet *dcm_file_read_metadata(DcmError **error, DcmFile *file)
             return NULL;
         }
         eheader_destroy(header);
-
-        n_elem += 1;
     }
     dcm_dataset_lock(dataset);
     return dataset;
