@@ -124,8 +124,9 @@ START_TEST(test_element_AE)
 {
     uint32_t tag = 0x00020016;
     char *value = malloc(DCM_CAPACITY_AE + 1);
+
     strncpy(value, "Application", 12);
-    DcmElement *element = dcm_element_create_AE(tag, value);
+    DcmElement *element = dcm_element_create_AE(NULL, tag, value);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
     ck_assert_int_eq(dcm_element_check_vr(element, "AE"), true);
@@ -145,8 +146,9 @@ START_TEST(test_element_AS)
 {
     uint32_t tag = 0x00020016;
     char *value = malloc(DCM_CAPACITY_AS + 1);
+
     strncpy(value, "99", 3);
-    DcmElement *element = dcm_element_create_AS(tag, value);
+    DcmElement *element = dcm_element_create_AS(NULL, tag, value);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
     ck_assert_int_eq(dcm_element_check_vr(element, "AS"), true);
@@ -167,6 +169,7 @@ START_TEST(test_element_CS_multivalue)
     uint32_t tag = 0x00080008;
     uint32_t vm = 4;
     char **values = malloc(vm * sizeof(char *));
+
     values[0] = malloc(9);
     strcpy(values[0], "ORIGINAL");
     values[1] = malloc(8);
@@ -175,7 +178,7 @@ START_TEST(test_element_CS_multivalue)
     strcpy(values[2], "VOLUME");
     values[3] = malloc(5);
     strcpy(values[3], "NONE");
-    DcmElement *element = dcm_element_create_CS_multi(tag, values, vm);
+    DcmElement *element = dcm_element_create_CS_multi(NULL, tag, values, vm);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
     ck_assert_int_eq(dcm_element_check_vr(element, "CS"), true);
@@ -198,8 +201,9 @@ START_TEST(test_element_DS)
 {
     uint32_t tag = 0x0040072A;
     char *value = malloc(DCM_CAPACITY_DS + 1);
+
     strncpy(value, "0.0025", 7);
-    DcmElement *element = dcm_element_create_DS(tag, value);
+    DcmElement *element = dcm_element_create_DS(NULL, tag, value);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
     ck_assert_int_eq(dcm_element_check_vr(element, "DS"), true);
@@ -219,8 +223,9 @@ START_TEST(test_element_IS)
 {
     uint32_t tag = 0x00280008;
     char *value = malloc(DCM_CAPACITY_IS + 1);
+
     strncpy(value, "10", 3);
-    DcmElement *element = dcm_element_create_IS(tag, value);
+    DcmElement *element = dcm_element_create_IS(NULL, tag, value);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
     ck_assert_int_eq(dcm_element_check_vr(element, "IS"), true);
@@ -241,7 +246,8 @@ START_TEST(test_element_ST)
     uint32_t tag = 0x00080092;
     char *value = malloc(DCM_CAPACITY_ST + 1);
     strncpy(value, "Random Street, Sometown", 24);
-    DcmElement *element = dcm_element_create_ST(tag, value);
+
+    DcmElement *element = dcm_element_create_ST(NULL, tag, value);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
     ck_assert_int_eq(dcm_element_check_vr(element, "ST"), true);
@@ -260,16 +266,18 @@ END_TEST
 START_TEST(test_element_SQ)
 {
     char *item_value = malloc(DCM_CAPACITY_DS + 1);
-    strncpy(item_value, "0.01", 5);
-    DcmElement *item_element = dcm_element_create_DS(0x00180050, item_value);
 
-    DcmDataSet *item = dcm_dataset_create();
-    ck_assert_int_eq(dcm_dataset_insert(item, item_element), true);
+    strncpy(item_value, "0.01", 5);
+    DcmElement *item_element = dcm_element_create_DS(NULL,
+                                                     0x00180050, item_value);
+
+    DcmDataSet *item = dcm_dataset_create(NULL);
+    ck_assert_int_eq(dcm_dataset_insert(NULL, item, item_element), true);
 
     uint32_t tag = 0x00289110;
-    DcmSequence *value = dcm_sequence_create();
-    ck_assert_int_eq(dcm_sequence_append(value, item), true);
-    DcmElement *element = dcm_element_create_SQ(tag, value);
+    DcmSequence *value = dcm_sequence_create(NULL);
+    ck_assert_int_eq(dcm_sequence_append(NULL, value, item), true);
+    DcmElement *element = dcm_element_create_SQ(NULL, tag, value);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
     ck_assert_int_eq(dcm_element_check_vr(element, "SQ"), true);
@@ -290,8 +298,8 @@ END_TEST
 START_TEST(test_element_SQ_empty)
 {
     uint32_t tag = 0x00400555;
-    DcmSequence *value = dcm_sequence_create();
-    DcmElement *element = dcm_element_create_SQ(tag, value);
+    DcmSequence *value = dcm_sequence_create(NULL);
+    DcmElement *element = dcm_element_create_SQ(NULL, tag, value);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
     ck_assert_int_eq(dcm_element_check_vr(element, "SQ"), true);
@@ -312,8 +320,9 @@ START_TEST(test_element_UI)
 {
     uint32_t tag = 0x00080018;
     char *value = malloc(DCM_CAPACITY_UI + 1);
+
     strncpy(value, "2.25.1", 7);
-    DcmElement *element = dcm_element_create_UI(tag, value);
+    DcmElement *element = dcm_element_create_UI(NULL, tag, value);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
     ck_assert_int_eq(dcm_element_check_vr(element, "UI"), true);
@@ -333,7 +342,8 @@ START_TEST(test_element_US)
 {
     uint32_t tag = 0x00280010;
     uint16_t value = 512;
-    DcmElement *element = dcm_element_create_US(tag, value);
+
+    DcmElement *element = dcm_element_create_US(NULL, tag, value);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
     ck_assert_int_eq(dcm_element_check_vr(element, "US"), true);
@@ -352,36 +362,36 @@ START_TEST(test_sequence)
 {
     DcmElement *element;
 
-    DcmDataSet *dataset = dcm_dataset_create();
-    DcmDataSet *other_dataset = dcm_dataset_create();
+    DcmDataSet *dataset = dcm_dataset_create(NULL);
+    DcmDataSet *other_dataset = dcm_dataset_create(NULL);
 
-    element = dcm_element_create_US(0x00280010, 256);
-    dcm_dataset_insert(dataset, element);
-    dcm_dataset_insert(other_dataset, dcm_element_clone(element));
+    element = dcm_element_create_US(NULL, 0x00280010, 256);
+    dcm_dataset_insert(NULL, dataset, element);
+    dcm_dataset_insert(NULL, other_dataset, dcm_element_clone(NULL, element));
     ck_assert_int_eq(dcm_dataset_count(dataset), 1);
     ck_assert_int_eq(dcm_dataset_count(other_dataset), 1);
 
-    element = dcm_element_create_US(0x00280011, 512);
-    dcm_dataset_insert(dataset, element);
-    dcm_dataset_insert(other_dataset, dcm_element_clone(element));
+    element = dcm_element_create_US(NULL, 0x00280011, 512);
+    dcm_dataset_insert(NULL, dataset, element);
+    dcm_dataset_insert(NULL, other_dataset, dcm_element_clone(NULL, element));
     ck_assert_int_eq(dcm_dataset_count(dataset), 2);
     ck_assert_int_eq(dcm_dataset_count(other_dataset), 2);
 
-    DcmSequence *seq = dcm_sequence_create();
+    DcmSequence *seq = dcm_sequence_create(NULL);
 
-    dcm_sequence_append(seq, dataset);
+    dcm_sequence_append(NULL, seq, dataset);
     ck_assert_int_eq(dcm_sequence_count(seq), 1);
-    dcm_sequence_append(seq, other_dataset);
+    dcm_sequence_append(NULL, seq, other_dataset);
     ck_assert_int_eq(dcm_sequence_count(seq), 2);
 
-    DcmDataSet *same_dataset = dcm_sequence_get(seq, 1);
+    DcmDataSet *same_dataset = dcm_sequence_get(NULL, seq, 1);
     ck_assert_int_eq(dcm_sequence_count(seq), 2);
     ck_assert_int_eq(dcm_dataset_count(dataset),
                      dcm_dataset_count(same_dataset));
 
-    dcm_sequence_remove(seq, 1);
+    dcm_sequence_remove(NULL, seq, 1);
     ck_assert_int_eq(dcm_sequence_count(seq), 1);
-    dcm_sequence_remove(seq, 0);
+    dcm_sequence_remove(NULL, seq, 0);
     ck_assert_int_eq(dcm_sequence_count(seq), 0);
 
     dcm_sequence_destroy(seq);
@@ -392,37 +402,37 @@ END_TEST
 START_TEST(test_dataset)
 {
     uint32_t tag = 0x00280010;
-    DcmElement *element = dcm_element_create_US(tag, 256);
+    DcmElement *element = dcm_element_create_US(NULL, tag, 256);
 
     uint32_t other_tag = 0x00280011;
-    DcmElement *other_element = dcm_element_create_US(other_tag, 512);
+    DcmElement *other_element = dcm_element_create_US(NULL, other_tag, 512);
 
-    DcmDataSet *dataset = dcm_dataset_create();
+    DcmDataSet *dataset = dcm_dataset_create(NULL);
     ck_assert_int_eq(dcm_dataset_count(dataset), 0);
 
-    dcm_dataset_insert(dataset, element);
+    dcm_dataset_insert(NULL, dataset, element);
     ck_assert_int_eq(dcm_dataset_count(dataset), 1);
-    ck_assert_int_eq(dcm_dataset_contains(dataset, tag), true);
+    ck_assert_ptr_nonnull(dcm_dataset_contains(dataset, tag));
 
-    DcmElement *same_element = dcm_dataset_get(dataset, tag);
+    DcmElement *same_element = dcm_dataset_get(NULL, dataset, tag);
     ck_assert_int_eq(dcm_dataset_count(dataset), 1);
     ck_assert_int_eq(dcm_element_get_tag(element),
                      dcm_element_get_tag(same_element));
 
-    DcmElement *copied_element = dcm_dataset_get_clone(dataset, tag);
+    DcmElement *copied_element = dcm_dataset_get_clone(NULL, dataset, tag);
     ck_assert_int_eq(dcm_dataset_count(dataset), 1);
     ck_assert_int_eq(dcm_element_get_tag(element),
                      dcm_element_get_tag(copied_element));
 
-    dcm_dataset_insert(dataset, other_element);
+    dcm_dataset_insert(NULL, dataset, other_element);
     ck_assert_int_eq(dcm_dataset_count(dataset), 2);
-    ck_assert_int_eq(dcm_dataset_contains(dataset, tag), true);
-    ck_assert_int_eq(dcm_dataset_contains(dataset, other_tag), true);
+    ck_assert_ptr_nonnull(dcm_dataset_contains(dataset, tag));
+    ck_assert_ptr_nonnull(dcm_dataset_contains(dataset, other_tag));
 
-    dcm_dataset_remove(dataset, tag);
+    dcm_dataset_remove(NULL, dataset, tag);
     ck_assert_int_eq(dcm_dataset_count(dataset), 1);
 
-    dcm_dataset_remove(dataset, other_tag);
+    dcm_dataset_remove(NULL, dataset, other_tag);
     ck_assert_int_eq(dcm_dataset_count(dataset), 0);
 
     dcm_dataset_print(dataset, 0);
@@ -439,20 +449,20 @@ START_TEST(test_file_sm_image_file_meta)
     DcmElement *element;
 
     char *file_path = fixture_path("data/test_files/sm_image.dcm");
-    DcmFile *file = dcm_file_create(file_path, 'r');
+    DcmFile *file = dcm_file_create(NULL, file_path, 'r');
     free(file_path);
 
-    DcmDataSet *file_meta = dcm_file_read_file_meta(file);
+    DcmDataSet *file_meta = dcm_file_read_file_meta(NULL, file);
 
     // Transfer Syntax UID
     tag = 0x00020010;
-    element = dcm_dataset_get(file_meta, tag);
+    element = dcm_dataset_get(NULL, file_meta, tag);
     ck_assert_str_eq(dcm_element_get_value_UI(element, 0),
                      "1.2.840.10008.1.2.1");
 
     // Media Storage SOP Class UID
     tag = 0x00020002;
-    element = dcm_dataset_get(file_meta, tag);
+    element = dcm_dataset_get(NULL, file_meta, tag);
     ck_assert_str_eq(dcm_element_get_value_UI(element, 0),
                      "1.2.840.10008.5.1.4.1.1.77.1.6");
 
@@ -467,13 +477,13 @@ END_TEST
 START_TEST(test_file_sm_image_metadata)
 {
     char *file_path = fixture_path("data/test_files/sm_image.dcm");
-    DcmFile *file = dcm_file_create(file_path, 'r');
+    DcmFile *file = dcm_file_create(NULL, file_path, 'r');
     free(file_path);
 
-    DcmDataSet *metadata = dcm_file_read_metadata(file);
+    DcmDataSet *metadata = dcm_file_read_metadata(NULL, file);
 
     // SOP Class UID
-    DcmElement *element = dcm_dataset_get(metadata, 0x00080016);
+    DcmElement *element = dcm_dataset_get(NULL, metadata, 0x00080016);
     ck_assert_str_eq(dcm_element_get_value_UI(element, 0),
                      "1.2.840.10008.5.1.4.1.1.77.1.6");
 
@@ -490,15 +500,26 @@ START_TEST(test_file_sm_image_frame)
     const uint32_t frame_number = 1;
 
     char *file_path = fixture_path("data/test_files/sm_image.dcm");
-    DcmFile *file = dcm_file_create(file_path, 'r');
+    DcmFile *file = dcm_file_create(NULL, file_path, 'r');
     free(file_path);
+    ck_assert_ptr_nonnull(file);
 
-    DcmDataSet *metadata = dcm_file_read_metadata(file);
+    DcmDataSet *metadata = dcm_file_read_metadata(NULL, file);
+    ck_assert_ptr_nonnull(metadata);
 
-    DcmBOT *bot = dcm_file_build_bot(file, metadata);
+    dcm_log_level = DCM_LOG_INFO;
+    DcmError *error = NULL;
+    DcmBOT *bot = dcm_file_build_bot(&error, file, metadata);
+    if (!bot) {
+        dcm_error_log(error);
+        dcm_error_clear(&error);
+        abort();
+    }
+    ck_assert_ptr_nonnull(bot);
     ck_assert_uint_eq(dcm_bot_get_num_frames(bot), 25);
 
-    DcmFrame *frame = dcm_file_read_frame(file, metadata, bot, frame_number);
+    DcmFrame *frame = dcm_file_read_frame(NULL, 
+                                          file, metadata, bot, frame_number);
     ck_assert_uint_eq(dcm_frame_get_number(frame), frame_number);
     ck_assert_uint_eq(dcm_frame_get_rows(frame), 10);
     ck_assert_uint_eq(dcm_frame_get_columns(frame), 10);
