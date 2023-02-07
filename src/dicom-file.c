@@ -1272,13 +1272,15 @@ DcmBOT *dcm_file_build_bot(DcmError **error,
         return NULL;
     }
     fseek(file->fp, file->pixel_data_offset, SEEK_SET);
+    tmp_offset = 0;
 
-    EHeader *eheader = read_element_header(error, file->fp, &tmp_offset, false);
+    EHeader *eheader = read_element_header(error, 
+                                           file->fp, &tmp_offset, false);
     uint32_t eheader_tag = eheader_get_tag(eheader);
     eheader_destroy(eheader);
-    if (!(eheader_tag == TAG_PIXEL_DATA ||
-          eheader_tag == TAG_FLOAT_PIXEL_DATA ||
-          eheader_tag == TAG_DOUBLE_PIXEL_DATA)) {
+    if (eheader_tag != TAG_PIXEL_DATA &&
+        eheader_tag != TAG_FLOAT_PIXEL_DATA &&
+        eheader_tag != TAG_DOUBLE_PIXEL_DATA) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                       "Building Basic Offset Table failed. "
                       "File pointer not positioned at Pixel Data Element.");
@@ -1314,6 +1316,7 @@ DcmBOT *dcm_file_build_bot(DcmError **error,
         // Move filepointer to first byte of first Frame item
         fseek(file->fp, item_length, SEEK_SET);
         i = 0;
+        current_offset = 0;
         while (true) {
             iheader = read_item_header(error, file->fp, &current_offset);
             if (iheader == NULL) {
