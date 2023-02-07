@@ -977,9 +977,8 @@ DcmDataSet *dcm_file_read_metadata(DcmError **error, DcmFile *file)
                 fseek(file->fp, -12L, SEEK_CUR);
             }
             file->pixel_data_offset = ftell(file->fp);
-            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                          "Stop reading Data Set",
-                          "Encountered Tag of Pixel Data Element");
+            dcm_log_debug("Stop reading Data Set. "
+                          "Encountered Tag of Pixel Data Element.");
             eheader_destroy(header);
             break;
         }
