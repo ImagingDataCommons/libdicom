@@ -3,13 +3,6 @@
  * Format for Media Interchange.
  */
 
-#ifdef _WIN32
-// the Windows CRT considers strncpy unsafe
-#define _CRT_SECURE_NO_WARNINGS
-// and deprecates strdup
-#define strdup(v) _strdup(v)
-#endif
-
 #include <assert.h>
 #include <ctype.h>
 #include <stdbool.h>
@@ -19,6 +12,7 @@
 #include "utarray.h"
 
 #include "dicom.h"
+#include "pdicom.h"
 
 
 #define TAG_ITEM                  0xFFFEE000

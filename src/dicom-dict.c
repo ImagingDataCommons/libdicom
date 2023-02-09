@@ -1,16 +1,17 @@
-
 /*
  * Implementation of Part 6 of the DICOM standard: Data Dictionary.
  */
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "dicom.h"
-
 #include "uthash.h"
+
+#include "dicom.h"
+#include "pdicom.h"
 
 
 struct _DcmAttribute {
