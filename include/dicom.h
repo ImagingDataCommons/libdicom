@@ -22,21 +22,6 @@ typedef SSIZE_T ssize_t;
 #define DCM_EXTERN __attribute__((visibility("default"))) extern
 #endif
 
-#ifndef NDEBUG
-#  define DCM_DEBUG_ONLY( ... ) __VA_ARGS__
-#else
-#  define DCM_DEBUG_ONLY( ... )
-#endif
-
-#define DCM_MALLOC(ERROR, SIZE) \
-    dcm_calloc(ERROR, 1, SIZE)
-
-#define DCM_NEW(ERROR, TYPE) \
-    (TYPE *) dcm_calloc(ERROR, 1, sizeof(TYPE))
-
-#define DCM_NEW_ARRAY(ERROR, N, TYPE) \
-    (TYPE *) dcm_calloc(ERROR, N, sizeof(TYPE))
-
 
 /**
  * Maximum number of characters in values with Value Representation AE.
@@ -277,39 +262,6 @@ const char *dcm_error_code_name(DcmErrorCode code);
  */
 DCM_EXTERN
 void dcm_error_log(DcmError *error);
-
-
-/**
- * Allocate and initialize a block of memory.
- *
- * :param n: Number of items
- * :param size: Number of bytes per item
- *
- * :return: Pointer to allocated memory.
- */
-DCM_EXTERN
-void *dcm_calloc(DcmError **error, size_t n, size_t size);
-
-
-/**
- * Allocate a copy of a string.
- *
- * :param str: String to copy
- *
- * :return: Pointer to copy of string.
- */
-DCM_EXTERN
-char *dcm_strdup(DcmError **error, const char *str);
-
-
-/**
- * Free an array of strings.
- *
- * :param strings: Array of strings to free
- * :param n: Size of array
- */
-DCM_EXTERN
-void dcm_free_string_array(char **strings, int n);
 
 
 /**
