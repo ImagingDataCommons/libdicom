@@ -51,6 +51,15 @@ char *dcm_strdup(DcmError **error, const char *str)
 }
 
 
+void dcm_free_string_array(char **array, int n)
+{
+    for (int i = 0; i < n; i++) {
+        free(array[i]);
+    }
+    free(array);
+}
+
+
 const char *dcm_get_version(void)
 {
     return DCM_SUFFIXED_VERSION;

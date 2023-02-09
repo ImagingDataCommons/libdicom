@@ -215,8 +215,6 @@ static DcmElement *create_element(DcmError **error,
 
 void dcm_element_destroy(DcmElement *element)
 {
-    uint32_t i;
-
     if (element) {
         dcm_log_debug("Destroy Data Element '%08X'.", element->tag);
         if(element->sequence_pointer) {
@@ -226,10 +224,7 @@ void dcm_element_destroy(DcmElement *element)
             free(element->value_pointer);
         }
         if(element->value_pointer_array) {
-            for (i = 0; i < element->vm; i++) {
-                free(element->value_pointer_array[i]);
-            }
-            free(element->value_pointer_array);
+            dcm_free_string_array(element->value_pointer_array, element->vm);
         }
         free(element);
         element = NULL;
@@ -516,16 +511,10 @@ static bool set_value_str_multi(DcmElement *element,
                                 uint32_t capacity) {
     assert(element);
     assert(values);
-    uint32_t i;
 
     if (!check_value_str_multi(element, values, vm, capacity)) {
         if (values) {
-            for (i = 0; i < vm; i++) {
-                if (values[i]) {
-                    free(values[i]);
-                }
-            }
-            free(values);
+            dcm_free_string_array(values, vm);
         }
         return false;
     }
@@ -553,10 +542,7 @@ static DcmElement *create_element_str(DcmError **error,
     DcmElement *element = create_element(error, tag, vr, length);
     if (element == NULL) {
         free(value);
-        if (values[0]) {
-            free(values[0]);
-        }
-        free(values);
+        dcm_free_string_array(values, 1);
         return NULL;
     }
     if (!set_value_str_multi(element, values, 1, capacity)) {
@@ -590,10 +576,7 @@ static DcmElement *create_element_str_multi(DcmError **error,
 
     DcmElement *element = create_element(error, tag, vr, length);
     if (element == NULL) {
-        for (i = 0; i < vm; i++) {
-            free(values[i]);
-        }
-        free(values);
+        dcm_free_string_array(values, vm);
         return NULL;
     }
 

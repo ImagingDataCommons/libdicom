@@ -415,10 +415,7 @@ static DcmElement *read_element(DcmError **error,
                               "Encountered unexpected Value Multiplicity %d "
                               "for Data Element '%08X'",
                               vm, tag);
-                for (i = 0; i < vm; i++) {
-                    free(strings[i]);
-                }
-                free(strings);
+                dcm_free_string_array(strings, vm);
                 return NULL;
             }
             char *str = strings[0];
@@ -436,10 +433,7 @@ static DcmElement *read_element(DcmError **error,
                               "Encountered unexpected Value Multiplicity %d "
                               "for Data Element '%08X'.",
                               vm, tag);
-                for (i = 0; i < vm; i++) {
-                    free(strings[i]);
-                }
-                free(strings);
+                dcm_free_string_array(strings, vm);
                 return NULL;
             }
             char *str = strings[0];
@@ -453,10 +447,7 @@ static DcmElement *read_element(DcmError **error,
                               "Encountered unexpected Value Multiplicity %d "
                               "for Data Element '%08X'.",
                               vm, tag);
-                for (i = 0; i < vm; i++) {
-                    free(strings[i]);
-                }
-                free(strings);
+                dcm_free_string_array(strings, vm);
                 return NULL;
             }
             char *str = strings[0];
@@ -470,10 +461,7 @@ static DcmElement *read_element(DcmError **error,
                               "Encountered unexpected Value Multiplicity %d "
                               "for Data Element '%08X'",
                               vm, tag);
-                for (i = 0; i < vm; i++) {
-                    free(strings[i]);
-                }
-                free(strings);
+                dcm_free_string_array(strings, vm);
                 return NULL;
             }
             char *str = strings[0];
@@ -485,10 +473,7 @@ static DcmElement *read_element(DcmError **error,
                           "Encountered unexpected Value Representation "
                           "for Data Element '%08X'",
                           tag);
-            for (i = 0; i < vm; i++) {
-                free(strings[i]);
-            }
-            free(strings);
+            dcm_free_string_array(strings, vm);
             return NULL;
         }
     } else if (eheader_check_vr(header, "SQ")) {

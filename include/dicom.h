@@ -282,8 +282,8 @@ void dcm_error_log(DcmError *error);
 /**
  * Allocate and initialize a block of memory.
  *
- * :param n: Number of items.
- * :param size: Number of bytes per item.
+ * :param n: Number of items
+ * :param size: Number of bytes per item
  *
  * :return: Pointer to allocated memory.
  */
@@ -294,12 +294,22 @@ void *dcm_calloc(DcmError **error, size_t n, size_t size);
 /**
  * Allocate a copy of a string.
  *
- * :param str: String to copy.
+ * :param str: String to copy
  *
  * :return: Pointer to copy of string.
  */
 DCM_EXTERN
 char *dcm_strdup(DcmError **error, const char *str);
+
+
+/**
+ * Free an array of strings.
+ *
+ * :param strings: Array of strings to free
+ * :param n: Size of array
+ */
+DCM_EXTERN
+void dcm_free_string_array(char **strings, int n);
 
 
 /**
