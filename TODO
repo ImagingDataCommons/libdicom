@@ -27,8 +27,6 @@
 
   part of allowing your own read funcs
 
-- call dcm_dataset_lock() everywhere, don't set lock by hand
-
 - disable assert in production builds
 	there's eg. assert_vr() too, check this
 	what does DCM_DEBUG_ONLY() mean? is this sanity checking?
