@@ -146,17 +146,23 @@ void dcm_error_set(DcmError **error, DcmErrorCode code,
 
     if (error) {
         va_list(ap);
+
         va_start(ap, format);
         *error = dcm_error_newf(code, summary, format, ap);
         va_end(ap);
     } else {
+        /* Log to DEBUG so messages don't get completely lost.
+         */
         va_list(ap);
 
         va_start(ap, format);
         DcmError *local_error = dcm_error_newf(code, summary, format, ap);
         va_end(ap);
 
-        dcm_error_log(local_error);
+        dcm_log_debug("%s: %s - %s", 
+                      dcm_error_code_str(local_error->code),
+                      local_error->summary,
+                      local_error->message);
 
         dcm_error_free(local_error);
     }
@@ -193,7 +199,7 @@ const char *dcm_error_summary(DcmError *error)
 void dcm_error_log(DcmError *error)
 {
     if (error) {
-        dcm_log_error("%s: %s - %s", 
+        dcm_log_error("%s: %s - %s",
                       dcm_error_code_str(error->code),
                       error->summary,
                       error->message);
