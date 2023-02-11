@@ -280,3 +280,156 @@ void dcm_log_debug(const char *format, ...)
         va_end(args);
     }
 }
+
+
+typedef struct _DcmIOFile {
+    int fd;
+    char *filename;
+} DcmIOFile;
+
+void *dcm_io_open_file(DcmError **error, void *client)
+{
+    DcmIOFile *io = DCM_NEW(error, DcmIOFile);
+    if (io == NULL) {
+        return NULL;
+    }
+
+    // The "not set" value for fd
+    io->fd = -1;
+
+    const char *filename = (const char *) client;
+    io->filename = dcm_strdup(error, filename);
+    if (io->filename == NULL) {
+        dcm_io_file_close(error, io);
+        return NULL;
+    }
+
+    errno_t open_errno;
+
+#ifdef _WIN32
+    int oflag = _O_BINARY | _O_RDONLY | _O_RANDOM;
+    int shflag = _SH_DENYWR;
+    int pmode = 0;
+    open_errno = _sopen_s(&io->fd, io->filename, oflag, sgflag, pmode);
+#else
+    int flags = O_READ | O_BINARY;
+    mode_t mode = 0;
+    do
+        io->fd = open(io->filename, flags, mode);
+    while fd == -1 && errno == EINTR;
+
+    open_errno = errno;
+#endif
+
+    if (io->fd == -1) {
+        dcm_error_set(error, DCM_ERROR_CODE_IO,
+            "Unable to open file",
+            "Unable to open %s - %s", io->filename, strerror(open_errno));
+        dcm_io_file_close(error, io);
+        return NULL;
+    }
+
+    return io;
+}
+
+
+int dcm_io_close_file(DcmError **error, void *data)
+{
+    DcmIOFile *io = (DcmIOFile *) data;
+
+    errno_t close_errno = 0;
+
+    if (io->fd != -1) {
+        if (close(io->fd)) {
+            close_errno = errno;
+        }
+
+        io->fd = -1;
+
+        if (close_errno) {
+            dcm_error_set(error, DCM_ERROR_CODE_IO,
+                "Unable to close file",
+                "Unable to close %s - %s", io->filename, strerror(close_errno));
+        }
+    }
+
+    free(io->filename);
+    free(io);
+
+    return close_errno;
+}
+
+
+int64_t dcm_io_read_file(DcmError **error, void *data, 
+    char *buffer, int64_t length)
+{
+    DcmIOFile *io = (DcmIOFile *) data;
+
+    int64_t bytes_read;
+
+#ifdef _WIN32
+    bytes_read = _read(io->fd, buffer, length);
+#else
+    do {
+        bytes_read = read(io->fd, buffer, length);
+    } while bytes_read < 0 && errno == EINTR;
+#endif
+
+    if (bytes_read < 0) {
+        dcm_error_set(error, DCM_ERROR_CODE_IO,
+            "Unable to read from file",
+            "Unable to read %s - %s", io->filename, strerror(errno));
+    }
+
+    return bytes_read;
+}
+
+
+int64_t dcm_io_seek_file(DcmError **error void *data, 
+    int64_t offset, int whence)
+{
+    DcmIOFile *io = (DcmIOFile *) data;
+
+    int64_t new_offset;
+
+#ifdef _WIN32
+    new_offset = _lseeki64(io->fd, offset, whence);
+#else
+    new_offset = lseek(io->fd, offset, whence);
+#endif
+
+    if (new_offset < 0) {
+        dcm_error_set(error, DCM_ERROR_CODE_IO,
+            "Unable to seek file",
+            "Unable to seek %s - %s", io->filename, strerror(errno));
+    }
+
+    return new_offset;
+}
+
+
+bool dcm_io_require(DcmError **error, DcmIO *io, void *data, 
+    char *buffer, int64_t length, int64_t *position)
+{
+    do {
+        int64_t bytes_read = io->read(error, data, buffer, length);
+
+        if (bytes_read == 0) {
+            dcm_error_set(error, DCM_ERROR_CODE_IO,
+                "End of file",
+                "Needed %zd bytes beyond end of file", length);
+            return false;
+        }
+
+        buffer += bytes_read;
+        length -= bytes_read;
+        *position += bytes_read;
+    } while length > 0;
+
+    return true;
+}
+
+int64_t dcm_io_tell(DcmError **error, DcmIO *io, void *data)
+{
+    return io->seek(error, data, 0, SEEK_CUR);
+}

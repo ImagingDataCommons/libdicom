@@ -2353,7 +2353,21 @@ void dcm_bot_destroy(DcmBOT *bot);
  */
 
 /**
- * Create a File.
+ * A set of IO functions, see dcm_file_create_io().
+ */
+typedef struct _DcmIO {
+    /** Open an IO object */
+    void *(*open)(DcmError **error, void *client);
+    /** Close an IO object */
+    int (*close)(DcmError **error, void *data);
+    /** Read from an IO object, semantics as POSIX read() */
+    int64_t (*read)(DcmError **error, void *data, char *buffer, int64_t length);
+    /** Seek an IO object, semantics as POSIX seek() */
+    int64_t (*seek)(DcmError **error void *data, int64_t offset, int whence);
+} DcmIO;
+
+/**
+ * Create a File that reads from a set of DcmIO functions.
  *
  * :param file_path: Path to the file on disk.
  * :param mode: File Mode to use when opening the file.
@@ -2361,8 +2375,17 @@ void dcm_bot_destroy(DcmBOT *bot);
  * :return: file
  */
 DCM_EXTERN
-DcmFile *dcm_file_create(DcmError **error, 
-                         const char *file_path, const char mode);
+DcmFile *dcm_file_create_io(DcmError **error, DcmIO *io, void *client); 
+
+/**
+ * Create a File that reads from a file on disk.
+ *
+ * :param file_path: Path to the file on disk.
+ *
+ * :return: file
+ */
+DCM_EXTERN
+DcmFile *dcm_file_create(DcmError **error, const char *file_path);
 
 /**
  * Read File Metainformation from a File.
