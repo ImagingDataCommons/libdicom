@@ -125,8 +125,8 @@ call :c:func:`dcm_error_clear()` to clear the error pointer and free any
 allocated memory.
 
 You can pass `NULL` instead of an error pointer if you are not interested in
-error messages. In this case, any errors will be logged instead, see
-:c:func:`dcm_log_error()`.
+error messages. In this case, any errors will be logged to debug instead, see
+:c:func:`dcm_log_debug()`.
 
 For example:
 
@@ -166,14 +166,19 @@ printing it to standard output:
 
     int main() {
         const char *file_path = "/path/to/file.dcm";
+        DcmError *error = NULL;
 
-        DcmFile *file = dcm_file_create(NULL, file_path, 'r');
+        DcmFile *file = dcm_file_create(&error, file_path, 'r');
         if (file == NULL) {
+            dcm_error_log(error);
+            dcm_error_clear(&error);
             return 1;
         }
 
-        DcmDataSet *metadata = dcm_file_read_metadata(NULL, file);
+        DcmDataSet *metadata = dcm_file_read_metadata(&error, file);
         if (metadata == NULL) {
+            dcm_error_log(error);
+            dcm_error_clear(&error);
             dcm_file_destroy(file);
             return 1;
         }
