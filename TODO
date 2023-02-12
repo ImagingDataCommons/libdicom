@@ -2,8 +2,6 @@
 
 # IO vfuncs
 
-- rename frequire etc., too confusing
-
 - input buffering layer on top of io vfuncs
 
 - add ungetc()?

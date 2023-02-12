@@ -122,33 +122,31 @@ DcmFile *dcm_file_open(DcmError **error, const char *file_path)
 }
 
 
-static bool closefile(DcmError **error, DcmFile *file)
+static bool dcm_close(DcmError **error, DcmFile *file)
 {
     if (file->fp) {
-        if (file->io->close(error, file->fp) != 0) {
+        if (!file->io->close(error, file->fp)) {
             return false;
         }
         file->fp = NULL;
     }
-
     return true;
 }
 
-
-static bool frequire(DcmError **error, DcmFile *file, 
+static bool dcm_require(DcmError **error, DcmFile *file, 
     char *buffer, size_t length, int64_t *position)
 {
     return dcm_io_require(error, file->io, file->fp, buffer, length, position);
 }
 
 
-static bool fseekto(DcmError **error, DcmFile *file, int64_t offset)
+static bool dcm_seek(DcmError **error, DcmFile *file, int64_t offset)
 {
     return  file->io->seek(error, file->fp, offset, SEEK_SET) >= 0;
 }
 
 
-static bool fskip(DcmError **error, DcmFile *file, 
+static bool dcm_skip(DcmError **error, DcmFile *file, 
     int64_t offset, int64_t *position)
 {
     int64_t new_offset = file->io->seek(error, file->fp, offset, SEEK_CUR);
@@ -162,7 +160,7 @@ static bool fskip(DcmError **error, DcmFile *file,
 }
 
 
-static bool fget_eof(DcmFile *file)
+static bool dcm_eof(DcmFile *file)
 {
     int64_t position = 0;
     bool eof = true;
@@ -171,14 +169,14 @@ static bool fget_eof(DcmFile *file)
     int64_t bytes_read = file->io->read(NULL, file->fp, buffer, 1);
     if (bytes_read > 0) {
         eof = false;
-        (void) fskip(NULL, file, -1, &position);
+        (void) dcm_skip(NULL, file, -1, &position);
     }
 
     return eof;
 }
 
 
-static bool fget_offset(DcmError **error, DcmFile *file, int64_t *offset)
+static bool dcm_offset(DcmError **error, DcmFile *file, int64_t *offset)
 {
     *offset = file->io->seek(error, file->fp, 0, SEEK_CUR);
     if (*offset < 0) {
@@ -197,7 +195,7 @@ static bool read_uint16(DcmError **error, DcmFile *file,
         char c[2];
     } buffer;
 
-    if (!frequire(error, file, buffer.c, 2, position)) {
+    if (!dcm_require(error, file, buffer.c, 2, position)) {
         return false;
     }
 
@@ -220,7 +218,7 @@ static bool read_uint32(DcmError **error, DcmFile *file,
         char c[4];
     } buffer;
 
-    if (!frequire(error, file, buffer.c, 4, position)) {
+    if (!dcm_require(error, file, buffer.c, 4, position)) {
         return false;
     }
 
@@ -245,7 +243,7 @@ static bool read_uint64(DcmError **error, DcmFile *file,
         char c[8];
     } buffer;
 
-    if (!frequire(error, file, buffer.c, 8, position)) {
+    if (!dcm_require(error, file, buffer.c, 8, position)) {
         return false;
     }
 
@@ -521,7 +519,7 @@ static EHeader *read_element_header(DcmError **error,
         }
     } else {
         // Value Representation
-        if (!frequire(error, file, vr, 2, position)) {
+        if (!dcm_require(error, file, vr, 2, position)) {
             return NULL;
         }
         vr[2] = '\0';
@@ -626,7 +624,7 @@ static DcmElement *read_element(DcmError **error,
             return NULL;
         }
 
-        if (!frequire(error, file, value, length, position)) {
+        if (!dcm_require(error, file, value, length, position)) {
             return NULL;
         }
 
@@ -828,7 +826,7 @@ static DcmElement *read_element(DcmError **error,
                     break;
                 }
 
-                if (!fskip(error, file, -4, &item_position)) {
+                if (!dcm_skip(error, file, -4, &item_position)) {
                     iheader_destroy(item_iheader);
                     dcm_sequence_destroy(value);
                     return NULL;
@@ -1019,7 +1017,7 @@ static DcmElement *read_element(DcmError **error,
             return NULL;
         }
 
-        if (!frequire(error, file, value, length, position)) {
+        if (!dcm_require(error, file, value, length, position)) {
             free(value);
             return NULL;
         }
@@ -1073,7 +1071,7 @@ DcmDataSet *dcm_file_read_file_meta(DcmError **error, DcmFile *file)
 
     // File Preamble
     char preamble[129];
-    if (!frequire(error, file, preamble, sizeof(preamble) - 1, &position)) {
+    if (!dcm_require(error, file, preamble, sizeof(preamble) - 1, &position)) {
         dcm_dataset_destroy(file_meta);
         return NULL;
     }
@@ -1082,7 +1080,7 @@ DcmDataSet *dcm_file_read_file_meta(DcmError **error, DcmFile *file)
 
     // DICOM Prefix
     char prefix[5];
-    if (!frequire(error, file, prefix, sizeof(prefix) - 1, &position)) {
+    if (!dcm_require(error, file, prefix, sizeof(prefix) - 1, &position)) {
         dcm_dataset_destroy(file_meta);
         return NULL;
     }
@@ -1172,7 +1170,7 @@ DcmDataSet *dcm_file_read_file_meta(DcmError **error, DcmFile *file)
         eheader_destroy(header);
     }
 
-    if (!fget_offset(error, file, &file->offset)) {
+    if (!dcm_offset(error, file, &file->offset)) {
         dcm_dataset_destroy(file_meta);
         return NULL;
     }
@@ -1198,7 +1196,9 @@ void dcm_file_destroy(DcmFile *file)
         if (file->transfer_syntax_uid) {
             free(file->transfer_syntax_uid);
         }
-        (void) closefile(NULL, file);
+
+        (void)dcm_close(NULL, file);
+
         free(file);
     }
 }
@@ -1221,7 +1221,7 @@ DcmDataSet *dcm_file_read_metadata(DcmError **error, DcmFile *file)
         dcm_dataset_destroy(file_meta);
     }
 
-    if (!fseekto(error, file, file->offset)) {
+    if (!dcm_seek(error, file, file->offset)) {
         return NULL;
     }
 
@@ -1239,7 +1239,7 @@ DcmDataSet *dcm_file_read_metadata(DcmError **error, DcmFile *file)
 
     int64_t position = 0;
     for (;;) {
-        if (fget_eof(file)) {
+        if (dcm_eof(file)) {
             dcm_log_info("Stop reading Data Set. Reached end of file.");
             break;
         }
@@ -1263,7 +1263,7 @@ DcmDataSet *dcm_file_read_metadata(DcmError **error, DcmFile *file)
             // Set file pointer to the first byte of the pixel data element
             if (implicit) {
                 // Tag: 4 bytes, Value Length: 4 bytes
-                if (!fskip(error, file, -8, &position)) {
+                if (!dcm_skip(error, file, -8, &position)) {
                     eheader_destroy(header);
                     dcm_dataset_destroy(dataset);
                     return NULL;
@@ -1271,14 +1271,14 @@ DcmDataSet *dcm_file_read_metadata(DcmError **error, DcmFile *file)
 
             } else {
                 // Tag: 4 bytes, VR: 2 bytes + 2 bytes, Value Length: 4 bytes
-                if (!fskip(error, file, -12, &position)) {
+                if (!dcm_skip(error, file, -12, &position)) {
                     eheader_destroy(header);
                     dcm_dataset_destroy(dataset);
                     return NULL;
                 }
             }
 
-            if (!fget_offset(error, file, &file->pixel_data_offset)) {
+            if (!dcm_offset(error, file, &file->pixel_data_offset)) {
                 eheader_destroy(header);
                 dcm_dataset_destroy(dataset);
                 return NULL;
@@ -1370,7 +1370,7 @@ DcmBOT *dcm_file_read_bot(DcmError **error, DcmFile *file, DcmDataSet *metadata)
         return NULL;
     }
 
-    if (!fseekto(error, file, file->pixel_data_offset)) {
+    if (!dcm_seek(error, file, file->pixel_data_offset)) {
         return NULL;
     }
 
@@ -1583,7 +1583,7 @@ DcmBOT *dcm_file_build_bot(DcmError **error,
         return NULL;
     }
 
-    if (!fseekto(error, file, file->pixel_data_offset)) {
+    if (!dcm_seek(error, file, file->pixel_data_offset)) {
         return NULL;
     }
     int64_t position = 0;
@@ -1631,7 +1631,7 @@ DcmBOT *dcm_file_build_bot(DcmError **error,
 
         // Move filepointer to first byte of first Frame item
         // FIXME ... absolute seek? is this right?
-        if (!fseekto(error, file, item_length)) {
+        if (!dcm_seek(error, file, item_length)) {
             free(offsets);
         }
 
@@ -1659,7 +1659,7 @@ DcmBOT *dcm_file_build_bot(DcmError **error,
                 iheader_destroy(iheader);
                 return NULL;
             }
-            if (fget_eof(file)) {
+            if (dcm_eof(file)) {
                 break;
             }
 
@@ -1667,7 +1667,7 @@ DcmBOT *dcm_file_build_bot(DcmError **error,
 
             item_length = iheader_get_length(iheader);
             iheader_destroy(iheader);
-            if (!fskip(error, file, item_length, &position)) {
+            if (!dcm_skip(error, file, item_length, &position)) {
                 free(offsets);
                 return NULL;
             }
@@ -1732,7 +1732,7 @@ DcmFrame *dcm_file_read_frame(DcmError **error,
     total_frame_offset = file->pixel_data_offset +
                          first_frame_offset +
                          frame_offset;
-    if (!fseekto(error, file, total_frame_offset)) {
+    if (!dcm_seek(error, file, total_frame_offset)) {
         return NULL;
     }
 
@@ -1769,7 +1769,7 @@ DcmFrame *dcm_file_read_frame(DcmError **error,
         destroy_pixel_description(desc);
         return NULL;
     }
-    if (!frequire(error, file, value, length, &position)) {
+    if (!dcm_require(error, file, value, length, &position)) {
         destroy_pixel_description(desc);
         free(value);
         return NULL;
