@@ -2378,14 +2378,14 @@ DCM_EXTERN
 DcmFile *dcm_file_create_io(DcmError **error, DcmIO *io, void *client); 
 
 /**
- * Create a File that reads from a file on disk.
+ * Open a file on disk as a DcmFile.
  *
  * :param file_path: Path to the file on disk.
  *
  * :return: file
  */
 DCM_EXTERN
-DcmFile *dcm_file_create(DcmError **error, const char *file_path);
+DcmFile *dcm_file_open(DcmError **error, const char *file_path);
 
 /**
  * Read File Metainformation from a File.

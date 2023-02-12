@@ -104,7 +104,7 @@ DcmFile *dcm_file_create_io(DcmError **error, DcmIO *io, void *client)
 }
 
 
-DcmFile *dcm_file_create(DcmError **error, const char *file_path)
+DcmFile *dcm_file_open(DcmError **error, const char *file_path)
 {
     static DcmIO file_io = {
         dcm_io_open_file,

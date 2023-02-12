@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
     file_path = argv[i];
 
     dcm_log_info("Read file '%s'", file_path);
-    file = dcm_file_create(&error, file_path);
+    file = dcm_file_open(&error, file_path);
     if (file == NULL) {
         dcm_error_log(error);
         dcm_error_clear(&error);

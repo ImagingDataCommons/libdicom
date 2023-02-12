@@ -2,42 +2,17 @@
 
 # IO vfuncs
 
-- wrappers for read() / seek() / etc. that include error checks 
-
-  part of allowing your own read funcs
-
-  use posix open() / close() / read() / seek() semantics, not stdio, or we'll 
-  need ferror and feof as well
-
-	void *(*open)(DcmError **error, void *client);
-	int (*close)(DcmError **error, void *data);
-        int64_t (*read)(DcmError **error, void *data, 
-		char *buffer, size_t length );
-        int64_t (*seek)(DcmError **error void *data, 
-		int64_t offset, int whence);
-
-  add something to loop on read if we must have length bytes
-
-  * struct DcmIO holding those four funcs
-
-  * dcm_file_create_io() where you pass in an io object plus a 
-    client pointer (eg. filename)
-
-  * reimplement dcm_file_create() on top of this, include buffering
-
-- read uint16, read uint32 funcs
-
-	check byte ordering ... network? bigendian? littleendian? can change?
-
-	section 7.3 days it's always little endian, so least 
-	significant byte first, and all values are coded this way
+- rename frequire etc., too confusing
 
 - input buffering layer on top of io vfuncs
 
-# rename
+- add ungetc()?
 
-- dcm_file_create() is incredibly confusing and alarming, how about 
-  dcm_file_open()?
+- add a memory source
+
+- benchmark
+
+- add somethnig to read BOT to dcm-dump? or add dcm-getframe?
 
 # bot support
 
