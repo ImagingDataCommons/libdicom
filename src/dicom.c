@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <time.h>
 
 #include "dicom.h"
@@ -295,72 +297,77 @@ typedef struct _DcmIOFile {
 
 void *dcm_io_open_file(DcmError **error, void *client)
 {
-    DcmIOFile *io = DCM_NEW(error, DcmIOFile);
-    if (io == NULL) {
+    DcmIOFile *io_file = DCM_NEW(error, DcmIOFile);
+    if (io_file == NULL) {
         return NULL;
     }
 
     // The "not set" value for fd
-    io->fd = -1;
+    io_file->fd = -1;
 
     const char *filename = (const char *) client;
-    io->filename = dcm_strdup(error, filename);
-    if (io->filename == NULL) {
-        dcm_io_file_close(error, io);
+    io_file->filename = dcm_strdup(error, filename);
+    if (io_file->filename == NULL) {
+        dcm_io_close_file(error, io_file);
         return NULL;
     }
 
-    errno_t open_errno;
+    int open_errno;
 
 #ifdef _WIN32
     int oflag = _O_BINARY | _O_RDONLY | _O_RANDOM;
     int shflag = _SH_DENYWR;
     int pmode = 0;
-    open_errno = _sopen_s(&io->fd, io->filename, oflag, sgflag, pmode);
+    open_errno = _sopen_s(&io_file->fd, io_file->filename, 
+                          oflag, sgflag, pmode);
 #else
-    int flags = O_READ | O_BINARY;
+    int flags = O_RDONLY;
+#ifdef O_BINARY
+    flags |= O_BINARY;
+#endif
     mode_t mode = 0;
     do
-        io->fd = open(io->filename, flags, mode);
-    while fd == -1 && errno == EINTR;
+        io_file->fd = open(io_file->filename, flags, mode);
+    while (io_file->fd == -1 && errno == EINTR);
 
     open_errno = errno;
 #endif
 
-    if (io->fd == -1) {
+    if (io_file->fd == -1) {
         dcm_error_set(error, DCM_ERROR_CODE_IO,
             "Unable to open file",
-            "Unable to open %s - %s", io->filename, strerror(open_errno));
-        dcm_io_file_close(error, io);
+            "Unable to open %s - %s", io_file->filename, strerror(open_errno));
+        dcm_io_close_file(error, io_file);
         return NULL;
     }
 
-    return io;
+    return io_file;
 }
 
 
 int dcm_io_close_file(DcmError **error, void *data)
 {
-    DcmIOFile *io = (DcmIOFile *) data;
+    DcmIOFile *io_file = (DcmIOFile *) data;
 
-    errno_t close_errno = 0;
+    int close_errno = 0;
 
-    if (io->fd != -1) {
-        if (close(io->fd)) {
+    if (io_file->fd != -1) {
+        if (close(io_file->fd)) {
             close_errno = errno;
         }
 
-        io->fd = -1;
+        io_file->fd = -1;
 
         if (close_errno) {
             dcm_error_set(error, DCM_ERROR_CODE_IO,
                 "Unable to close file",
-                "Unable to close %s - %s", io->filename, strerror(close_errno));
+                "Unable to close %s - %s", 
+                io_file->filename, strerror(close_errno));
         }
     }
 
-    free(io->filename);
-    free(io);
+    free(io_file->filename);
+    free(io_file);
 
     return close_errno;
 }
@@ -369,45 +376,45 @@ int dcm_io_close_file(DcmError **error, void *data)
 int64_t dcm_io_read_file(DcmError **error, void *data, 
     char *buffer, int64_t length)
 {
-    DcmIOFile *io = (DcmIOFile *) data;
+    DcmIOFile *io_file = (DcmIOFile *) data;
 
     int64_t bytes_read;
 
 #ifdef _WIN32
-    bytes_read = _read(io->fd, buffer, length);
+    bytes_read = _read(io_file->fd, buffer, length);
 #else
     do {
-        bytes_read = read(io->fd, buffer, length);
-    } while bytes_read < 0 && errno == EINTR;
+        bytes_read = read(io_file->fd, buffer, length);
+    } while (bytes_read < 0 && errno == EINTR);
 #endif
 
     if (bytes_read < 0) {
         dcm_error_set(error, DCM_ERROR_CODE_IO,
             "Unable to read from file",
-            "Unable to read %s - %s", io->filename, strerror(errno));
+            "Unable to read %s - %s", io_file->filename, strerror(errno));
     }
 
     return bytes_read;
 }
 
 
-int64_t dcm_io_seek_file(DcmError **error void *data, 
+int64_t dcm_io_seek_file(DcmError **error, void *data, 
     int64_t offset, int whence)
 {
-    DcmIOFile *io = (DcmIOFile *) data;
+    DcmIOFile *io_file = (DcmIOFile *) data;
 
     int64_t new_offset;
 
 #ifdef _WIN32
-    new_offset = _lseeki64(io->fd, offset, whence);
+    new_offset = _lseeki64(io_file->fd, offset, whence);
 #else
-    new_offset = lseek(io->fd, offset, whence);
+    new_offset = lseek(io_file->fd, offset, whence);
 #endif
 
     if (new_offset < 0) {
         dcm_error_set(error, DCM_ERROR_CODE_IO,
             "Unable to seek file",
-            "Unable to seek %s - %s", io->filename, strerror(errno));
+            "Unable to seek %s - %s", io_file->filename, strerror(errno));
     }
 
     return new_offset;
@@ -417,7 +424,7 @@ int64_t dcm_io_seek_file(DcmError **error void *data,
 bool dcm_io_require(DcmError **error, DcmIO *io, void *data, 
     char *buffer, int64_t length, int64_t *position)
 {
-    do {
+    while (length > 0) {
         int64_t bytes_read = io->read(error, data, buffer, length);
 
         if (bytes_read == 0) {
@@ -430,7 +437,7 @@ bool dcm_io_require(DcmError **error, DcmIO *io, void *data,
         buffer += bytes_read;
         length -= bytes_read;
         *position += bytes_read;
-    } while length > 0;
+    }
 
     return true;
 }

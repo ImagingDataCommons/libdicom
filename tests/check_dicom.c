@@ -49,7 +49,7 @@ START_TEST(test_error)
 {
     DcmError *error = NULL;
 
-    DcmFile *file = dcm_file_create(&error, "banana", 'r');
+    DcmFile *file = dcm_file_create(&error, "banana");
     ck_assert_ptr_null(file);
     ck_assert_ptr_nonnull(error);
 
@@ -468,7 +468,7 @@ START_TEST(test_file_sm_image_file_meta)
     DcmElement *element;
 
     char *file_path = fixture_path("data/test_files/sm_image.dcm");
-    DcmFile *file = dcm_file_create(NULL, file_path, 'r');
+    DcmFile *file = dcm_file_create(NULL, file_path);
     free(file_path);
 
     DcmDataSet *file_meta = dcm_file_read_file_meta(NULL, file);
@@ -496,7 +496,7 @@ END_TEST
 START_TEST(test_file_sm_image_metadata)
 {
     char *file_path = fixture_path("data/test_files/sm_image.dcm");
-    DcmFile *file = dcm_file_create(NULL, file_path, 'r');
+    DcmFile *file = dcm_file_create(NULL, file_path);
     free(file_path);
 
     DcmDataSet *metadata = dcm_file_read_metadata(NULL, file);
@@ -519,7 +519,7 @@ START_TEST(test_file_sm_image_frame)
     const uint32_t frame_number = 1;
 
     char *file_path = fixture_path("data/test_files/sm_image.dcm");
-    DcmFile *file = dcm_file_create(NULL, file_path, 'r');
+    DcmFile *file = dcm_file_create(NULL, file_path);
     free(file_path);
     ck_assert_ptr_nonnull(file);
 

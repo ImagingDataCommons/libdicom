@@ -61,10 +61,10 @@ int dcm_io_close_file(DcmError **error, void *data);
 int64_t dcm_io_read_file(DcmError **error, void *data, 
     char *buffer, int64_t length);
 
-int64_t dcm_io_seek_file(DcmError **error void *data, 
+int64_t dcm_io_seek_file(DcmError **error, void *data, 
     int64_t offset, int whence);
 
 bool dcm_io_require(DcmError **error, DcmIO *io, void *data, 
-    char *buffer, int64_t length, int64_t *position)
+    char *buffer, int64_t length, int64_t *position);
 
 int64_t dcm_io_tell(DcmError **error, DcmIO *io, void *data);

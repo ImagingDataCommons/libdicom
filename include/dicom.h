@@ -2363,7 +2363,7 @@ typedef struct _DcmIO {
     /** Read from an IO object, semantics as POSIX read() */
     int64_t (*read)(DcmError **error, void *data, char *buffer, int64_t length);
     /** Seek an IO object, semantics as POSIX seek() */
-    int64_t (*seek)(DcmError **error void *data, int64_t offset, int whence);
+    int64_t (*seek)(DcmError **error, void *data, int64_t offset, int whence);
 } DcmIO;
 
 /**
@@ -2431,9 +2431,8 @@ DcmDataSet *dcm_file_read_metadata(DcmError **error, DcmFile *file);
  * :return: Basic Offset Table
  */
 DCM_EXTERN
-DcmBOT *dcm_file_read_bot(DcmError **error,
-                          const DcmFile *file,
-                          const DcmDataSet *metadata);
+DcmBOT *dcm_file_read_bot(DcmError **error, DcmFile *file,
+                          DcmDataSet *metadata);
 
 /**
  * Build Basic Offset Table for a File.
@@ -2445,8 +2444,8 @@ DcmBOT *dcm_file_read_bot(DcmError **error,
  * :return: Basic Offset Table
  */
 DCM_EXTERN
-DcmBOT *dcm_file_build_bot(DcmError **error,
-                           const DcmFile *file, const DcmDataSet *metadata);
+DcmBOT *dcm_file_build_bot(DcmError **error, DcmFile *file, 
+			   DcmDataSet *metadata);
 
 /**
  * Read an individual Frame from a File.
@@ -2461,9 +2460,9 @@ DcmBOT *dcm_file_build_bot(DcmError **error,
  */
 DCM_EXTERN
 DcmFrame *dcm_file_read_frame(DcmError **error,
-                              const DcmFile *file,
-                              const DcmDataSet *metadata,
-                              const DcmBOT *bot,
+                              DcmFile *file,
+                              DcmDataSet *metadata,
+                              DcmBOT *bot,
                               uint32_t index);
 
 /**

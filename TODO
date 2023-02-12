@@ -25,6 +25,25 @@
 
   * reimplement dcm_file_create() on top of this, include buffering
 
+- read uint16, read uint32 funcs
+
+	check byte ordering ... network? bigendian? littleendian? can change?
+
+	section 7.3 days it's always little endian, so least 
+	significant byte first, and all values are coded this way
+
+- input buffering layer on top of io vfuncs
+
+# rename
+
+- dcm_file_create() is incredibly confusing and alarming, how about 
+  dcm_file_open()?
+
+# bot support
+
+- need more tests and test images
+
+- extended offset table support seems to be broken? see FIXME comment
 
 # less copy-paste
 
