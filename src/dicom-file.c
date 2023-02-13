@@ -3,8 +3,10 @@
  * Format for Media Interchange.
  */
 
+#include "config.h"
+
 #ifdef _WIN32
-// the Windows CRT considers strncpy unsafe
+// the Windows CRT considers strdup and strcpy unsafe
 #define _CRT_SECURE_NO_WARNINGS
 // and deprecates strdup
 #define strdup(v) _strdup(v)
@@ -19,6 +21,7 @@
 #include "utarray.h"
 
 #include "dicom.h"
+#include "pdicom.h"
 
 
 #define TAG_ITEM                  0xFFFEE000
@@ -225,14 +228,13 @@ finish:
 
     for (i = 0; i < n; i++) {
         token_ptr = utarray_eltptr(array, i);
-        parts[i] = DCM_MALLOC(error, strlen(*token_ptr) + 1);
+        parts[i] = dcm_strdup(error, *token_ptr);
         if (parts[i] == NULL) {
             free(parts);
             free(string);
             utarray_free(array);
             return NULL;
         }
-        strcpy(parts[i], *token_ptr);
     }
 
     *vm = n;
@@ -415,10 +417,7 @@ static DcmElement *read_element(DcmError **error,
                               "Encountered unexpected Value Multiplicity %d "
                               "for Data Element '%08X'",
                               vm, tag);
-                for (i = 0; i < vm; i++) {
-                    free(strings[i]);
-                }
-                free(strings);
+                dcm_free_string_array(strings, vm);
                 return NULL;
             }
             char *str = strings[0];
@@ -436,10 +435,7 @@ static DcmElement *read_element(DcmError **error,
                               "Encountered unexpected Value Multiplicity %d "
                               "for Data Element '%08X'.",
                               vm, tag);
-                for (i = 0; i < vm; i++) {
-                    free(strings[i]);
-                }
-                free(strings);
+                dcm_free_string_array(strings, vm);
                 return NULL;
             }
             char *str = strings[0];
@@ -453,10 +449,7 @@ static DcmElement *read_element(DcmError **error,
                               "Encountered unexpected Value Multiplicity %d "
                               "for Data Element '%08X'.",
                               vm, tag);
-                for (i = 0; i < vm; i++) {
-                    free(strings[i]);
-                }
-                free(strings);
+                dcm_free_string_array(strings, vm);
                 return NULL;
             }
             char *str = strings[0];
@@ -470,10 +463,7 @@ static DcmElement *read_element(DcmError **error,
                               "Encountered unexpected Value Multiplicity %d "
                               "for Data Element '%08X'",
                               vm, tag);
-                for (i = 0; i < vm; i++) {
-                    free(strings[i]);
-                }
-                free(strings);
+                dcm_free_string_array(strings, vm);
                 return NULL;
             }
             char *str = strings[0];
@@ -485,10 +475,7 @@ static DcmElement *read_element(DcmError **error,
                           "Encountered unexpected Value Representation "
                           "for Data Element '%08X'",
                           tag);
-            for (i = 0; i < vm; i++) {
-                free(strings[i]);
-            }
-            free(strings);
+            dcm_free_string_array(strings, vm);
             return NULL;
         }
     } else if (eheader_check_vr(header, "SQ")) {
