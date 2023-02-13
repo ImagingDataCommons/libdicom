@@ -2367,10 +2367,10 @@ typedef struct _DcmIO {
 } DcmIO;
 
 /**
- * Create a File that reads from a set of DcmIO functions.
+ * Create a File that reads using a set of DcmIO functions.
  *
- * :param file_path: Path to the file on disk.
- * :param mode: File Mode to use when opening the file.
+ * :param io: Set of read functions for this DcmFile
+ * :param client: Client data for read functions
  *
  * :return: file
  */
@@ -2380,12 +2380,23 @@ DcmFile *dcm_file_create_io(DcmError **error, DcmIO *io, void *client);
 /**
  * Open a file on disk as a DcmFile.
  *
- * :param file_path: Path to the file on disk.
+ * :param file_path: Path to the file on disk
  *
  * :return: file
  */
 DCM_EXTERN
 DcmFile *dcm_file_open(DcmError **error, const char *file_path);
+
+/**
+ * Open an area of memory as a DcmFile.
+ *
+ * :param buffer: Pointer to memory area
+ * :param length: Length of memory area in bytes
+ *
+ * :return: file
+ */
+DCM_EXTERN
+DcmFile *dcm_file_memory(DcmError **error, char *buffer, int64_t length);
 
 /**
  * Read File Metainformation from a File.

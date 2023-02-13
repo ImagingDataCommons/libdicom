@@ -2,21 +2,19 @@
 
 # IO vfuncs
 
-- input buffering layer on top of io vfuncs
-
-- add ungetc()?
-
-- add a memory source
+- add a memory source test
 
 - benchmark
 
-- add somethnig to read BOT to dcm-dump? or add dcm-getframe?
+- add something to read BOT to dcm-dump? or add dcm-getframe?
+
 
 # bot support
 
 - need more tests and test images
 
 - extended offset table support seems to be broken? see FIXME comment
+
 
 # less copy-paste
 

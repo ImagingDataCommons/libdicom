@@ -126,6 +126,7 @@ library_includes = include_directories('include')
 library_options = ['-DBUILDING_LIBDICOM']
 library_sources = [
   'src/dicom.c',
+  'src/dicom-io.c',
   'src/dicom-data.c',
   'src/dicom-dict.c',
   'src/dicom-file.c',

@@ -24,7 +24,6 @@
 #define TAG_FLOAT_PIXEL_DATA      0x7FE00008
 #define TAG_DOUBLE_PIXEL_DATA     0x7FE00009
 
-
 struct PixelDescription {
     uint16_t rows;
     uint16_t columns;
@@ -104,49 +103,67 @@ DcmFile *dcm_file_create_io(DcmError **error, DcmIO *io, void *client)
 }
 
 
-DcmFile *dcm_file_open(DcmError **error, const char *file_path)
+void dcm_file_destroy(DcmFile *file)
 {
-    static DcmIO file_io = {
-        dcm_io_open_file,
-        dcm_io_close_file,
-        dcm_io_read_file,
-        dcm_io_seek_file,
-    };
+    if (file) {
+        if (file->transfer_syntax_uid) {
+            free(file->transfer_syntax_uid);
+        }
 
-    DcmFile *file = dcm_file_create_io(error, &file_io, (void *) file_path);
-    if (file == NULL) {
-        return NULL;
+        if (file->fp) {
+            (void)file->io->close(NULL, file->fp);
+            file->fp = NULL;
+        }
+
+        free(file);
     }
-
-    return file;
 }
 
 
-static bool dcm_close(DcmError **error, DcmFile *file)
+static int64_t dcm_read(DcmError **error, DcmFile *file,
+    char *buffer, int64_t length, int64_t *position)
 {
-    if (file->fp) {
-        if (!file->io->close(error, file->fp)) {
+    int64_t bytes_read = file->io->read(error, file->fp, buffer, length);
+    if (bytes_read < 0) {
+        return bytes_read;
+    }
+
+    *position += bytes_read;
+
+    return bytes_read;
+}
+
+
+static bool dcm_require(DcmError **error, DcmFile *file, 
+    char *buffer, int64_t length, int64_t *position)
+{
+    while (length > 0) {
+        int64_t bytes_read = dcm_read(error, file, buffer, length, position);
+
+        if (bytes_read < 0) {
+            return false;
+        } else if (bytes_read == 0) {
+            dcm_error_set(error, DCM_ERROR_CODE_IO,
+                "End of file",
+                "Needed %zd bytes beyond end of file", length);
             return false;
         }
-        file->fp = NULL;
+
+        buffer += bytes_read;
+        length -= bytes_read;
     }
+
     return true;
 }
 
-static bool dcm_require(DcmError **error, DcmFile *file, 
-    char *buffer, size_t length, int64_t *position)
+
+static bool dcm_seekset(DcmError **error, DcmFile *file, int64_t offset)
 {
-    return dcm_io_require(error, file->io, file->fp, buffer, length, position);
+    return file->io->seek(error, file->fp, offset, SEEK_SET) >= 0;
 }
 
 
-static bool dcm_seek(DcmError **error, DcmFile *file, int64_t offset)
-{
-    return  file->io->seek(error, file->fp, offset, SEEK_SET) >= 0;
-}
-
-
-static bool dcm_skip(DcmError **error, DcmFile *file, 
+static bool dcm_seekcur(DcmError **error, DcmFile *file, 
     int64_t offset, int64_t *position)
 {
     int64_t new_offset = file->io->seek(error, file->fp, offset, SEEK_CUR);
@@ -160,22 +177,6 @@ static bool dcm_skip(DcmError **error, DcmFile *file,
 }
 
 
-static bool dcm_eof(DcmFile *file)
-{
-    int64_t position = 0;
-    bool eof = true;
-
-    char buffer[1];
-    int64_t bytes_read = file->io->read(NULL, file->fp, buffer, 1);
-    if (bytes_read > 0) {
-        eof = false;
-        (void) dcm_skip(NULL, file, -1, &position);
-    }
-
-    return eof;
-}
-
-
 static bool dcm_offset(DcmError **error, DcmFile *file, int64_t *offset)
 {
     *offset = file->io->seek(error, file->fp, 0, SEEK_CUR);
@@ -184,6 +185,22 @@ static bool dcm_offset(DcmError **error, DcmFile *file, int64_t *offset)
     }
 
     return true;
+}
+
+
+static bool dcm_is_eof(DcmFile *file)
+{
+    int64_t position = 0;
+    bool eof = true;
+
+    char buffer[1];
+    int64_t bytes_read = file->io->read(NULL, file->fp, buffer, 1);
+    if (bytes_read > 0) {
+        eof = false;
+        (void) dcm_seekcur(NULL, file, -1, &position);
+    }
+
+    return eof;
 }
 
 
@@ -553,7 +570,6 @@ static EHeader *read_element_header(DcmError **error,
             if (!read_uint16(error, file, &short_length, position)) {
                 return NULL;
             }
-            printf("vr = %s, short_length =%d\n", vr, short_length);
             length = (uint32_t) short_length;
         } else {
             // Other VRs have two reserved bytes before length of four bytes
@@ -826,7 +842,7 @@ static DcmElement *read_element(DcmError **error,
                     break;
                 }
 
-                if (!dcm_skip(error, file, -4, &item_position)) {
+                if (!dcm_seekcur(error, file, -4, &item_position)) {
                     iheader_destroy(item_iheader);
                     dcm_sequence_destroy(value);
                     return NULL;
@@ -1190,20 +1206,6 @@ DcmDataSet *dcm_file_read_file_meta(DcmError **error, DcmFile *file)
 }
 
 
-void dcm_file_destroy(DcmFile *file)
-{
-    if (file) {
-        if (file->transfer_syntax_uid) {
-            free(file->transfer_syntax_uid);
-        }
-
-        (void)dcm_close(NULL, file);
-
-        free(file);
-    }
-}
-
-
 DcmDataSet *dcm_file_read_metadata(DcmError **error, DcmFile *file)
 {
     uint32_t tag;
@@ -1221,7 +1223,7 @@ DcmDataSet *dcm_file_read_metadata(DcmError **error, DcmFile *file)
         dcm_dataset_destroy(file_meta);
     }
 
-    if (!dcm_seek(error, file, file->offset)) {
+    if (!dcm_seekset(error, file, file->offset)) {
         return NULL;
     }
 
@@ -1239,7 +1241,7 @@ DcmDataSet *dcm_file_read_metadata(DcmError **error, DcmFile *file)
 
     int64_t position = 0;
     for (;;) {
-        if (dcm_eof(file)) {
+        if (dcm_is_eof(file)) {
             dcm_log_info("Stop reading Data Set. Reached end of file.");
             break;
         }
@@ -1263,7 +1265,7 @@ DcmDataSet *dcm_file_read_metadata(DcmError **error, DcmFile *file)
             // Set file pointer to the first byte of the pixel data element
             if (implicit) {
                 // Tag: 4 bytes, Value Length: 4 bytes
-                if (!dcm_skip(error, file, -8, &position)) {
+                if (!dcm_seekcur(error, file, -8, &position)) {
                     eheader_destroy(header);
                     dcm_dataset_destroy(dataset);
                     return NULL;
@@ -1271,7 +1273,7 @@ DcmDataSet *dcm_file_read_metadata(DcmError **error, DcmFile *file)
 
             } else {
                 // Tag: 4 bytes, VR: 2 bytes + 2 bytes, Value Length: 4 bytes
-                if (!dcm_skip(error, file, -12, &position)) {
+                if (!dcm_seekcur(error, file, -12, &position)) {
                     eheader_destroy(header);
                     dcm_dataset_destroy(dataset);
                     return NULL;
@@ -1370,7 +1372,7 @@ DcmBOT *dcm_file_read_bot(DcmError **error, DcmFile *file, DcmDataSet *metadata)
         return NULL;
     }
 
-    if (!dcm_seek(error, file, file->pixel_data_offset)) {
+    if (!dcm_seekset(error, file, file->pixel_data_offset)) {
         return NULL;
     }
 
@@ -1583,7 +1585,7 @@ DcmBOT *dcm_file_build_bot(DcmError **error,
         return NULL;
     }
 
-    if (!dcm_seek(error, file, file->pixel_data_offset)) {
+    if (!dcm_seekset(error, file, file->pixel_data_offset)) {
         return NULL;
     }
     int64_t position = 0;
@@ -1631,7 +1633,7 @@ DcmBOT *dcm_file_build_bot(DcmError **error,
 
         // Move filepointer to first byte of first Frame item
         // FIXME ... absolute seek? is this right?
-        if (!dcm_seek(error, file, item_length)) {
+        if (!dcm_seekset(error, file, item_length)) {
             free(offsets);
         }
 
@@ -1659,7 +1661,7 @@ DcmBOT *dcm_file_build_bot(DcmError **error,
                 iheader_destroy(iheader);
                 return NULL;
             }
-            if (dcm_eof(file)) {
+            if (dcm_is_eof(file)) {
                 break;
             }
 
@@ -1667,7 +1669,7 @@ DcmBOT *dcm_file_build_bot(DcmError **error,
 
             item_length = iheader_get_length(iheader);
             iheader_destroy(iheader);
-            if (!dcm_skip(error, file, item_length, &position)) {
+            if (!dcm_seekcur(error, file, item_length, &position)) {
                 free(offsets);
                 return NULL;
             }
@@ -1732,7 +1734,7 @@ DcmFrame *dcm_file_read_frame(DcmError **error,
     total_frame_offset = file->pixel_data_offset +
                          first_frame_offset +
                          frame_offset;
-    if (!dcm_seek(error, file, total_frame_offset)) {
+    if (!dcm_seekset(error, file, total_frame_offset)) {
         return NULL;
     }
 
