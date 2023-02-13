@@ -3,6 +3,15 @@
  * Format for Media Interchange.
  */
 
+#include "config.h"
+
+#ifdef _WIN32
+// the Windows CRT considers strdup and strcpy unsafe
+#define _CRT_SECURE_NO_WARNINGS
+// and deprecates strdup
+#define strdup(v) _strdup(v)
+#endif
+
 #include <assert.h>
 #include <ctype.h>
 #include <stdbool.h>
@@ -481,14 +490,13 @@ finish:
 
     for (i = 0; i < n; i++) {
         token_ptr = utarray_eltptr(array, i);
-        parts[i] = DCM_MALLOC(error, strlen(*token_ptr) + 1);
+        parts[i] = dcm_strdup(error, *token_ptr);
         if (parts[i] == NULL) {
             free(parts);
             free(string);
             utarray_free(array);
             return NULL;
         }
-        strcpy(parts[i], *token_ptr);
     }
 
     *vm = n;

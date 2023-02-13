@@ -2,6 +2,15 @@
  * Implementation of subroutines that are independent of the DICOM standard.
  */
 
+#include "config.h"
+
+#ifdef _WIN32
+// the Windows CRT considers strdup and strcpy unsafe
+#define _CRT_SECURE_NO_WARNINGS
+// and deprecates strdup
+#define strdup(v) _strdup(v)
+#endif
+
 #include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
@@ -38,7 +47,7 @@ char *dcm_strdup(DcmError **error, const char *str)
     if (new_str == NULL) {
         return NULL;
     }
-    strcpy(new_str, str);
+    memmove(new_str, str, length + 1);
 
     return new_str;
 }

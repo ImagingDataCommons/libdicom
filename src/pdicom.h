@@ -1,17 +1,6 @@
 /* Declarations not in the public API.
  */
 
-#include "config.h"
-
-#ifdef _WIN32
-// the Windows CRT considers strncpy unsafe
-#define _CRT_SECURE_NO_WARNINGS
-// and deprecates strdup
-#define strdup(v) _strdup(v)
-// _close() is the posix-like close()
-#define close(v) _close(v)
-#endif
-
 #ifndef NDEBUG
 #  define DCM_DEBUG_ONLY( ... ) __VA_ARGS__
 #else

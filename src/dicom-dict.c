@@ -2,6 +2,15 @@
  * Implementation of Part 6 of the DICOM standard: Data Dictionary.
  */
 
+#include "config.h"
+
+#ifdef _WIN32
+// the Windows CRT considers strdup and strcpy unsafe
+#define _CRT_SECURE_NO_WARNINGS
+// and deprecates strdup
+#define strdup(v) _strdup(v)
+#endif
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
