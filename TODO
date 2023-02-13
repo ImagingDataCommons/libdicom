@@ -1,19 +1,12 @@
 # TODO
 
-# IO vfuncs
-
-- add a memory source test
-
-- benchmark
-
-- add something to read BOT to dcm-dump? or add dcm-getframe?
-
-
 # bot support
 
 - need more tests and test images
 
 - extended offset table support seems to be broken? see FIXME comment
+
+- add something to read BOT to dcm-dump? or add dcm-getframe?
 
 
 # less copy-paste
@@ -29,6 +22,7 @@
 - element->vr should be an enum (not "UL" etc.)
 	- swap all the strcmps for ==
 
+- benchmark against the original 
 
 # data types
 
@@ -55,10 +49,6 @@
 
 
 # asserts
-
-- disable assert in production builds
-	there's eg. assert_vr() too, check this
-	what does DCM_DEBUG_ONLY() mean? is this sanity checking?
 
 - should the foreach funcs take two params (one for error)? are they used?
 
