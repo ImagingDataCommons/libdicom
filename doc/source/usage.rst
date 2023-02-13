@@ -153,6 +153,14 @@ For example:
         return 0;
     }
 
+Load from memory
+++++++++++++++++
+
+As well as :c:func:`dcm_file_open()`, there's :c:func:`dcm_memory_open()`
+to make a DcmFile from a memory area containing a DICOM image. You
+can make your own load functions to load from other IO sources, see
+:c:func:`dcm_file_create_io()`.
+
 Getting started
 +++++++++++++++
 
