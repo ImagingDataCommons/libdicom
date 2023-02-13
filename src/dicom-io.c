@@ -177,7 +177,7 @@ static int64_t dcm_io_read_file(DcmError **error, void *data,
         memcpy(buffer, 
                io_file->input_buffer + io_file->read_point, 
                bytes_to_copy);
-        length =- bytes_to_copy;
+        length -= bytes_to_copy;
         buffer += bytes_to_copy;
 
         io_file->read_point += bytes_to_copy;

@@ -1405,7 +1405,7 @@ DcmBOT *dcm_file_read_bot(DcmError **error, DcmFile *file, DcmDataSet *metadata)
         return NULL;
     }
 
-    int64_t *offsets = DCM_NEW_ARRAY(error, num_frames, int64_t);
+    ssize_t *offsets = DCM_NEW_ARRAY(error, num_frames, ssize_t);
     if (offsets == NULL) {
         iheader_destroy(iheader);
         return NULL;
@@ -1603,7 +1603,7 @@ DcmBOT *dcm_file_build_bot(DcmError **error,
         return NULL;
     }
 
-    int64_t *offsets = DCM_NEW_ARRAY(error, num_frames, int64_t);
+    ssize_t *offsets = DCM_NEW_ARRAY(error, num_frames, ssize_t);
     if (offsets == NULL) {
         return NULL;
     }
