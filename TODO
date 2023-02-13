@@ -1,0 +1,41 @@
+# TODO
+
+- replace copy-paste code over types with a table
+	dcm_element_clone()
+
+- element->vr should be an enum (not "UL" etc.)
+	- swap all the strcmps for ==
+
+- use a table for dcm_element_create_* as well
+
+- should create_element() take a size_t for length?
+
+- remove dcm_dataset_copy_tags() etc should not use uint32_t? what about
+  dcm_dataset_count()?
+
+	get_num_frames() uses strtol(), so it's a long
+
+  does utarray_len() really return uint32?
+
+- dcm_dataset_print() should not use uint8_t
+
+- should the foreach funcs take two params? are they used?
+
+- wrappers for read() / seek() / etc. that include error checks 
+
+  part of allowing your own read funcs
+
+- call dcm_dataset_lock() everywhere, don't set lock by hand
+
+- disable assert in production builds
+	there's eg. assert_vr() too, check this
+	what does DCM_DEBUG_ONLY() mean? is this sanity checking?
+
+- have a thing to free an array of strings, plus the array eg.
+	create_element_str_multi()
+
+# Tips
+
+- debug failing test with eg.
+
+	CK_FORK=no CK_RUN_CASE=frame gdb ./check_dicom
