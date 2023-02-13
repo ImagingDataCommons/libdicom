@@ -4,8 +4,10 @@
 #include "config.h"
 
 #ifdef _WIN32
-// the Windows CRT considers strncpy unsafe
+// the Windows CRT considers strncp and strcpy unsafe
 #define _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_DEPRECATE
+#define _CRT_NONSTDC_NO_DEPRECATE
 // and deprecates strdup
 #define strdup(v) _strdup(v)
 #endif
