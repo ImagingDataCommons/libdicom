@@ -9,7 +9,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
+#ifndef _WIN32
+// needed for close/read/lseek on posix
 #include <unistd.h>
+#endif
 #include <time.h>
 
 #include "dicom.h"

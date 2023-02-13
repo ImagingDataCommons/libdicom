@@ -9,7 +9,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <time.h>
 
 #include "dicom.h"
