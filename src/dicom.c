@@ -37,7 +37,7 @@ char *dcm_strdup(DcmError **error, const char *str)
     if (new_str == NULL) {
         return NULL;
     }
-    strcpy(new_str, str);
+    memmove(new_str, str, length + 1);
 
     return new_str;
 }

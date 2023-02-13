@@ -219,14 +219,13 @@ finish:
 
     for (i = 0; i < n; i++) {
         token_ptr = utarray_eltptr(array, i);
-        parts[i] = DCM_MALLOC(error, strlen(*token_ptr) + 1);
+        parts[i] = dcm_strdup(error, *token_ptr);
         if (parts[i] == NULL) {
             free(parts);
             free(string);
             utarray_free(array);
             return NULL;
         }
-        strcpy(parts[i], *token_ptr);
     }
 
     *vm = n;
