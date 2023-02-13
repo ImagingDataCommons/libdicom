@@ -19,6 +19,7 @@ static char *fixture_path(const char *relpath)
     return path;
 }
 
+
 static size_t compute_length_of_string_value(char *value)
 {
     size_t length = strlen(value);
@@ -42,6 +43,49 @@ static size_t compute_length_of_string_value_multi(char **values, uint32_t vm)
         length += 1;  // zero padding
     }
     return length;
+}
+
+
+static char *load_file_to_memory(const char *name, long *length_out)
+{
+    FILE *fp;
+
+    char *full_path = fixture_path(name);
+    if (!(fp = fopen(full_path, "rb"))) {
+        free(full_path);
+        return NULL;
+    }
+    free(full_path);
+
+    fseek(fp, 0, SEEK_END);
+    long length = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+
+    if (length < 0) {
+        fclose(fp);
+        return NULL;
+    }
+
+    char *result = malloc(length);
+    if (result == NULL) {
+        fclose(fp);
+        return NULL;
+    }
+
+    long total_read = 0;
+    while (total_read < length) {
+        size_t bytes_read = fread(result + total_read, 
+                                  1, 
+                                  length - total_read,
+                                  fp);
+        total_read += bytes_read;
+    }
+
+    fclose(fp);
+
+    *length_out = length;
+
+    return result;
 }
 
 
@@ -559,6 +603,40 @@ START_TEST(test_file_sm_image_frame)
 END_TEST
 
 
+START_TEST(test_file_sm_image_file_meta_memory)
+{
+    uint32_t tag;
+    DcmElement *element;
+
+    long length;
+    char *memory = load_file_to_memory("data/test_files/sm_image.dcm", &length);
+    ck_assert_ptr_nonnull(memory);
+    DcmFile *file = dcm_file_memory(NULL, memory, length);
+    ck_assert_ptr_nonnull(file);
+
+    DcmDataSet *file_meta = dcm_file_read_file_meta(NULL, file);
+
+    // Transfer Syntax UID
+    tag = 0x00020010;
+    element = dcm_dataset_get(NULL, file_meta, tag);
+    ck_assert_str_eq(dcm_element_get_value_UI(element, 0),
+                     "1.2.840.10008.1.2.1");
+
+    // Media Storage SOP Class UID
+    tag = 0x00020002;
+    element = dcm_dataset_get(NULL, file_meta, tag);
+    ck_assert_str_eq(dcm_element_get_value_UI(element, 0),
+                     "1.2.840.10008.5.1.4.1.1.77.1.6");
+
+    dcm_dataset_print(file_meta, 0);
+
+    dcm_dataset_destroy(file_meta);
+    dcm_file_destroy(file);
+    free(memory);
+}
+END_TEST
+
+
 static Suite *create_main_suite(void)
 {
     Suite *suite = suite_create("main");
@@ -626,6 +704,10 @@ static Suite *create_file_suite(void)
     TCase *frame_case = tcase_create("frame");
     tcase_add_test(frame_case, test_file_sm_image_frame);
     suite_add_tcase(suite, frame_case);
+
+    TCase *memory_case = tcase_create("memory");
+    tcase_add_test(memory_case, test_file_sm_image_file_meta_memory);
+    suite_add_tcase(suite, memory_case);
 
     return suite;
 }
