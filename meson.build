@@ -91,6 +91,14 @@ cfg.set_quoted(
   '\\\\'.join(meson.current_source_dir().split('\\')),
   description : 'Define to the path to the source directory.',
 )
+
+if cc.has_header('io.h')
+    cfg.set('HAVE_IO_H', '1')
+endif
+if cc.has_header('unistd.h')
+    cfg.set('HAVE_UNISTD_H', '1')
+endif
+
 configure_file(
   output : 'config.h',
   configuration : cfg,

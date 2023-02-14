@@ -19,10 +19,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
-#ifndef _WIN32
-// needed for close/read/lseek on posix
+#include <sys/types.h>
+#include <sys/stat.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#ifdef HAVE_IO_H
+#include <io.h>
+#endif /*HAVE_IO_H*/
 #include <time.h>
 
 #include "dicom.h"
