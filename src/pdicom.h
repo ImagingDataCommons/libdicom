@@ -17,26 +17,6 @@
     (TYPE *) dcm_calloc(ERROR, N, sizeof(TYPE))
 
 
-#define DCM_RETURN_VALUE_IF_FAIL(ERROR, CONDITION, RETURN_VALUE) \
-    if (!(CONDITION)) { \
-        dcm_error_set((ERROR), DCM_ERROR_CODE_INVALID, \
-            "Test fail", \
-	    "%s:%s (%d)" \
-            __FILE__, __FUNCTION__, __LINE__); \
-        return RETURN_VALUE; \
-    }
-
-
-#define DCM_RETURN_IF_FAIL(ERROR, CONDITION) \
-    if (!(CONDITION)) { \
-        dcm_error_set((ERROR), DCM_ERROR_CODE_INVALID, \
-            "Test fail", \
-	    "%s:%s (%d)" \
-            __FILE__, __FUNCTION__, __LINE__); \
-        return; \
-    }
-
-
 #define MIN(A, B) ((A) < (B) ? (A) : (B))
 #define MAX(A, B) ((A) > (B) ? (A) : (B))
 #define USED(x) (void)(x)
