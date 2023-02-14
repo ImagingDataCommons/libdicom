@@ -140,6 +140,20 @@ typedef struct _DcmBOT DcmBOT;
 
 
 /**
+ * Start up libdicom.
+ *
+ * Call this from the main thread during program startup for libdicom to be
+ * threadsafe.
+ *
+ * If you don't call it, it will be called for you on first use, but libdicom
+ * will no longer be threadsafe.
+ *
+ * This function can be called many times.
+ */
+void dcm_init(void);
+
+
+/**
  * Enumeration of error codes.
  */
 enum _DcmErrorCode {
