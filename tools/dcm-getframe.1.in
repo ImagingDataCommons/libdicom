@@ -1,0 +1,35 @@
+.TH DCM-GETFRAME 1 2023-01-14 "dcm @DCM_SUFFIXED_VERSION@" "User Commands"
+
+.SH NAME
+dcm-getframe \- print a frame from a DICOM PS3.10 file to standard output
+
+.SH SYNOPSIS
+.BR "dcm-getframe " [ -v "]
+.IR file
+.IR frame-number
+
+.SH DESCRIPTION
+Print a frame from a DICOM PS3.10 file to standard output.
+
+.SH OPTIONS
+.TP
+.B -o OUTPUT-FILENAME
+Write frame to OUTPUT-FILENAME. By default, the frame will be written to
+stdout.
+
+.TP
+.B -h
+Display help message (usage summary) and exit.
+
+.TP
+.B -V
+Display version and exit.
+
+.TP
+.B -v
+Increase logging verbosity to INFO.
+
+.SH EXIT STATUS
+.B dcm-getframe
+returns 0 on success, 1 if a file could not be read or 2 if the
+arguments are invalid.

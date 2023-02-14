@@ -6,8 +6,6 @@
 
 - extended offset table support seems to be broken? see FIXME comment
 
-- add something to read BOT to dcm-dump? or add dcm-getframe?
-
 
 # less copy-paste
 

@@ -2457,7 +2457,7 @@ uint32_t dcm_bot_get_num_frames(const DcmBOT *bot)
 ssize_t dcm_bot_get_frame_offset(const DcmBOT *bot, uint32_t number)
 {
     assert(bot);
-    assert(number > 0 && number < bot->num_frames);
+    assert(number > 0 && number < bot->num_frames + 1);
     uint32_t index = number - 1;
     return bot->offsets[index];
 }

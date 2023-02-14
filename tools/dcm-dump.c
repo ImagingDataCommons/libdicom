@@ -10,8 +10,8 @@
 static const char usage[] = "usage: dcm-dump [-v] [-V] [-h] FILE_PATH\n";
 
 
-int main(int argc, char *argv[]) {
-
+int main(int argc, char *argv[]) 
+{
     int i;
     const char *file_path = NULL;
     DcmError *error = NULL;
