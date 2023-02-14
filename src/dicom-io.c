@@ -97,7 +97,7 @@ static void *dcm_io_open_file(DcmError **error, void *client)
     int shflag = _SH_DENYWR;
     int pmode = 0;
     open_errno = _sopen_s(&io_file->fd, io_file->filename, 
-                          oflag, sgflag, pmode);
+                          oflag, shflag, pmode);
 #else
     int flags = O_RDONLY;
 #ifdef O_BINARY
