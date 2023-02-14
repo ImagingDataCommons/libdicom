@@ -7,9 +7,9 @@
 #ifdef _WIN32
 // the Windows CRT considers strdup and strcpy unsafe
 #define _CRT_SECURE_NO_WARNINGS
+#define _CRT_NONSTDC_NO_DEPRECATE
 // and deprecates strdup
 #define strdup(v) _strdup(v)
-#define close(v) _close(v)
 #endif
 
 #include <assert.h>
@@ -18,9 +18,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
