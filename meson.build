@@ -91,6 +91,16 @@ cfg.set_quoted(
   '\\\\'.join(meson.current_source_dir().split('\\')),
   description : 'Define to the path to the source directory.',
 )
+
+# we use a constructor attr for dcm_init()
+code = '''#include<stdio.h>
+__attribute__ ((constructor)) void func() { printf("constructor\n"); }
+'''
+cfg.set(
+  'HAS_CONSTRUCTOR',
+  cc.compiles(code, name : 'has constructor attribute')
+)
+
 configure_file(
   output : 'config.h',
   configuration : cfg,
