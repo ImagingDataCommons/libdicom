@@ -22,29 +22,6 @@ typedef SSIZE_T ssize_t;
 #define DCM_EXTERN __attribute__((visibility("default"))) extern
 #endif
 
-#ifndef NDEBUG
-#  define DCM_DEBUG_ONLY( ... ) __VA_ARGS__
-#else
-#  define DCM_DEBUG_ONLY( ... )
-#endif
-
-#define DCM_NEW(TYPE) \
-    (TYPE *) dcm_calloc(1, sizeof(TYPE))
-
-#define DCM_ARRAY_ZEROS(N, TYPE) \
-    (TYPE *) dcm_calloc(N, sizeof(TYPE))
-
-/**
- * Allocate and initialize a block of memory.
- *
- * :param n: Number of items.
- * :param size: Number of bytes per item.
- *
- * :return: Pointer to allocated memory.
- */
-DCM_EXTERN
-void *dcm_calloc(size_t n, size_t size);
-
 
 /**
  * Maximum number of characters in values with Value Representation AE.
@@ -160,6 +137,131 @@ typedef struct _DcmFrame DcmFrame;
  * Basic Offset Table (BOT) Item of Pixel Data Element
  */
 typedef struct _DcmBOT DcmBOT;
+
+
+/**
+ * Enumeration of error codes.
+ */
+enum _DcmErrorCode {
+    /** Out of memory */
+    DCM_ERROR_CODE_NOMEM = 1,
+    /** Invalid parameter */
+    DCM_ERROR_CODE_INVALID = 2,
+    /** Parse error */
+    DCM_ERROR_CODE_PARSE = 3,
+    /** IO error */
+    DCM_ERROR_CODE_IO = 4,
+};
+
+/**
+ * Error codes
+ */
+typedef enum _DcmErrorCode DcmErrorCode;
+
+/** 
+ * Convert an error code to a human-readable string.
+ *
+ * :param code: The error code
+ *
+ * :return: A string that can be displayed to users
+ */
+DCM_EXTERN
+const char *dcm_error_code_str(DcmErrorCode code);
+
+/**
+ * Get a symbolic name for a DcmErrorCode.
+ *
+ * :param code: The error code
+ *
+ * :return: A symbolic name for the code.
+ */
+DCM_EXTERN
+const char *dcm_error_code_name(DcmErrorCode code);
+
+/**
+ * Error return object.
+ */
+typedef struct _DcmError DcmError;
+
+/**
+ * Set an error.
+ *
+ * Create a new DcmError object and store the pointer in error.
+ *
+ * You can't set error twice -- always check the error state and return 
+ * immediately if set.
+ *
+ * :param error: Pointer to store the new error object in
+ * :param code: Numeric error code
+ * :param summary: Summary of error
+ * :param format: Format string
+ * :param ...: Variable arguments
+ */
+DCM_EXTERN
+void dcm_error_set(DcmError **error, DcmErrorCode code, 
+    const char *summary, const char *format, ...);
+
+/**
+ * Clear an error, if set.
+ *
+ * :param error: Pointer holding the error object
+ */
+DCM_EXTERN
+void dcm_error_clear(DcmError **error);
+
+/**
+ * Get the summary from a DcmError object.
+ *
+ * Do not free this result. The pointer will be valid as long as error is
+ * valid.
+ *
+ * :param error: DcmError to read the error from
+ *
+ * :return: Summary stored in a dcm error object
+ */
+DCM_EXTERN
+const char *dcm_error_summary(DcmError *error);
+
+/**
+ * Get the message from a DcmError object.
+ *
+ * Do not free this result. The pointer will be valid as long as error is
+ * valid.
+ *
+ * :param error: DcmError to read the error from
+ *
+ * :return: Message stored in a dcm error object
+ */
+DCM_EXTERN
+const char *dcm_error_message(DcmError *error);
+
+/**
+ * Get the code from a DcmError object.
+ *
+ * :param error: DcmError to read the error from
+ *
+ * :return: Error code
+ */
+DCM_EXTERN
+DcmErrorCode dcm_error_code(DcmError *error);
+
+/**
+ * Get a symbolic name for a DcmErrorCode.
+ *
+ * :param code: DcmError to read the error from
+ *
+ * :return: Error code
+ */
+DCM_EXTERN
+const char *dcm_error_code_name(DcmErrorCode code);
+
+/**
+ * Add an error message to the log for a DcmError.
+ *
+ * :param error: DcmError to read the error from
+ */
+DCM_EXTERN
+void dcm_error_log(DcmError *error);
 
 
 /**
@@ -324,18 +426,22 @@ bool dcm_is_encapsulated_transfer_syntax(const char *transfer_syntax_uid);
 /**
  * Create a Data Element with Value Representation AE (Application Entity).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Character string value
  *
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_AE(uint32_t tag, char *value);
+DcmElement *dcm_element_create_AE(DcmError **error, 
+                                  uint32_t tag, 
+                                  char *value);
 
 /**
  * Create a Data Element with Value Representation AE (Application Entity)
  * and Value Multiplicity equal to or greater than one.
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param values: Array of character string values
  * :param vm: Value Multiplicity
@@ -346,25 +452,31 @@ DcmElement *dcm_element_create_AE(uint32_t tag, char *value);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_AE_multi(uint32_t tag, char **values,
+DcmElement *dcm_element_create_AE_multi(DcmError **error,
+                                        uint32_t tag, 
+                                        char **values,
                                         uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation AS (Age String).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Character string value
  *
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_AS(uint32_t tag, char *value);
+DcmElement *dcm_element_create_AS(DcmError **error, 
+                                  uint32_t tag, char *value);
 
 /**
  * Create a Data Element with Value Representation AS (Age String)
  * and Value Multiplicity equal to or greater than one.
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
+ * :param error: Error structure pointer
  * :param values: Array of character string values
  * :param vm: Value Multiplicity
  *
@@ -374,24 +486,30 @@ DcmElement *dcm_element_create_AS(uint32_t tag, char *value);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_AS_multi(uint32_t tag, char **values,
+DcmElement *dcm_element_create_AS_multi(DcmError **error,
+                                        uint32_t tag, 
+                                        char **values,
                                         uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation AT (Attribute Tag).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Character string value
  *
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_AT(uint32_t tag, char *value);
+DcmElement *dcm_element_create_AT(DcmError **error,
+                                  uint32_t tag, 
+                                  char *value);
 
 /**
  * Create a Data Element with Value Representation AT (Attribute Tag)
  * and Value Multiplicity equal to or greater than one.
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param values: Array of character string values
  * :param vm: Value Multiplicity
@@ -402,24 +520,30 @@ DcmElement *dcm_element_create_AT(uint32_t tag, char *value);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_AT_multi(uint32_t tag, char **values,
+DcmElement *dcm_element_create_AT_multi(DcmError **error,
+                                        uint32_t tag, 
+                                        char **values,
                                         uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation CS (Code String).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Character string value
  *
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_CS(uint32_t tag, char *value);
+DcmElement *dcm_element_create_CS(DcmError **error, 
+                                  uint32_t tag, 
+                                  char *value);
 
 /**
  * Create a Data Element with Value Representation CS (Code String)
  * and Value Multiplicity equal to or greater than one.
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param values: Array of character string values
  * :param vm: Value Multiplicity
@@ -430,24 +554,30 @@ DcmElement *dcm_element_create_CS(uint32_t tag, char *value);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_CS_multi(uint32_t tag, char **values,
+DcmElement *dcm_element_create_CS_multi(DcmError **error,
+                                        uint32_t tag, 
+                                        char **values,
                                         uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation DA (Date).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Character string value
  *
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_DA(uint32_t tag, char *value);
+DcmElement *dcm_element_create_DA(DcmError **error, 
+                                  uint32_t tag, 
+                                  char *value);
 
 /**
  * Create a Data Element with Value Representation DA (Date)
  * and Value Multiplicity equal to or greater than one.
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param values: Array of character string values
  * :param vm: Value Multiplicity
@@ -458,24 +588,29 @@ DcmElement *dcm_element_create_DA(uint32_t tag, char *value);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_DA_multi(uint32_t tag, char **values,
+DcmElement *dcm_element_create_DA_multi(DcmError **error,
+                                        uint32_t tag, 
+                                        char **values,
                                         uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation DS (Decimal String).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Character string value
  *
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_DS(uint32_t tag, char *value);
+DcmElement *dcm_element_create_DS(DcmError **error, 
+                                  uint32_t tag, char *value);
 
 /**
  * Create a Data Element with Value Representation DS (Decimal String)
  * and Value Multiplicity equal to or greater than one.
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param values: Array of character string values
  * :param vm: Value Multiplicity
@@ -486,24 +621,30 @@ DcmElement *dcm_element_create_DS(uint32_t tag, char *value);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_DS_multi(uint32_t tag, char **values,
+DcmElement *dcm_element_create_DS_multi(DcmError **error,
+                                        uint32_t tag, 
+                                        char **values,
                                         uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation DT (Date Time).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Character string value
  *
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_DT(uint32_t tag, char *value);
+DcmElement *dcm_element_create_DT(DcmError **error,
+                                  uint32_t tag, 
+                                  char *value);
 
 /**
  * Create a Data Element with Value Representation DT (Date Time)
  * and Value Multiplicity equal to or greater than one.
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param values: Array of character string values
  * :param vm: Value Multiplicity
@@ -514,24 +655,30 @@ DcmElement *dcm_element_create_DT(uint32_t tag, char *value);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_DT_multi(uint32_t tag, char **values,
+DcmElement *dcm_element_create_DT_multi(DcmError **error,
+                                        uint32_t tag, 
+                                        char **values,
                                         uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation FD (Floating Point Double).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Floating-point value
  *
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_FD(uint32_t tag, double value);
+DcmElement *dcm_element_create_FD(DcmError **error,
+                                  uint32_t tag, 
+                                  double value);
 
 /**
  * Create a Data Element with Value Representation FD (Floating Point Double)
  * and Value Multiplicity equal to or greater than one.
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param values: Array of floating-point values
  * :param vm: Value Multiplicity
@@ -542,24 +689,30 @@ DcmElement *dcm_element_create_FD(uint32_t tag, double value);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_FD_multi(uint32_t tag, double *values,
+DcmElement *dcm_element_create_FD_multi(DcmError **error,
+                                        uint32_t tag, 
+                                        double *values,
                                         uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation FL (Floating Point Single).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Floating-point value
  *
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_FL(uint32_t tag, float value);
+DcmElement *dcm_element_create_FL(DcmError **error,
+                                  uint32_t tag, 
+                                  float value);
 
 /**
  * Create a Data Element with Value Representation FL (Floating Point Single)
  * and Value Multiplicity equal to or greater than one.
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param values: Array of floating-point values
  * :param vm: Value Multiplicity
@@ -570,24 +723,30 @@ DcmElement *dcm_element_create_FL(uint32_t tag, float value);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_FL_multi(uint32_t tag, float *values,
+DcmElement *dcm_element_create_FL_multi(DcmError **error,
+                                        uint32_t tag, 
+                                        float *values,
                                         uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation IS (Integer String).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Character string value
  *
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_IS(uint32_t tag, char *value);
+DcmElement *dcm_element_create_IS(DcmError **error, 
+                                  uint32_t tag, 
+                                  char *value);
 
 /**
  * Create a Data Element with Value Representation IS (Integer String)
  * and Value Multiplicity equal to or greater than one.
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param values: Array of character string values
  * :param vm: Value Multiplicity
@@ -598,24 +757,30 @@ DcmElement *dcm_element_create_IS(uint32_t tag, char *value);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_IS_multi(uint32_t tag, char **values,
+DcmElement *dcm_element_create_IS_multi(DcmError **error,
+                                        uint32_t tag, 
+                                        char **values,
                                         uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation LO (Long String).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Character string value
  *
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_LO(uint32_t tag, char *value);
+DcmElement *dcm_element_create_LO(DcmError **error,
+                                  uint32_t tag, 
+                                  char *value);
 
 /**
  * Create a Data Element with Value Representation LO (Long String)
  * and Value Multiplicity equal to or greater than one.
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param values: Array of character string values
  * :param vm: Value Multiplicity
@@ -626,24 +791,30 @@ DcmElement *dcm_element_create_LO(uint32_t tag, char *value);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_LO_multi(uint32_t tag, char **values,
+DcmElement *dcm_element_create_LO_multi(DcmError **error,
+                                        uint32_t tag, 
+                                        char **values,
                                         uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation PN (Person Name).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Character string value
  *
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_PN(uint32_t tag, char *value);
+DcmElement *dcm_element_create_PN(DcmError **error, 
+                                  uint32_t tag, 
+                                  char *value);
 
 /**
  * Create a Data Element with Value Representation PN (Person Name)
  * and Value Multiplicity equal to or greater than one.
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param values: Array of character string values
  * :param vm: Value Multiplicity
@@ -654,24 +825,30 @@ DcmElement *dcm_element_create_PN(uint32_t tag, char *value);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_PN_multi(uint32_t tag, char **values,
+DcmElement *dcm_element_create_PN_multi(DcmError **error,
+                                        uint32_t tag, 
+                                        char **values,
                                         uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation SH (Short String).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Character string value
  *
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_SH(uint32_t tag, char *value);
+DcmElement *dcm_element_create_SH(DcmError **error,
+                                  uint32_t tag, 
+                                  char *value);
 
 /**
  * Create a Data Element with Value Representation SH (Short String)
  * and Value Multiplicity equal to or greater than one.
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param values: Array of character string values
  * :param vm: Value Multiplicity
@@ -682,24 +859,30 @@ DcmElement *dcm_element_create_SH(uint32_t tag, char *value);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_SH_multi(uint32_t tag, char **values,
+DcmElement *dcm_element_create_SH_multi(DcmError **error,
+                                        uint32_t tag, 
+                                        char **values,
                                         uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation TM (Time).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Character string value
  *
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_TM(uint32_t tag, char *value);
+DcmElement *dcm_element_create_TM(DcmError **error,
+                                  uint32_t tag, 
+                                  char *value);
 
 /**
  * Create a Data Element with Value Representation TM (Time)
  * and Value Multiplicity equal to or greater than one.
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param values: Array of character string values
  * :param vm: Value Multiplicity
@@ -710,24 +893,30 @@ DcmElement *dcm_element_create_TM(uint32_t tag, char *value);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_TM_multi(uint32_t tag, char **values,
+DcmElement *dcm_element_create_TM_multi(DcmError **error,
+                                        uint32_t tag, 
+                                        char **values,
                                         uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation UI (Unique Identifier).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Character string value
  *
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_UI(uint32_t tag, char *value);
+DcmElement *dcm_element_create_UI(DcmError **error,
+                                  uint32_t tag, 
+                                  char *value);
 
 /**
  * Create a Data Element with Value Representation UI (Unique Identifier)
  * and Value Multiplicity equal to or greater than one.
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param values: Array of character string values
  * :param vm: Value Multiplicity
@@ -738,24 +927,30 @@ DcmElement *dcm_element_create_UI(uint32_t tag, char *value);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_UI_multi(uint32_t tag, char **values,
+DcmElement *dcm_element_create_UI_multi(DcmError **error,
+                                        uint32_t tag, 
+                                        char **values,
                                         uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation SS (Signed Short)
  * and Value Multiplicity equal to or greater than one.
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Integer value
  *
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_SS(uint32_t tag, int16_t value);
+DcmElement *dcm_element_create_SS(DcmError **error,
+                                  uint32_t tag, 
+                                  int16_t value);
 
 /**
  * Create a Data Element with Value Representation SS (Signed Short).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param values: Array of integer values
  * :param vm: Value Multiplicity
@@ -766,24 +961,30 @@ DcmElement *dcm_element_create_SS(uint32_t tag, int16_t value);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_SS_multi(uint32_t tag, int16_t *values,
+DcmElement *dcm_element_create_SS_multi(DcmError **error,
+                                        uint32_t tag, 
+                                        int16_t *values,
                                         uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation SL (Signed Long).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Integer value
  *
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_SL(uint32_t tag, int32_t value);
+DcmElement *dcm_element_create_SL(DcmError **error,
+                                  uint32_t tag, 
+                                  int32_t value);
 
 /**
  * Create a Data Element with Value Representation SL (Signed Long)
  * and Value Multiplicity equal to or greater than one.
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param values: Array of integer values
  * :param vm: Value Multiplicity
@@ -794,24 +995,30 @@ DcmElement *dcm_element_create_SL(uint32_t tag, int32_t value);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_SL_multi(uint32_t tag, int32_t *values,
+DcmElement *dcm_element_create_SL_multi(DcmError **error,
+                                        uint32_t tag, 
+                                        int32_t *values,
                                         uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation SV (Signed Very Long).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Integer value
  *
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_SV(uint32_t tag, int64_t value);
+DcmElement *dcm_element_create_SV(DcmError **error,
+                                  uint32_t tag, 
+                                  int64_t value);
 
 /**
  * Create a Data Element with Value Representation SV (Signed Very Long)
  * and Value Multiplicity equal to or greater than one.
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param values: Array of integer values
  * :param vm: Value Multiplicity
@@ -822,25 +1029,31 @@ DcmElement *dcm_element_create_SV(uint32_t tag, int64_t value);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_SV_multi(uint32_t tag, int64_t *values,
+DcmElement *dcm_element_create_SV_multi(DcmError **error,
+                                        uint32_t tag, 
+                                        int64_t *values,
                                         uint32_t vm);
 
 
 /**
  * Create a Data Element with Value Representation UL (Unsigned Long).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Integer value
  *
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_UL(uint32_t tag, uint32_t value);
+DcmElement *dcm_element_create_UL(DcmError **error,
+                                  uint32_t tag, 
+                                  uint32_t value);
 
 /**
  * Create a Data Element with Value Representation UL (Unsigned Long)
  * and Value Multiplicity equal to or greater than one.
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param values: Array of integer values
  * :param vm: Value Multiplicity
@@ -851,24 +1064,30 @@ DcmElement *dcm_element_create_UL(uint32_t tag, uint32_t value);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_UL_multi(uint32_t tag, uint32_t *values,
+DcmElement *dcm_element_create_UL_multi(DcmError **error,
+                                        uint32_t tag, 
+                                        uint32_t *values,
                                         uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation US (Unsigned Short).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Integer value
  *
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_US(uint32_t tag, uint16_t value);
+DcmElement *dcm_element_create_US(DcmError **error, 
+                                  uint32_t tag, 
+                                  uint16_t value);
 
 /**
  * Create a Data Element with Value Representation US (Unsigned Short)
  * and Value Multiplicity equal to or greater than one.
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param values: Array of integer values
  * :param vm: Value Multiplicity
@@ -879,24 +1098,30 @@ DcmElement *dcm_element_create_US(uint32_t tag, uint16_t value);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_US_multi(uint32_t tag, uint16_t *values,
+DcmElement *dcm_element_create_US_multi(DcmError **error,
+                                        uint32_t tag, 
+                                        uint16_t *values,
                                         uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation UV (Unsigned Very Long).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Integer value
  *
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_UV(uint32_t tag, uint64_t value);
+DcmElement *dcm_element_create_UV(DcmError **error,
+                                  uint32_t tag, 
+                                  uint64_t value);
 
 /**
  * Create a Data Element with Value Representation UV (Unsigned Very Long)
  * and Value Multiplicity equal to or greater than one.
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param values: Array of integer values
  * :param vm: Value Multiplicity
@@ -907,12 +1132,15 @@ DcmElement *dcm_element_create_UV(uint32_t tag, uint64_t value);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_UV_multi(uint32_t tag, uint64_t *values,
+DcmElement *dcm_element_create_UV_multi(DcmError **error,
+                                        uint32_t tag,
+                                        uint64_t *values,
                                         uint32_t vm);
 
 /**
  * Create a Data Element with Value Representation ST (Short Text).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Character string value
  *
@@ -922,11 +1150,14 @@ DcmElement *dcm_element_create_UV_multi(uint32_t tag, uint64_t *values,
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_ST(uint32_t tag, char *value);
+DcmElement *dcm_element_create_ST(DcmError **error, 
+                                  uint32_t tag, 
+                                  char *value);
 
 /**
  * Create a Data Element with Value Representation SQ (Sequence).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Sequence value
  *
@@ -936,11 +1167,14 @@ DcmElement *dcm_element_create_ST(uint32_t tag, char *value);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_SQ(uint32_t tag, DcmSequence *value);
+DcmElement *dcm_element_create_SQ(DcmError **error,
+                                  uint32_t tag, 
+                                  DcmSequence *value);
 
 /**
  * Create a Data Element with Value Representation LT (Long Text).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Character string value
  *
@@ -950,11 +1184,14 @@ DcmElement *dcm_element_create_SQ(uint32_t tag, DcmSequence *value);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_LT(uint32_t tag, char *value);
+DcmElement *dcm_element_create_LT(DcmError **error, 
+                                  uint32_t tag, 
+                                  char *value);
 
 /**
  * Create a Data Element with Value Representation OB (Other Byte).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Byte string value
  * :param length: Number of bytes
@@ -965,11 +1202,15 @@ DcmElement *dcm_element_create_LT(uint32_t tag, char *value);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_OB(uint32_t tag, char *value, uint32_t length);
+DcmElement *dcm_element_create_OB(DcmError **error, 
+                                  uint32_t tag, 
+                                  char *value, 
+                                  uint32_t length);
 
 /**
  * Create a Data Element with Value Representation OD (Other Double).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Byte string value
  * :param length: Number of bytes
@@ -980,11 +1221,15 @@ DcmElement *dcm_element_create_OB(uint32_t tag, char *value, uint32_t length);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_OD(uint32_t tag, char *value, uint32_t length);
+DcmElement *dcm_element_create_OD(DcmError **error, 
+                                  uint32_t tag, 
+                                  char *value, 
+                                  uint32_t length);
 
 /**
  * Create a Data Element with Value Representation OF (Other Float).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Byte string value
  * :param length: Number of bytes
@@ -995,11 +1240,15 @@ DcmElement *dcm_element_create_OD(uint32_t tag, char *value, uint32_t length);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_OF(uint32_t tag, char *value, uint32_t length);
+DcmElement *dcm_element_create_OF(DcmError **error,
+                                  uint32_t tag, 
+                                  char *value, 
+                                  uint32_t length);
 
 /**
  * Create a Data Element with Value Representation OL (Other Long).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Byte string value
  * :param length: Number of bytes
@@ -1010,11 +1259,15 @@ DcmElement *dcm_element_create_OF(uint32_t tag, char *value, uint32_t length);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_OL(uint32_t tag, char *value, uint32_t length);
+DcmElement *dcm_element_create_OL(DcmError **error,
+                                  uint32_t tag, 
+                                  char *value, 
+                                  uint32_t length);
 
 /**
  * Create a Data Element with Value Representation OV (Other Very Long).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Byte string value
  * :param length: Number of bytes
@@ -1025,11 +1278,15 @@ DcmElement *dcm_element_create_OL(uint32_t tag, char *value, uint32_t length);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_OV(uint32_t tag, char *value, uint32_t length);
+DcmElement *dcm_element_create_OV(DcmError **error, 
+                                  uint32_t tag, 
+                                  char *value, 
+                                  uint32_t length);
 
 /**
  * Create a Data Element with Value Representation OW (Other Word).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Byte string value
  * :param length: Number of bytes
@@ -1040,11 +1297,15 @@ DcmElement *dcm_element_create_OV(uint32_t tag, char *value, uint32_t length);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_OW(uint32_t tag, char *value, uint32_t length);
+DcmElement *dcm_element_create_OW(DcmError **error,
+                                  uint32_t tag, 
+                                  char *value, 
+                                  uint32_t length);
 
 /**
  * Create a Data Element with Value Representation UC (Unlimited Characters).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Byte string value
  * :param length: Number of bytes
@@ -1055,11 +1316,15 @@ DcmElement *dcm_element_create_OW(uint32_t tag, char *value, uint32_t length);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_UC(uint32_t tag, char *value, uint32_t length);
+DcmElement *dcm_element_create_UC(DcmError **error,
+                                  uint32_t tag, 
+                                  char *value, 
+                                  uint32_t length);
 
 /**
  * Create a Data Element with Value Representation UN (Unknown).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Byte string value
  * :param length: Number of bytes
@@ -1070,12 +1335,16 @@ DcmElement *dcm_element_create_UC(uint32_t tag, char *value, uint32_t length);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_UN(uint32_t tag, char *value, uint32_t length);
+DcmElement *dcm_element_create_UN(DcmError **error,
+                                  uint32_t tag, 
+                                  char *value, 
+                                  uint32_t length);
 
 /**
  * Create a Data Element with Value Representation UR
  * (Universal Resource Identifier).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Character string value
  *
@@ -1085,11 +1354,14 @@ DcmElement *dcm_element_create_UN(uint32_t tag, char *value, uint32_t length);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_UR(uint32_t tag, char *value);
+DcmElement *dcm_element_create_UR(DcmError **error, 
+                                  uint32_t tag, 
+                                  char *value);
 
 /**
  * Create a Data Element with Value Representation UT (Unlimited Text).
  *
+ * :param error: Error structure pointer
  * :param tag: Tag
  * :param value: Character string value
  *
@@ -1099,7 +1371,9 @@ DcmElement *dcm_element_create_UR(uint32_t tag, char *value);
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_UT(uint32_t tag, char *value);
+DcmElement *dcm_element_create_UT(DcmError **error, 
+                                  uint32_t tag, 
+                                  char *value);
 
 /**
  * Get group number (first part of Tag) of a Data Element.
@@ -1175,12 +1449,13 @@ bool dcm_element_is_multivalued(const DcmElement *element);
 /**
  * Clone (i.e., create a deep copy of) a Data Element.
  *
+ * :param error: Error structure pointer
  * :param element: Pointer to Data Element
  *
  * :return: Pointer to clone of Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_clone(const DcmElement *element);
+DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element);
 
 /**
  * Get value of a Data Element with Value Representation AE
@@ -1561,23 +1836,27 @@ void dcm_element_destroy(DcmElement *element);
 
 /**
  * Create an empty Data Set.
+ *
+ * :param error: Error structure pointer
  */
 DCM_EXTERN
-DcmDataSet *dcm_dataset_create(void);
+DcmDataSet *dcm_dataset_create(DcmError **error);
 
 /**
  * Clone (i.e., create a deep copy of) a Data Set.
  *
+ * :param error: Error structure pointer
  * :param dataset: Pointer to Data Set
  *
  * :return: Pointer to clone of Data Set
  */
 DCM_EXTERN
-DcmDataSet *dcm_dataset_clone(const DcmDataSet *dataset);
+DcmDataSet *dcm_dataset_clone(DcmError **error, const DcmDataSet *dataset);
 
 /**
  * Insert a Data Element into a Data Set.
  *
+ * :param error: Error structure pointer
  * :param dataset: Pointer to Data Set
  * :param element: Pointer to Data Element
  *
@@ -1587,40 +1866,46 @@ DcmDataSet *dcm_dataset_clone(const DcmDataSet *dataset);
  * :return: Whether insert operation was successful
  */
 DCM_EXTERN
-bool dcm_dataset_insert(DcmDataSet *dataset, DcmElement *element);
+bool dcm_dataset_insert(DcmError **error,
+                        DcmDataSet *dataset, DcmElement *element);
 
 /**
  * Remove a Data Element from a Data Set.
  *
+ * :param error: Error structure pointer
  * :param dataset: Pointer to Data Set
  * :param tag: Attribute Tag of a Data Element
  *
  * :return: Whether remove operation was successful
  */
 DCM_EXTERN
-bool dcm_dataset_remove(DcmDataSet *dataset, uint32_t tag);
+bool dcm_dataset_remove(DcmError **error, DcmDataSet *dataset, uint32_t tag);
 
 /**
  * Get a Data Element from a Data Set.
  *
+ * :param error: Error structure pointer
  * :param dataset: Pointer to Data Set
  * :param tag: Attribute Tag of a Data Element
  *
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_dataset_get(const DcmDataSet *dataset, uint32_t tag);
+DcmElement *dcm_dataset_get(DcmError **error,
+                            const DcmDataSet *dataset, uint32_t tag);
 
 /**
  * Get a clone (deep copy) of a Data Element from a Data Set.
  *
+ * :param error: Error structure pointer
  * :param dataset: Pointer to Data Set
  * :param tag: Attribute Tag of a Data Element
  *
  * :return: Pointer to clone of Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_dataset_get_clone(const DcmDataSet *dataset, uint32_t tag);
+DcmElement *dcm_dataset_get_clone(DcmError **error,
+                                  const DcmDataSet *dataset, uint32_t tag);
 
 /**
  * Iterate over Data Elements in a Data Set.
@@ -1636,15 +1921,15 @@ void dcm_dataset_foreach(const DcmDataSet *dataset,
                          void (*fn)(const DcmElement *element));
 
 /**
- * Determine whether a Data Element is contained in a Data Set.
+ * Fetch a Data Element from a Data Set, or NULL if not present.
  *
  * :param dataset: Pointer to Data Set
  * :param tag: Attribute Tag of a Data Element
  *
- * :return: Yes/no answer
+ * :return: Data Element, or NULL if not present
  */
 DCM_EXTERN
-bool dcm_dataset_contains(const DcmDataSet *dataset, uint32_t tag);
+DcmElement *dcm_dataset_contains(const DcmDataSet *dataset, uint32_t tag);
 
 /**
  * Count the number of Data Elements in a Data Set.
@@ -1697,6 +1982,7 @@ bool dcm_dataset_is_locked(const DcmDataSet *dataset);
 /**
  * Print a Data Set.
  *
+ * :param error: Error structure pointer
  * :param dataset: Pointer to Data Set
  * :param indentation: Number of white spaces before text
  */
@@ -1723,14 +2009,16 @@ void dcm_dataset_destroy(DcmDataSet *dataset);
  * Note that created object represents the value of a Data Element rather
  * than a Data Element itself.
  *
+ * :param error: Error structure pointer
  * :return: Pointer to Sequence
  */
 DCM_EXTERN
-DcmSequence *dcm_sequence_create(void);
+DcmSequence *dcm_sequence_create(DcmError **error);
 
 /**
  * Append a Data Set item to a Sequence.
  *
+ * :param error: Error structure pointer
  * :param seq: Pointer to Sequence
  * :param item: Data Set item
  *
@@ -1740,18 +2028,21 @@ DcmSequence *dcm_sequence_create(void);
  * :return: Whether append operation was successful
  */
 DCM_EXTERN
-bool dcm_sequence_append(DcmSequence *seq, DcmDataSet *item);
+bool dcm_sequence_append(DcmError **error, 
+                         DcmSequence *seq, DcmDataSet *item);
 
 /**
  * Get a Data Set item from a Sequence.
  *
+ * :param error: Error structure pointer
  * :param seq: Pointer to Sequence
  * :param index: Zero-based index of the Data Set item in the Sequence
  *
  * :return: Pointer to Data Set item
  */
 DCM_EXTERN
-DcmDataSet *dcm_sequence_get(const DcmSequence *seq, uint32_t index);
+DcmDataSet *dcm_sequence_get(DcmError **error, 
+                             const DcmSequence *seq, uint32_t index);
 
 /**
  * Iterate over Data Set items in a Sequence.
@@ -1766,11 +2057,12 @@ void dcm_sequence_foreach(const DcmSequence *seq,
 /**
  * Remove a Data Set item from a Sequence.
  *
+ * :param error: Error structure pointer
  * :param seq: Pointer to Sequence
  * :param index: Zero-based index of the Data Set item in the Sequence
  */
 DCM_EXTERN
-void dcm_sequence_remove(DcmSequence *seq, uint32_t index);
+void dcm_sequence_remove(DcmError **error, DcmSequence *seq, uint32_t index);
 
 /**
  * Count the number of Data Set items in a Sequence.
@@ -1819,6 +2111,7 @@ void dcm_sequence_destroy(DcmSequence *seq);
 /**
  * Create a Frame.
  *
+ * :param error: Error structure pointer
  * :param index: Index of the Frame within the Pixel Data Element
  * :param data: Pixel data of the Frame
  * :param length: Size of the Frame (number of bytes)
@@ -1842,7 +2135,8 @@ void dcm_sequence_destroy(DcmSequence *seq);
  * :return: Frame Item
  */
 DCM_EXTERN
-DcmFrame *dcm_frame_create(uint32_t number,
+DcmFrame *dcm_frame_create(DcmError **error,
+                           uint32_t number,
                            const char *data,
                            uint32_t length,
                            uint16_t rows,
@@ -2001,6 +2295,7 @@ void dcm_frame_destroy(DcmFrame *frame);
 /**
  * Create a Basic Offset Table.
  *
+ * :param error: Error structure pointer
  * :param offsets: Offset of each Frame in the Pixel Data Element
  *                 (measured from the first byte of the first Frame).
  * :param num_frames: Number of Frames in the Pixel Data Element
@@ -2012,7 +2307,8 @@ void dcm_frame_destroy(DcmFrame *frame);
  * :return: Basic Offset Table
  */
 DCM_EXTERN
-DcmBOT *dcm_bot_create(ssize_t *offsets, uint32_t num_frames);
+DcmBOT *dcm_bot_create(DcmError **error,
+                       ssize_t *offsets, uint32_t num_frames);
 
 /**
  * Get number of Frame offsets in the Basic Offset Table.
@@ -2065,7 +2361,8 @@ void dcm_bot_destroy(DcmBOT *bot);
  * :return: file
  */
 DCM_EXTERN
-DcmFile *dcm_file_create(const char *file_path, const char mode);
+DcmFile *dcm_file_create(DcmError **error, 
+                         const char *file_path, const char mode);
 
 /**
  * Read File Metainformation from a File.
@@ -2074,25 +2371,28 @@ DcmFile *dcm_file_create(const char *file_path, const char mode);
  * file to speed up subsequent access and determines the transfer syntax in
  * which the contained Data Set is encoded.
  *
+ * :param error: Error structure pointer
  * :param file: File
  *
  * :return: File Metainformation
  */
 DCM_EXTERN
-DcmDataSet *dcm_file_read_file_meta(DcmFile *file);
+DcmDataSet *dcm_file_read_file_meta(DcmError **error, DcmFile *file);
 
 /**
  * Read metadata from a File.
  *
- * Keeps track of the offset of the Pixel Data Element relative to the beginning
- * of the file to speed up subsequent access to individual Frame items.
+ * Keeps track of the offset of the Pixel Data Element relative to the 
+ * beginning of the file to speed up subsequent access to individual 
+ * Frame items.
  *
+ * :param error: Error structure pointer
  * :param file: File
  *
  * :return: metadata
  */
 DCM_EXTERN
-DcmDataSet *dcm_file_read_metadata(DcmFile *file);
+DcmDataSet *dcm_file_read_metadata(DcmError **error, DcmFile *file);
 
 /**
  * Read Basic Offset Table from a File.
@@ -2101,30 +2401,34 @@ DcmDataSet *dcm_file_read_metadata(DcmFile *file);
  * but contains an Extended Offset Table element, the value of the Extended
  * Offset Table element will be read instead.
  *
+ * :param error: Error structure pointer
  * :param file: File
  * :param metadata: Metadata
  *
  * :return: Basic Offset Table
  */
 DCM_EXTERN
-DcmBOT *dcm_file_read_bot(const DcmFile *file,
+DcmBOT *dcm_file_read_bot(DcmError **error,
+                          const DcmFile *file,
                           const DcmDataSet *metadata);
 
 /**
  * Build Basic Offset Table for a File.
  *
+ * :param error: Error structure pointer
  * :param file: File
  * :param metadata: Metadata
  *
  * :return: Basic Offset Table
  */
 DCM_EXTERN
-DcmBOT *dcm_file_build_bot(const DcmFile *file,
-                           const DcmDataSet *metadata);
+DcmBOT *dcm_file_build_bot(DcmError **error,
+                           const DcmFile *file, const DcmDataSet *metadata);
 
 /**
  * Read an individual Frame from a File.
  *
+ * :param error: Error structure pointer
  * :param file: File
  * :param metadata: Metadata
  * :param bot: Basic Offset Table
@@ -2133,7 +2437,8 @@ DcmBOT *dcm_file_build_bot(const DcmFile *file,
  * :return: Frame
  */
 DCM_EXTERN
-DcmFrame *dcm_file_read_frame(const DcmFile *file,
+DcmFrame *dcm_file_read_frame(DcmError **error,
+                              const DcmFile *file,
                               const DcmDataSet *metadata,
                               const DcmBOT *bot,
                               uint32_t index);

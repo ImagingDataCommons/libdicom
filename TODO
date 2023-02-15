@@ -1,0 +1,97 @@
+# TODO
+
+# IO vfuncs
+
+- wrappers for read() / seek() / etc. that include error checks 
+
+  part of allowing your own read funcs
+
+  use posix open() / close() / read() / seek() semantics, not stdio, or we'll 
+  need ferror and feof as well
+
+	void *(*open)(DcmError **error, void *client);
+	int (*close)(DcmError **error, void *data);
+        int64_t (*read)(DcmError **error, void *data, 
+		char *buffer, size_t length );
+        int64_t (*seek)(DcmError **error void *data, 
+		int64_t offset, int whence);
+
+  add something to loop on read if we must have length bytes
+
+  * struct DcmIO holding those four funcs
+
+  * dcm_file_create_io() where you pass in an io object plus a 
+    client pointer (eg. filename)
+
+  * reimplement dcm_file_create() on top of this, include buffering
+
+
+# less copy-paste
+
+- replace copy-paste code over types with a table
+	dcm_element_clone()
+
+- use a table for dcm_element_create_* as well
+
+
+# more enums
+
+- element->vr should be an enum (not "UL" etc.)
+	- swap all the strcmps for ==
+
+
+# data types
+
+- should create_element() take a size_t for length?
+
+- remove dcm_dataset_copy_tags() etc should not use uint32_t? what about
+  dcm_dataset_count()?
+
+	get_num_frames() uses strtol(), so it's a long
+
+- does utarray_len() really return uint32?
+
+	no, it's unsigned int
+
+- dcm_dataset_print() should not use uint8_t
+
+
+# revise pointer ownership rules
+
+- right now, _create funcs free passed in objects on error which feels very 
+  error-prone
+
+  instead, the caller should free on error ... how easy would this be to change?
+
+
+# asserts
+
+- disable assert in production builds
+	there's eg. assert_vr() too, check this
+	what does DCM_DEBUG_ONLY() mean? is this sanity checking?
+
+- should the foreach funcs take two params (one for error)? are they used?
+
+	nope, unused within libdicom
+
+- add eg.
+
+	#define DCM_RETURN_VALUE_IF_FAIL(ERROR, CONDITION, RETURN_VALUE)
+		if (!(CONDITION)) {
+			dcm_error_set(error, invalid,
+				"Pointer is null", "%s:%s (%d)"
+				__FILE__, __FUNCTION__, __LINE__);
+			return RETURN_VALUE
+		}
+
+  and use instead of assert in most places
+
+  hmm a sure way to memleaks because of the way that pointer ownership is 
+  handled, fix that first
+
+
+# Tips
+
+- debug failing test with eg.
+
+	CK_FORK=no CK_RUN_CASE=frame gdb ./check_dicom

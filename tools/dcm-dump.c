@@ -14,12 +14,12 @@ int main(int argc, char *argv[]) {
 
     int i;
     const char *file_path = NULL;
+    DcmError *error = NULL;
     DcmDataSet *metadata = NULL;
     DcmDataSet *file_meta = NULL;
     DcmFile *file = NULL;
 
     dcm_log_level = DCM_LOG_ERROR;
-
 
     for (i = 1; i < argc && argv[i][0] == '-'; i++) {
         switch (argv[i][1]) {
@@ -45,22 +45,29 @@ int main(int argc, char *argv[]) {
     file_path = argv[i];
 
     dcm_log_info("Read file '%s'", file_path);
-    file = dcm_file_create(file_path, 'r');
+    file = dcm_file_create(&error, file_path, 'r');
     if (file == NULL) {
-        dcm_log_error("Reading file '%s' failed.", file_path);
+        dcm_error_log(error);
+        dcm_error_clear(&error);
         return EXIT_FAILURE;
     }
     dcm_log_info("Read File Meta Information");
-    file_meta = dcm_file_read_file_meta(file);
+    file_meta = dcm_file_read_file_meta(&error, file);
+    if (file_meta == NULL) {
+        dcm_error_log(error);
+        dcm_error_clear(&error);
+        dcm_file_destroy(file);
+        return EXIT_FAILURE;
+    }
 
     printf("===File Meta Information===\n");
     dcm_dataset_print(file_meta, 0);
 
     dcm_log_info("Read metadata");
-    metadata = dcm_file_read_metadata(file);
+    metadata = dcm_file_read_metadata(&error, file);
     if (metadata == NULL) {
-        dcm_log_error("Reading file '%s' failed. "
-                      "Could not read Data Set.", file_path);
+        dcm_error_log(error);
+        dcm_error_clear(&error);
         dcm_file_destroy(file);
         dcm_dataset_destroy(file_meta);
         return EXIT_FAILURE;
