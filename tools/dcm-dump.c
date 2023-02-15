@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <dicom.h>
+#include <dicom/dicom.h>
 
 
 static const char usage[] = "usage: dcm-dump [-v] [-V] [-h] FILE_PATH\n";

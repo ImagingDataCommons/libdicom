@@ -118,14 +118,14 @@ add_project_arguments(
 
 # include
 version_header = configure_file(
-    input : 'include/version.h.in',
+    input : 'include/dicom/version.h.in',
     output : 'version.h',
     configuration : version_data,
 )
 
 install_headers(
   version_header,
-  'include/dicom.h',
+  'include/dicom/dicom.h',
   subdir : 'dicom',
 )
 
@@ -155,7 +155,6 @@ import('pkgconfig').generate(
   description : 'C library for reading DICOM files',
   filebase : 'libdicom',
   name : 'libdicom',
-  subdirs : 'dicom',
   url : 'https://github.com/ImagingDataCommons/libdicom',
 )
 libdicom_dep = declare_dependency(
@@ -192,7 +191,7 @@ custom_target(
     'doc/source/introduction.rst',
     'doc/source/tools.rst',
     'doc/source/usage.rst',
-    'include/dicom.h',
+    'include/dicom/dicom.h',
   ],
   output : 'html',
 )

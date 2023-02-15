@@ -20,7 +20,7 @@
 
 #include "utarray.h"
 
-#include "dicom.h"
+#include <dicom/dicom.h>
 #include "pdicom.h"
 
 
