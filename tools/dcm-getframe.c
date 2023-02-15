@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <dicom.h>
+#include <dicom/dicom.h>
 
 
 static const char usage[] = "usage: dcm-getframe [-v] [-V] [-h] [-o OUTPUT-FILE] FILE_PATH FRAME_NUMBER\n";
