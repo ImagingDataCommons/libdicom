@@ -170,7 +170,7 @@ printing it to standard output:
 .. code:: c
 
     #include <stdlib.h>
-    #include <dicom.h>
+    #include <dicom/dicom.h>
 
     int main() {
         const char *file_path = "/path/to/file.dcm";
