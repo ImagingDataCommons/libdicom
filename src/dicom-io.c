@@ -29,7 +29,7 @@
 #endif /*HAVE_IO_H*/
 #include <time.h>
 
-#include "dicom.h"
+#include <dicom/dicom.h>
 #include "pdicom.h"
 
 /* The size of the input buffer we use.
