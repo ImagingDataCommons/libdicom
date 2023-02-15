@@ -138,7 +138,7 @@ For example:
 .. code:: c
 
     #include <stdlib.h>
-    #include <dicom.h>
+    #include <dicom/dicom.h>
 
     int main() {
         const char *file_path = "does not exist";

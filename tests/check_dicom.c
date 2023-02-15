@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <check.h>
 
-#include "dicom.h"
+#include <dicom/dicom.h>
 
 
 static char *fixture_path(const char *relpath)
