@@ -635,20 +635,18 @@ static DcmElement *read_element(DcmError **error,
         eheader_check_vr(header, "DT") ||
         eheader_check_vr(header, "IS") ||  // Integer String
         eheader_check_vr(header, "LO") ||
-        eheader_check_vr(header, "LT") ||
         eheader_check_vr(header, "PN") ||
         eheader_check_vr(header, "SH") ||
-        eheader_check_vr(header, "ST") ||
         eheader_check_vr(header, "TM") ||
         eheader_check_vr(header, "UI") ||
-        eheader_check_vr(header, "UR") ||
-        eheader_check_vr(header, "UT")) {
+        eheader_check_vr(header, "UR")) {
         char *value = DCM_MALLOC(error, length + 1);
         if (value == NULL) {
             return NULL;
         }
 
         if (!dcm_require(error, file, value, length, position)) {
+            free(value);
             return NULL;
         }
 
@@ -688,66 +686,10 @@ static DcmElement *read_element(DcmError **error,
             return dcm_element_create_PN_multi(error, tag, strings, vm);
         } else if (eheader_check_vr(header, "SH")) {
             return dcm_element_create_SH_multi(error, tag, strings, vm);
-        } else if (eheader_check_vr(header, "ST")) {
-            // This VM shall always have VM 1.
-            if (vm != 1) {
-                dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                              "Reading of Data Element failed",
-                              "Encountered unexpected Value Multiplicity %d "
-                              "for Data Element '%08X'",
-                              vm, tag);
-                dcm_free_string_array(strings, vm);
-                return NULL;
-            }
-            char *str = strings[0];
-            free(strings);
-            return dcm_element_create_ST(error, tag, str);
         } else if (eheader_check_vr(header, "TM")) {
             return dcm_element_create_TM_multi(error, tag, strings, vm);
         } else if (eheader_check_vr(header, "UI")) {
             return dcm_element_create_UI_multi(error, tag, strings, vm);
-        } else if (eheader_check_vr(header, "LT")) {
-            // This VM shall always have VM 1.
-            if (vm != 1) {
-                dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                              "Reading of Data Element failed",
-                              "Encountered unexpected Value Multiplicity %d "
-                              "for Data Element '%08X'.",
-                              vm, tag);
-                dcm_free_string_array(strings, vm);
-                return NULL;
-            }
-            char *str = strings[0];
-            free(strings);
-            return dcm_element_create_LT(error, tag, str);
-        } else if (eheader_check_vr(header, "UR")) {
-            // This VM shall always have VM 1.
-            if (vm != 1) {
-                dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                              "Reading of Data Element failed",
-                              "Encountered unexpected Value Multiplicity %d "
-                              "for Data Element '%08X'.",
-                              vm, tag);
-                dcm_free_string_array(strings, vm);
-                return NULL;
-            }
-            char *str = strings[0];
-            free(strings);
-            return dcm_element_create_UR(error, tag, str);
-        } else if (eheader_check_vr(header, "UT")) {
-            // This VM shall always have VM 1.
-            if (vm != 1) {
-                dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                              "Reading of Data Element failed",
-                              "Encountered unexpected Value Multiplicity %d "
-                              "for Data Element '%08X'",
-                              vm, tag);
-                dcm_free_string_array(strings, vm);
-                return NULL;
-            }
-            char *str = strings[0];
-            free(strings);
-            return dcm_element_create_UT(error, tag, str);
         } else {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                           "Reading of Data Element failed",
@@ -755,6 +697,42 @@ static DcmElement *read_element(DcmError **error,
                           "for Data Element '%08X'",
                           tag);
             dcm_free_string_array(strings, vm);
+            return NULL;
+        }
+    } else if (eheader_check_vr(header, "UT") ||
+        eheader_check_vr(header, "LT") ||
+        eheader_check_vr(header, "ST") ||
+        eheader_check_vr(header, "UR")) {
+        // unparsed character strings
+        char *value = DCM_MALLOC(error, length + 1);
+        if (value == NULL) {
+            return NULL;
+        }
+
+        if (!dcm_require(error, file, value, length, position)) {
+            free(value);
+            return NULL;
+        }
+
+        /* C-style \0 terminate.
+         */
+        value[length] = '\0';
+
+        if (eheader_check_vr(header, "UT")) {
+            return dcm_element_create_UT(error, tag, value);
+        } else if (eheader_check_vr(header, "LT")) {
+            return dcm_element_create_LT(error, tag, value);
+        } else if (eheader_check_vr(header, "ST")) {
+            return dcm_element_create_ST(error, tag, value);
+        } else if (eheader_check_vr(header, "UR")) {
+            return dcm_element_create_UR(error, tag, value);
+        } else {
+            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                          "Reading of Data Element failed",
+                          "Encountered unexpected Value Representation "
+                          "for Data Element '%08X'",
+                          tag);
+            free(value);
             return NULL;
         }
     } else if (eheader_check_vr(header, "SQ")) {
