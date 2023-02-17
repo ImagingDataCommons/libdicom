@@ -22,6 +22,11 @@ typedef SSIZE_T ssize_t;
 #define DCM_EXTERN __attribute__((visibility("default"))) extern
 #endif
 
+#ifdef HAS_CONSTRUCTOR
+#define DCM_CONSTRUCTOR __attribute__ ((constructor))
+#else
+#define DCM_CONSTRUCTOR __attribute__ ((constructor))
+#endif
 
 /**
  * Maximum number of characters in values with Value Representation AE.
@@ -138,6 +143,21 @@ typedef struct _DcmFrame DcmFrame;
  */
 typedef struct _DcmBOT DcmBOT;
 
+/**
+ * Start up libdicom.
+ *
+ * Call this from the main thread during program startup for libdicom to be
+ * threadsafe.
+ *
+ * If you don't do this, libdidom will attempt to call it for you in a safe
+ * way, but cannot guarantee this on all platforms and with all compilers, and
+ * therefore cannot guarantee thread safety.  
+ *
+ * This function can be called many times.
+ */
+DCM_EXTERN
+DCM_CONSTRUCTOR
+void dcm_init(void);
 
 /**
  * Enumeration of error codes.
@@ -262,7 +282,6 @@ const char *dcm_error_code_name(DcmErrorCode code);
  */
 DCM_EXTERN
 void dcm_error_log(DcmError *error);
-
 
 /**
  * Enumeration of log levels
