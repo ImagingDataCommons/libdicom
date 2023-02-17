@@ -28,9 +28,10 @@
 
 struct _DcmElement {
     uint32_t tag;
-    char vr[3];
+    DcmVR vr;
     uint32_t length;
     uint32_t vm;
+
     union {
         // Numeric value (multiplicity 1-n)
         float *fl_multi;
@@ -41,16 +42,39 @@ struct _DcmElement {
         uint16_t *us_multi;
         uint32_t *ul_multi;
         uint64_t *uv_multi;
+
         // Character string value (multiplicity 1-n)
         char **str_multi;
+
         // Binary value (multiplicity 1)
         char *bytes;
+
         // Sequence value (multiplicity 1)
         DcmSequence *sq;
+
     } value;
+
+    // Store values for multiplicity 1 (the most common case) 
+    // inside the element to save a pair of tiny malloc/frees during build
+    union {
+        float fl;
+        double fd;
+        int16_t ss;
+        int32_t sl;
+        int64_t sv;
+        uint16_t us;
+        uint32_t ul;
+        uint64_t uv;
+
+        char *str;
+    } multi1;
+
+    // Pointers to free (if any).
     void *value_pointer;
     char **value_pointer_array;
+
     DcmSequence *sequence_pointer;
+
     UT_hash_handle hh;
 };
 
@@ -93,47 +117,6 @@ struct _DcmBOT {
 struct SequenceItem {
     DcmDataSet *dataset;
 };
-
-
-static bool is_vr_string(const char *vr) 
-{
-    if (strcmp(vr, "AE") == 0 ||
-        strcmp(vr, "AS") == 0 ||
-        strcmp(vr, "AT") == 0 ||
-        strcmp(vr, "CS") == 0 ||
-        strcmp(vr, "DA") == 0 ||
-        strcmp(vr, "DS") == 0 ||
-        strcmp(vr, "DT") == 0 ||
-        strcmp(vr, "IS") == 0 ||
-        strcmp(vr, "LO") == 0 ||
-        strcmp(vr, "LT") == 0 ||
-        strcmp(vr, "PN") == 0 ||
-        strcmp(vr, "SH") == 0 ||
-        strcmp(vr, "ST") == 0 ||
-        strcmp(vr, "TM") == 0 ||
-        strcmp(vr, "UI") == 0 ||
-        strcmp(vr, "UR") == 0 ||
-        strcmp(vr, "UT") == 0) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-
-static bool is_vr_bytes(const char *vr) 
-{
-    if (strcmp(vr, "OB") == 0 ||
-        strcmp(vr, "OD") == 0 ||
-        strcmp(vr, "OF") == 0 ||
-        strcmp(vr, "OV") == 0 ||
-        strcmp(vr, "UC") == 0 ||
-        strcmp(vr, "UN") == 0) {
-        return true;
-    } else {
-        return false;
-    }
-}
 
 
 static struct SequenceItem *create_sequence_item(DcmError **error,
@@ -192,7 +175,7 @@ static int compare_tags(const void *a, const void *b)
 // Data Elements
 
 static DcmElement *create_element(DcmError **error, 
-                                  uint32_t tag, const char *vr, uint32_t length)
+                                  uint32_t tag, DcmVR vr, uint32_t length)
 {
     dcm_log_debug("Create Data Element '%08X'.", tag);
     DcmElement *element = DCM_NEW(error, DcmElement);
@@ -200,18 +183,12 @@ static DcmElement *create_element(DcmError **error,
         return NULL;
     }
     element->tag = tag;
-    strncpy(element->vr, vr, 3);
-    element->vr[2] = '\0';
+    element->vr = vr;
     if (length % 2 != 0) {
         // Zero padding
         length += 1;
     }
     element->length = length;
-    element->vm = 0;
-    element->value.str_multi = NULL;
-    element->value_pointer = NULL;
-    element->value_pointer_array = NULL;
-    element->sequence_pointer = NULL;
     return element;
 }
 
@@ -256,10 +233,10 @@ uint32_t dcm_element_get_tag(const DcmElement *element)
 }
 
 
-bool dcm_element_check_vr(const DcmElement *element, const char *vr)
+bool dcm_element_check_vr(const DcmElement *element, DcmVR vr)
 {
     assert(element);
-    return strcmp(element->vr, vr) == 0;
+    return element->vr == vr;
 }
 
 
@@ -280,11 +257,16 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
         return NULL;
     }
     clone->tag = element->tag;
-    strncpy(clone->vr, element->vr, 3);
+    clone->vr = element->vr;
     clone->length = element->length;
     clone->vm = element->vm;
 
-    if (strcmp(element->vr, "SQ") == 0) {
+    if (clone->vm == 1) {
+        clone->value.fl_multi = &clone->multi1.fl;
+        clone->multi1 = element->multi1;
+    }
+
+    if (element->vr == DCM_VR_SQ) {
         if (element->value.sq) {
             // Copy each data set in sequence
             DcmSequence *seq = dcm_sequence_create(error);
@@ -309,27 +291,38 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
             clone->value.sq = seq;
             clone->sequence_pointer = seq;
         }
-    } else if (is_vr_string(element->vr)) {
-        if (element->value.str_multi) {
-            clone->value.str_multi = DCM_NEW_ARRAY(error, element->vm, char *);
-            if (clone->value.str_multi == NULL) {
-                free(clone);
+    } else if (dcm_dict_vr_is_string(element->vr)) {
+        if (clone->vm == 1 && element->multi1.str) {
+            clone->multi1.str = dcm_strdup(error, element->multi1.str);
+            if (clone->multi1.str == NULL) {
+                dcm_element_destroy(clone);
                 return NULL;
             }
+            clone->value_pointer = clone->multi1.str;
+        }
+        else if (element->value.str_multi) {
+            clone->value.str_multi = DCM_NEW_ARRAY(error, element->vm, char *);
+            if (clone->value.str_multi == NULL) {
+                dcm_element_destroy(clone);
+                return NULL;
+            }
+            clone->value_pointer_array = clone->value.str_multi;
+
             for (i = 0; i < element->vm; i++) {
                 clone->value.str_multi[i] = dcm_strdup(error, 
                                                        element->
                                                        value.str_multi[i]);
                 if (clone->value.str_multi[i] == NULL) {
-                    // FIXME: free memory allocated for previous values
-                    free(clone->value.str_multi);
-                    free(clone);
+                    dcm_element_destroy(clone);
                     return NULL;
                 }
             }
-            clone->value_pointer_array = clone->value.str_multi;
         }
-    } else if (is_vr_bytes(element->vr)) {
+
+
+
+
+    } else if (dcm_dict_vr_is_bytes(element->vr)) {
         if (element->value.bytes) {
             clone->value.bytes = DCM_MALLOC(error, element->length);
             if (clone->value.bytes == NULL) {

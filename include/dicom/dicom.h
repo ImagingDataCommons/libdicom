@@ -178,6 +178,51 @@ enum _DcmErrorCode {
  */
 typedef enum _DcmErrorCode DcmErrorCode;
 
+/**
+ * An enum of VRs. VRs which are not known to libdicom will be coded as
+ * DCM_VR_uk (unknown VR).
+ *
+ * The order in this enum must match the table in dicom-dict.c. The final
+ * entry must always be DCM_VR_uk.
+ */
+typedef enum _DcmVR {
+    DCM_VR_AE = 0,
+    DCM_VR_AS,
+    DCM_VR_AT,
+    DCM_VR_CS,
+    DCM_VR_DA,
+    DCM_VR_DS,
+    DCM_VR_DT,
+    DCM_VR_FL,
+    DCM_VR_FD,
+    DCM_VR_IS,
+    DCM_VR_LO,
+    DCM_VR_LT,
+    DCM_VR_OB,
+    DCM_VR_OD,
+    DCM_VR_OF,
+    DCM_VR_OW,
+    DCM_VR_PN,
+    DCM_VR_SH,
+    DCM_VR_SL,
+    DCM_VR_SQ,
+    DCM_VR_SS,
+    DCM_VR_ST,
+    DCM_VR_TM,
+    DCM_VR_UI,
+    DCM_VR_UL,
+    DCM_VR_UN,
+    DCM_VR_US,
+    DCM_VR_UT,
+    DCM_VR_UR,
+    DCM_VR_UC,
+    DCM_VR_OL,
+    DCM_VR_OV,
+    DCM_VR_SV,
+    DCM_VR_UV,
+    DCM_VR_uk,
+} DcmVR;
+
 /** 
  * Convert an error code to a human-readable string.
  *
@@ -365,6 +410,24 @@ void dcm_log_debug(const char *format, ...);
 DCM_EXTERN
 const char *dcm_get_version(void);
 
+/** 
+ * Turn a string VR into an enum value.
+ *
+ * :param vr: The VR as a two character string.
+ *
+ * :return: The enum for that VR.
+ */
+DCM_EXTERN DcmVR dcm_dict_str_to_vr(const char *vr);
+
+/** 
+ * Turn an enum VR into a character string.
+ *
+ * :param vr: The VR as an enum value.
+ *
+ * :return: The string representation of that VR.
+ */
+DCM_EXTERN const char *dcm_dict_vr_to_str(DcmVR vr);
+
 /**
  * Look up the Value Representation of an Attribute in the Dictionary.
  *
@@ -373,7 +436,7 @@ const char *dcm_get_version(void);
  * :return: name of attribute Value Representation
  */
 DCM_EXTERN
-const char *dcm_dict_lookup_vr(uint32_t tag);
+DcmVR dcm_dict_lookup_vr(uint32_t tag);
 
 /**
  * Look up the Keyword of an Attribute in the Dictionary.
