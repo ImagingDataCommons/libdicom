@@ -6,6 +6,9 @@
 
 - extended offset table support seems to be broken? see FIXME comment
 
+- bot frame offsets should be int64_t to match dcm_seekset(), 
+  pixel_data_offset, etc.
+
 
 # less copy-paste
 

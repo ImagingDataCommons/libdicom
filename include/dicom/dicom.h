@@ -2318,7 +2318,8 @@ void dcm_frame_destroy(DcmFrame *frame);
  * :param offsets: Offset of each Frame in the Pixel Data Element
  *                 (measured from the first byte of the first Frame).
  * :param num_frames: Number of Frames in the Pixel Data Element
- *                    (measured from the first byte of the File).
+ * :first_frame_offset: Offset from pixel_data_offset to the first byte of the
+ * 			first frame
  *
  * The created object takes over ownership of the memory referenced by `offsets`
  * and frees it when the object is destroyed or if the creation fails.
@@ -2327,7 +2328,8 @@ void dcm_frame_destroy(DcmFrame *frame);
  */
 DCM_EXTERN
 DcmBOT *dcm_bot_create(DcmError **error,
-                       ssize_t *offsets, uint32_t num_frames);
+                       ssize_t *offsets, uint32_t num_frames, 
+		       ssize_t first_frame_offset);
 
 /**
  * Get number of Frame offsets in the Basic Offset Table.
@@ -2345,7 +2347,7 @@ uint32_t dcm_bot_get_num_frames(const DcmBOT *bot);
  * :param bot: Basic Offset Table
  * :param index: Zero-based index of Frame in the Pixel Data Element
  *
- * :return: offset
+ * :return: offset from pixel_data_offset
  */
 DCM_EXTERN
 ssize_t dcm_bot_get_frame_offset(const DcmBOT *bot, uint32_t index);

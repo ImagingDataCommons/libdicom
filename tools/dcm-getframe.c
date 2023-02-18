@@ -70,6 +70,13 @@ int main(int argc, char *argv[])
     dcm_log_info("Read BOT");
     DcmBOT *bot = dcm_file_read_bot(&error, file, metadata);
     if (bot == NULL) {
+        /* Try to build the BOT instead.
+         */
+        dcm_error_clear(&error);
+        dcm_log_info("Build BOT");
+        bot = dcm_file_build_bot(&error, file, metadata);
+    }
+    if (bot == NULL) {
         dcm_error_log(error);
         dcm_error_clear(&error);
         dcm_dataset_destroy(metadata);
