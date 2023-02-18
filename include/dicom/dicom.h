@@ -2390,6 +2390,7 @@ typedef struct _DcmIO {
 /**
  * Create a File that reads using a set of DcmIO functions.
  *
+ * :param error: Error structure pointer
  * :param io: Set of read functions for this DcmFile
  * :param client: Client data for read functions
  *
@@ -2401,6 +2402,7 @@ DcmFile *dcm_file_create_io(DcmError **error, DcmIO *io, void *client);
 /**
  * Open a file on disk as a DcmFile.
  *
+ * :param error: Error structure pointer
  * :param file_path: Path to the file on disk
  *
  * :return: file
@@ -2411,6 +2413,7 @@ DcmFile *dcm_file_open(DcmError **error, const char *file_path);
 /**
  * Open an area of memory as a DcmFile.
  *
+ * :param error: Error structure pointer
  * :param buffer: Pointer to memory area
  * :param length: Length of memory area in bytes
  *
