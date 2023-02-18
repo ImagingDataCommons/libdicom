@@ -4934,29 +4934,52 @@ static const struct _DcmAttribute attribute_table[] = {
 static const int n_attributes = sizeof(attribute_table) /
                                 sizeof(struct _DcmAttribute);
 
+static struct _DcmAttribute_hash_entry *attribute_from_tag_dict = NULL;
+static struct _DcmAttribute_hash_entry *attribute_from_vr_dict = NULL;
 
-static const struct _DcmAttribute *attribute_from_tag(uint32_t tag)
+
+void dcm_init(void)
 {
-    static struct _DcmAttribute_hash_entry *dictionary = NULL;
-
+    DcmError *error = NULL;
     struct _DcmAttribute_hash_entry *entry;
 
-    if (!dictionary) {
+    if (!attribute_from_tag_dict) {
         int i;
 
         for (i = 0; i < n_attributes; i++) {
-            HASH_FIND_INT(dictionary, &attribute_table[i].tag, entry);
-            if (entry) {
-                return NULL;
+            HASH_FIND_INT(attribute_from_tag_dict, 
+                          &attribute_table[i].tag, entry);
+            if (!entry) {
+                entry = DCM_NEW(&error, struct _DcmAttribute_hash_entry);
+                *((struct _DcmAttribute *)entry) = attribute_table[i];
+                HASH_ADD_INT(attribute_from_tag_dict, tag, entry);
             }
-
-            entry = DCM_NEW(NULL, struct _DcmAttribute_hash_entry);
-            *((struct _DcmAttribute *)entry) = attribute_table[i];
-            HASH_ADD_INT(dictionary, tag, entry);
         }
     }
 
-    HASH_FIND_INT(dictionary, &tag, entry);
+    if (!attribute_from_vr_dict) {
+        int i;
+
+        for (i = 0; i < n_attributes; i++) {
+            HASH_FIND_STR(attribute_from_vr_dict, attribute_table[i].vr, entry);
+
+            if (!entry) {
+                entry = DCM_NEW(NULL, struct _DcmAttribute_hash_entry);
+                *((struct _DcmAttribute *)entry) = attribute_table[i];
+                HASH_ADD_STR(attribute_from_vr_dict, vr, entry);
+            }
+        }
+    }
+}
+
+
+static const struct _DcmAttribute *attribute_from_tag(uint32_t tag)
+{
+    struct _DcmAttribute_hash_entry *entry;
+
+    dcm_init();
+
+    HASH_FIND_INT(attribute_from_tag_dict, &tag, entry);
 
     return (const struct _DcmAttribute *)entry;
 }
@@ -4964,25 +4987,11 @@ static const struct _DcmAttribute *attribute_from_tag(uint32_t tag)
 
 static const struct _DcmAttribute *attribute_from_vr(const char *vr)
 {
-    static struct _DcmAttribute_hash_entry *dictionary = NULL;
-
     struct _DcmAttribute_hash_entry *entry;
 
-    if (!dictionary) {
-        int i;
+    dcm_init();
 
-        for (i = 0; i < n_attributes; i++) {
-            HASH_FIND_STR(dictionary, attribute_table[i].vr, entry);
-
-            if (!entry) {
-                entry = DCM_NEW(NULL, struct _DcmAttribute_hash_entry);
-                *((struct _DcmAttribute *)entry) = attribute_table[i];
-                HASH_ADD_STR(dictionary, vr, entry);
-            }
-        }
-    }
-
-    HASH_FIND_STR(dictionary, vr, entry);
+    HASH_FIND_STR(attribute_from_vr_dict, vr, entry);
 
     return (const struct _DcmAttribute *)entry;
 }
