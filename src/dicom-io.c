@@ -260,12 +260,7 @@ DcmFile *dcm_file_open(DcmError **error, const char *file_path)
         dcm_io_seek_file,
     };
 
-    DcmFile *file = dcm_file_create_io(error, &io, (void *) file_path);
-    if (file == NULL) {
-        return NULL;
-    }
-
-    return file;
+    return dcm_file_create_io(error, &io, (void *) file_path);
 }
 
 
@@ -363,18 +358,11 @@ DcmFile *dcm_file_memory(DcmError **error, char *buffer, int64_t length)
         dcm_io_seek_memory,
     };
 
-    DcmIOMemory *memory = DCM_NEW(error, DcmIOMemory);
-    if (memory == NULL) {
-        return NULL;
-    }
-    memory->buffer = buffer;
-    memory->length = length;
+    DcmIOMemory memory = {
+        buffer,
+        length,
+        0
+    };
 
-    DcmFile *file = dcm_file_create_io(error, &io, memory);
-    free(memory);
-    if (file == NULL) {
-        return NULL;
-    }
-
-    return file;
+    return dcm_file_create_io(error, &io, &memory);
 }
