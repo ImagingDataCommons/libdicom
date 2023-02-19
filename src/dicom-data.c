@@ -32,47 +32,49 @@ struct _DcmElement {
     uint32_t length;
     uint32_t vm;
 
+    // Store values for multiplicity 1 (the most common case) 
+    // inside the element to reduce malloc/frees during build
     union {
-        // Numeric value (multiplicity 1-n)
-        float *fl_multi;
-        double *fd_multi;
-        int16_t *ss_multi;
-        int32_t *sl_multi;
-        int64_t *sv_multi;
-        uint16_t *us_multi;
-        uint32_t *ul_multi;
-        uint64_t *uv_multi;
+        union {
+            float fl;
+            double fd;
+            int16_t ss;
+            int32_t sl;
+            int64_t sv;
+            uint16_t us;
+            uint32_t ul;
+            uint64_t uv;
 
-        // Character string value (multiplicity 1-n)
-        char **str_multi;
+            char *str;
 
-        // Binary value (multiplicity 1)
-        char *bytes;
+            // Binary value (multiplicity 1)
+            char *bytes;
 
-        // Sequence value (multiplicity 1)
-        DcmSequence *sq;
+            // Sequence value (multiplicity 1)
+            DcmSequence *sq;
 
+        } single;
+
+        union {
+            // Numeric value (multiplicity 2-n)
+            float *fl;
+            double *fd;
+            int16_t *ss;
+            int32_t *sl;
+            int64_t *sv;
+            uint16_t *us;
+            uint32_t *ul;
+            uint64_t *uv;
+
+            // Character string value (multiplicity 2-n)
+            char **str;
+
+        } multi;
     } value;
 
-    // Store values for multiplicity 1 (the most common case) 
-    // inside the element to save a pair of tiny malloc/frees during build
-    union {
-        float fl;
-        double fd;
-        int16_t ss;
-        int32_t sl;
-        int64_t sv;
-        uint16_t us;
-        uint32_t ul;
-        uint64_t uv;
-
-        char *str;
-    } multi1;
-
-    // Pointers to free (if any).
+    // Free these on destroy
     void *value_pointer;
     char **value_pointer_array;
-
     DcmSequence *sequence_pointer;
 
     UT_hash_handle hh;
@@ -207,7 +209,6 @@ void dcm_element_destroy(DcmElement *element)
             dcm_free_string_array(element->value_pointer_array, element->vm);
         }
         free(element);
-        element = NULL;
     }
 }
 
@@ -260,14 +261,10 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
     clone->vr = element->vr;
     clone->length = element->length;
     clone->vm = element->vm;
-
-    if (clone->vm == 1) {
-        clone->value.fl_multi = &clone->multi1.fl;
-        clone->multi1 = element->multi1;
-    }
+    clone->value = element->value;
 
     if (element->vr == DCM_VR_SQ) {
-        if (element->value.sq) {
+        if (element->value.single.sq) {
             // Copy each data set in sequence
             DcmSequence *seq = dcm_sequence_create(error);
             DcmDataSet *item;
@@ -288,148 +285,64 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
                 dcm_sequence_append(error, seq, cloned_item);
                 dcm_dataset_destroy(cloned_item);
             }
-            clone->value.sq = seq;
+            clone->value.single.sq = seq;
             clone->sequence_pointer = seq;
         }
     } else if (dcm_dict_vr_is_string(element->vr)) {
-        if (clone->vm == 1 && element->multi1.str) {
-            clone->multi1.str = dcm_strdup(error, element->multi1.str);
-            if (clone->multi1.str == NULL) {
+        // all the string types
+        if (clone->vm == 1 && element->value.single.str) {
+            clone->value.single.str = dcm_strdup(error, 
+                                                 element->value.single.str);
+            if (clone->value.single.str == NULL) {
                 dcm_element_destroy(clone);
                 return NULL;
             }
-            clone->value_pointer = clone->multi1.str;
+            clone->value_pointer = clone->value.single.str;
         }
-        else if (element->value.str_multi) {
-            clone->value.str_multi = DCM_NEW_ARRAY(error, element->vm, char *);
-            if (clone->value.str_multi == NULL) {
+        else if (clone->vm > 1 && element->value.multi.str) {
+            clone->value.multi.str = DCM_NEW_ARRAY(error, element->vm, char *);
+            if (clone->value.multi.str == NULL) {
                 dcm_element_destroy(clone);
                 return NULL;
             }
-            clone->value_pointer_array = clone->value.str_multi;
+            clone->value_pointer_array = clone->value.multi.str;
 
             for (i = 0; i < element->vm; i++) {
-                clone->value.str_multi[i] = dcm_strdup(error, 
+                clone->value.multi.str[i] = dcm_strdup(error, 
                                                        element->
-                                                       value.str_multi[i]);
-                if (clone->value.str_multi[i] == NULL) {
+                                                       value.multi.str[i]);
+                if (clone->value.multi.str[i] == NULL) {
                     dcm_element_destroy(clone);
                     return NULL;
                 }
             }
         }
-
-
-
-
     } else if (dcm_dict_vr_is_bytes(element->vr)) {
-        if (element->value.bytes) {
-            clone->value.bytes = DCM_MALLOC(error, element->length);
-            if (clone->value.bytes == NULL) {
-                free(clone);
+        // is_bytes means some kind of binary value in the bytes pointer
+        if (element->value.single.bytes) {
+            clone->value.single.bytes = DCM_MALLOC(error, element->length);
+            if (clone->value.single.bytes == NULL) {
+                dcm_element_destroy(clone);
                 return NULL;
             }
-            memcpy(clone->value.bytes,
-                   element->value.bytes,
+            memcpy(clone->value.single.bytes,
+                   element->value.single.bytes,
                    element->length);
-            clone->value_pointer = clone->value.bytes;
+            clone->value_pointer = clone->value.single.bytes;
         }
-    } else if (strcmp(element->vr, "FL") == 0) {
-        if (element->value.fl_multi) {
-            clone->value.fl_multi = DCM_NEW_ARRAY(error, element->vm, float);
-            if (clone->value.fl_multi == NULL) {
-                free(clone);
-                return NULL;
-            }
-            for (i = 0; i < element->vm; i++) {
-                clone->value.fl_multi[i] = element->value.fl_multi[i];
-            }
-            clone->value_pointer = clone->value.fl_multi;
+    } else if (close->vm > 1 && dcm_dict_vr_size(element->vr) > 1) {
+        // some kind of numeric value .. we use the float pointer, but this
+        // will do all the numeric types
+        size_t size = dcm_dict_vr_size(element->vr);
+        clone->value.multi.fl = dcm_calloc(error, element->vm, size);
+        if (clone->value.multi.fl == NULL) {
+            dcm_element_destroy(clone);
+            return NULL;
         }
-    } else if (strcmp(element->vr, "FD") == 0) {
-        if (element->value.fd_multi) {
-            clone->value.fd_multi = DCM_NEW_ARRAY(error, element->vm, double);
-            if (clone->value.fd_multi == NULL) {
-                free(clone);
-                return NULL;
-            }
-            for (i = 0; i < element->vm; i++) {
-                clone->value.fd_multi[i] = element->value.fd_multi[i];
-            }
-            clone->value_pointer = clone->value.fd_multi;
-        }
-    } else if (strcmp(element->vr, "SS") == 0) {
-        if (element->value.ss_multi) {
-            clone->value.ss_multi = DCM_NEW_ARRAY(error, element->vm, int16_t);
-            if (clone->value.ss_multi == NULL) {
-                free(clone);
-                return NULL;
-            }
-            for (i = 0; i < element->vm; i++) {
-                clone->value.ss_multi[i] = element->value.ss_multi[i];
-            }
-            clone->value_pointer = clone->value.ss_multi;
-        }
-    } else if (strcmp(element->vr, "SL") == 0) {
-        if (element->value.sl_multi) {
-            clone->value.sl_multi = DCM_NEW_ARRAY(error, element->vm, int32_t);
-            if (clone->value.sl_multi == NULL) {
-                free(clone);
-                return NULL;
-            }
-            for (i = 0; i < element->vm; i++) {
-                clone->value.sl_multi[i] = element->value.sl_multi[i];
-            }
-            clone->value_pointer = clone->value.sl_multi;
-        }
-    } else if (strcmp(element->vr, "SV") == 0) {
-        if (element->value.sv_multi) {
-            clone->value.sv_multi = DCM_NEW_ARRAY(error, element->vm, int64_t);
-            if (clone->value.sv_multi == NULL) {
-                free(clone);
-                return NULL;
-            }
-            for (i = 0; i < element->vm; i++) {
-                clone->value.sv_multi[i] = element->value.sv_multi[i];
-            }
-            clone->value_pointer = clone->value.sv_multi;
-        }
-    } else if (strcmp(element->vr, "US") == 0) {
-        if (element->value.us_multi) {
-            clone->value.us_multi = DCM_NEW_ARRAY(error, element->vm, uint16_t);
-            if (clone->value.us_multi == NULL) {
-                free(clone);
-                return NULL;
-            }
-            for (i = 0; i < element->vm; i++) {
-                clone->value.us_multi[i] = element->value.us_multi[i];
-            }
-            clone->value_pointer = clone->value.us_multi;
-        }
-    } else if (strcmp(element->vr, "UL") == 0) {
-        if (element->value.ul_multi) {
-            clone->value.ul_multi = DCM_NEW_ARRAY(error, element->vm, uint32_t);
-            if (clone->value.ul_multi == NULL) {
-                free(clone);
-                return NULL;
-            }
-            for (i = 0; i < element->vm; i++) {
-                clone->value.ul_multi[i] = element->value.ul_multi[i];
-            }
-            clone->value_pointer = clone->value.ul_multi;
-        }
-    } else if (strcmp(element->vr, "UV") == 0) {
-        if (element->value.uv_multi) {
-            clone->value.uv_multi = DCM_NEW_ARRAY(error, element->vm, uint64_t);
-            if (clone->value.uv_multi == NULL) {
-                free(clone);
-                return NULL;
-            }
-            for (i = 0; i < element->vm; i++) {
-                clone->value.uv_multi[i] = element->value.uv_multi[i];
-            }
-            clone->value_pointer = clone->value.uv_multi;
-        }
+        memcpy(clone->value.multi.fl,
+               element->value.multi.fl,
+               element->vm * size);
+        clone->value_pointer = clone->value.multi.fl;
     }
 
     return clone;
@@ -501,7 +414,7 @@ static bool check_value_str_multi(const DcmElement *element,
 }
 
 
-static bool set_value_str_multi(DcmElement *element,
+static bool set_value_multi_str(DcmElement *element,
                                 char **values,
                                 uint32_t vm,
                                 uint32_t capacity) {
@@ -514,7 +427,7 @@ static bool set_value_str_multi(DcmElement *element,
         }
         return false;
     }
-    element->value.str_multi = values;
+    element->value.multi.str = values;
     element->value_pointer_array = values;
     element->vm = vm;
     return true;

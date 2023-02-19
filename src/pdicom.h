@@ -47,3 +47,4 @@ void dcm_free_string_array(char **strings, int n);
 
 bool dcm_dict_vr_is_bytes(DcmVR vr);
 bool dcm_dict_vr_is_string(DcmVR vr);
+size_t dcm_dict_vr_size(DcmVR vr);

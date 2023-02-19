@@ -42,43 +42,43 @@ struct _DcmVRTable_hash_entry {
 
 /* This ordering must match the enum in dicom.h.
  *
- * enum     name    is_string   is_bytes    size
+ * enum     name    is_string   is_bytes    sizeof(value)
  */
 static const struct _DcmVRTable vr_table[] = {
     {DCM_VR_AE, "AE", true,  false, 1},
     {DCM_VR_AS, "AS", true,  false, 1},
-    {DCM_VR_AT, "AT", true,  false, 1},
+    {DCM_VR_AT, "AT", true,  false, sizeof(uint32_t)},
     {DCM_VR_CS, "CS", true,  false, 1},
     {DCM_VR_DA, "DA", true,  false, 1},
     {DCM_VR_DS, "DS", true,  false, 1},
     {DCM_VR_DT, "DT", false, false, 1},
-    {DCM_VR_FL, "FL", false, false, 1},
-    {DCM_VR_FD, "FD", false, false, 1},
+    {DCM_VR_FL, "FL", false, false, sizeof(float)},
+    {DCM_VR_FD, "FD", false, false, sizeof(double)},
     {DCM_VR_IS, "IS", true,  false, 1},
     {DCM_VR_LO, "LO", true,  false, 1},
     {DCM_VR_LT, "LT", true,  false, 1},
     {DCM_VR_OB, "OB", false, true,  1},
-    {DCM_VR_OD, "OD", false, true,  1},
-    {DCM_VR_OF, "OF", false, true,  1},
-    {DCM_VR_OW, "OW", false, false, 1},
+    {DCM_VR_OD, "OD", false, true,  sizeof(double)},
+    {DCM_VR_OF, "OF", false, true,  sizeof(float)},
+    {DCM_VR_OW, "OW", false, false, sizeof(uint16_t)},
     {DCM_VR_PN, "PN", true,  false, 1},
     {DCM_VR_SH, "SH", true,  false, 1},
-    {DCM_VR_SL, "SL", false, false, 1},
+    {DCM_VR_SL, "SL", false, false, sizeof(int32_t)},
     {DCM_VR_SQ, "SQ", false, false, 1},
-    {DCM_VR_SS, "SS", false, false, 1},
+    {DCM_VR_SS, "SS", false, false, sizeof(int16_t)},
     {DCM_VR_ST, "ST", true,  false, 1},
     {DCM_VR_TM, "TM", true,  false, 1},
     {DCM_VR_UI, "UI", true,  false, 1},
-    {DCM_VR_UL, "UL", false, false, 1},
+    {DCM_VR_UL, "UL", false, false, sizeof(uint32_t)},
     {DCM_VR_UN, "UN", false, true,  1},
-    {DCM_VR_US, "US", false, false, 1},
+    {DCM_VR_US, "US", false, false, sizeof(uint16_t)},
     {DCM_VR_UT, "UT", true,  false, 1},
     {DCM_VR_UR, "UR", true,  false, 1},
     {DCM_VR_UC, "UC", false, true,  1},
     {DCM_VR_OL, "OL", false, false, 1},
-    {DCM_VR_OV, "OV", false, true,  1},
-    {DCM_VR_SV, "SV", false, false, 1},
-    {DCM_VR_UV, "UV", false, false, 1},
+    {DCM_VR_OV, "OV", false, true,  sizeof(uint64_t)},
+    {DCM_VR_SV, "SV", false, false, sizeof(int64_t)},
+    {DCM_VR_UV, "UV", false, false, sizeof(uint64_t)},
     {DCM_VR_uk, "uk", false, false, 1},
 };
 
@@ -5103,6 +5103,16 @@ bool dcm_dict_vr_is_bytes(DcmVR vr)
     }
 
     return vr_table[(int)vr].is_bytes;
+}
+
+
+size_t dcm_dict_vr_size(DcmVR vr)
+{
+    if (vr < 0 || vr > DCM_VR_uk) {
+        return 1
+    }
+
+    return vr_table[(int)vr].size;
 }
 
 
