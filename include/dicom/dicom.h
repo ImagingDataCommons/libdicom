@@ -116,7 +116,7 @@ typedef SSIZE_T ssize_t;
 /**
  * Part10 file
  */
-typedef struct _DcmFile DcmFile;
+typedef struct _DcmFilehandle DcmFilehandle;
 
 /**
  * Data Element
@@ -2319,7 +2319,7 @@ void dcm_frame_destroy(DcmFrame *frame);
  *                 (measured from the first byte of the first Frame).
  * :param num_frames: Number of Frames in the Pixel Data Element
  * :first_frame_offset: Offset from pixel_data_offset to the first byte of the
- * 			first frame
+ *                      first frame
  *
  * The created object takes over ownership of the memory referenced by `offsets`
  * and frees it when the object is destroyed or if the creation fails.
@@ -2329,7 +2329,7 @@ void dcm_frame_destroy(DcmFrame *frame);
 DCM_EXTERN
 DcmBOT *dcm_bot_create(DcmError **error,
                        ssize_t *offsets, uint32_t num_frames, 
-		       ssize_t first_frame_offset);
+                       ssize_t first_frame_offset);
 
 /**
  * Get number of Frame offsets in the Basic Offset Table.
@@ -2374,7 +2374,7 @@ void dcm_bot_destroy(DcmBOT *bot);
  */
 
 /**
- * A set of IO functions, see dcm_file_create_io().
+ * A set of IO functions, see dcm_filehandle_create().
  */
 typedef struct _DcmIO {
     /** Open an IO object */
@@ -2388,69 +2388,73 @@ typedef struct _DcmIO {
 } DcmIO;
 
 /**
- * Create a File that reads using a set of DcmIO functions.
+ * Create a filehandle that reads using a set of DcmIO functions.
  *
  * :param error: Error structure pointer
- * :param io: Set of read functions for this DcmFile
+ * :param io: Set of read functions for this DcmFilehandle
  * :param client: Client data for read functions
  *
- * :return: file
+ * :return: filehandle
  */
 DCM_EXTERN
-DcmFile *dcm_file_create_io(DcmError **error, DcmIO *io, void *client); 
+DcmFilehandle *dcm_filehandle_create(DcmError **error, DcmIO *io, void *client); 
 
 /**
- * Open a file on disk as a DcmFile.
+ * Open a file on disk as a DcmFilehandle.
  *
  * :param error: Error structure pointer
- * :param file_path: Path to the file on disk
+ * :param filepath: Path to the file on disk
  *
- * :return: file
+ * :return: filehandle
  */
 DCM_EXTERN
-DcmFile *dcm_file_open(DcmError **error, const char *file_path);
+DcmFilehandle *dcm_filehandle_create_from_file(DcmError **error, 
+                                               const char *filepath);
 
 /**
- * Open an area of memory as a DcmFile.
+ * Open an area of memory as a DcmFilehandle.
  *
  * :param error: Error structure pointer
  * :param buffer: Pointer to memory area
  * :param length: Length of memory area in bytes
  *
- * :return: file
+ * :return: filehandle
  */
 DCM_EXTERN
-DcmFile *dcm_file_memory(DcmError **error, char *buffer, int64_t length);
+DcmFilehandle *dcm_filehandle_create_from_memory(DcmError **error, 
+                                                 char *buffer, int64_t length);
 
 /**
  * Read File Metainformation from a File.
  *
  * Keeps track of the offset of the Data Set relative to the beginning of the
- * file to speed up subsequent access and determines the transfer syntax in
- * which the contained Data Set is encoded.
+ * filehandle to speed up subsequent access, and determines the transfer 
+ * syntax in which the contained Data Set is encoded.
  *
  * :param error: Error structure pointer
- * :param file: File
+ * :param filehandle: File
  *
  * :return: File Metainformation
  */
 DCM_EXTERN
-DcmDataSet *dcm_file_read_file_meta(DcmError **error, DcmFile *file);
+DcmDataSet *dcm_filehandle_read_filehandle_meta(DcmError **error, 
+                                                DcmFilehandle *filehandle);
 
 /**
  * Read metadata from a File.
  *
  * Keeps track of the offset of the Pixel Data Element relative to the 
- * beginning of the file to speed up subsequent access to individual 
+ * beginning of the filehandle to speed up subsequent access to individual 
  * Frame items.
  *
  * :param error: Error structure pointer
- * :param file: File
+ * :param filehandle: File
  *
  * :return: metadata
  */
 DCM_EXTERN
-DcmDataSet *dcm_file_read_metadata(DcmError **error, DcmFile *file);
+DcmDataSet *dcm_filehandle_read_metadata(DcmError **error, 
+                                         DcmFilehandle *filehandle);
 
 /**
  * Read Basic Offset Table from a File.
@@ -2460,33 +2464,33 @@ DcmDataSet *dcm_file_read_metadata(DcmError **error, DcmFile *file);
  * Offset Table element will be read instead.
  *
  * :param error: Error structure pointer
- * :param file: File
+ * :param filehandle: File
  * :param metadata: Metadata
  *
  * :return: Basic Offset Table
  */
 DCM_EXTERN
-DcmBOT *dcm_file_read_bot(DcmError **error, DcmFile *file,
-                          DcmDataSet *metadata);
+DcmBOT *dcm_filehandle_read_bot(DcmError **error, DcmFilehandle *filehandle,
+                                DcmDataSet *metadata);
 
 /**
  * Build Basic Offset Table for a File.
  *
  * :param error: Error structure pointer
- * :param file: File
+ * :param filehandle: File
  * :param metadata: Metadata
  *
  * :return: Basic Offset Table
  */
 DCM_EXTERN
-DcmBOT *dcm_file_build_bot(DcmError **error, DcmFile *file, 
-			   DcmDataSet *metadata);
+DcmBOT *dcm_filehandle_build_bot(DcmError **error, DcmFilehandle *filehandle, 
+                                 DcmDataSet *metadata);
 
 /**
  * Read an individual Frame from a File.
  *
  * :param error: Error structure pointer
- * :param file: File
+ * :param filehandle: File
  * :param metadata: Metadata
  * :param bot: Basic Offset Table
  * :param index: Zero-based offset of the Frame in the Pixel Data Element
@@ -2494,18 +2498,18 @@ DcmBOT *dcm_file_build_bot(DcmError **error, DcmFile *file,
  * :return: Frame
  */
 DCM_EXTERN
-DcmFrame *dcm_file_read_frame(DcmError **error,
-                              DcmFile *file,
-                              DcmDataSet *metadata,
-                              DcmBOT *bot,
-                              uint32_t index);
+DcmFrame *dcm_filehandle_read_frame(DcmError **error,
+                                    DcmFilehandle *filehandle,
+                                    DcmDataSet *metadata,
+                                    DcmBOT *bot,
+                                    uint32_t index);
 
 /**
  * Destroy a File.
  *
- * :param file: File
+ * :param filehandle: File
  */
 DCM_EXTERN
-void dcm_file_destroy(DcmFile *file);
+void dcm_filehandle_destroy(DcmFilehandle *filehandle);
 
 #endif
