@@ -509,7 +509,7 @@ finish:
 static IHeader *read_item_header(DcmError **error, 
     DcmFile *file, int64_t *position)
 {
-    // length is only 32 bits a a DICOM file, though we use 64 internally
+    // length is only 32 bits in a DICOM file, though we use 64 internally
     uint32_t tag;
     uint32_t length;
     if (!read_tag(error, file, &tag, position) ||
@@ -635,20 +635,18 @@ static DcmElement *read_element(DcmError **error,
         eheader_check_vr(header, "DT") ||
         eheader_check_vr(header, "IS") ||  // Integer String
         eheader_check_vr(header, "LO") ||
-        eheader_check_vr(header, "LT") ||
         eheader_check_vr(header, "PN") ||
         eheader_check_vr(header, "SH") ||
-        eheader_check_vr(header, "ST") ||
         eheader_check_vr(header, "TM") ||
         eheader_check_vr(header, "UI") ||
-        eheader_check_vr(header, "UR") ||
-        eheader_check_vr(header, "UT")) {
+        eheader_check_vr(header, "UR")) {
         char *value = DCM_MALLOC(error, length + 1);
         if (value == NULL) {
             return NULL;
         }
 
         if (!dcm_require(error, file, value, length, position)) {
+            free(value);
             return NULL;
         }
 
@@ -688,66 +686,10 @@ static DcmElement *read_element(DcmError **error,
             return dcm_element_create_PN_multi(error, tag, strings, vm);
         } else if (eheader_check_vr(header, "SH")) {
             return dcm_element_create_SH_multi(error, tag, strings, vm);
-        } else if (eheader_check_vr(header, "ST")) {
-            // This VM shall always have VM 1.
-            if (vm != 1) {
-                dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                              "Reading of Data Element failed",
-                              "Encountered unexpected Value Multiplicity %d "
-                              "for Data Element '%08X'",
-                              vm, tag);
-                dcm_free_string_array(strings, vm);
-                return NULL;
-            }
-            char *str = strings[0];
-            free(strings);
-            return dcm_element_create_ST(error, tag, str);
         } else if (eheader_check_vr(header, "TM")) {
             return dcm_element_create_TM_multi(error, tag, strings, vm);
         } else if (eheader_check_vr(header, "UI")) {
             return dcm_element_create_UI_multi(error, tag, strings, vm);
-        } else if (eheader_check_vr(header, "LT")) {
-            // This VM shall always have VM 1.
-            if (vm != 1) {
-                dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                              "Reading of Data Element failed",
-                              "Encountered unexpected Value Multiplicity %d "
-                              "for Data Element '%08X'.",
-                              vm, tag);
-                dcm_free_string_array(strings, vm);
-                return NULL;
-            }
-            char *str = strings[0];
-            free(strings);
-            return dcm_element_create_LT(error, tag, str);
-        } else if (eheader_check_vr(header, "UR")) {
-            // This VM shall always have VM 1.
-            if (vm != 1) {
-                dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                              "Reading of Data Element failed",
-                              "Encountered unexpected Value Multiplicity %d "
-                              "for Data Element '%08X'.",
-                              vm, tag);
-                dcm_free_string_array(strings, vm);
-                return NULL;
-            }
-            char *str = strings[0];
-            free(strings);
-            return dcm_element_create_UR(error, tag, str);
-        } else if (eheader_check_vr(header, "UT")) {
-            // This VM shall always have VM 1.
-            if (vm != 1) {
-                dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                              "Reading of Data Element failed",
-                              "Encountered unexpected Value Multiplicity %d "
-                              "for Data Element '%08X'",
-                              vm, tag);
-                dcm_free_string_array(strings, vm);
-                return NULL;
-            }
-            char *str = strings[0];
-            free(strings);
-            return dcm_element_create_UT(error, tag, str);
         } else {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                           "Reading of Data Element failed",
@@ -755,6 +697,42 @@ static DcmElement *read_element(DcmError **error,
                           "for Data Element '%08X'",
                           tag);
             dcm_free_string_array(strings, vm);
+            return NULL;
+        }
+    } else if (eheader_check_vr(header, "UT") ||
+        eheader_check_vr(header, "LT") ||
+        eheader_check_vr(header, "ST") ||
+        eheader_check_vr(header, "UR")) {
+        // unparsed character strings
+        char *value = DCM_MALLOC(error, length + 1);
+        if (value == NULL) {
+            return NULL;
+        }
+
+        if (!dcm_require(error, file, value, length, position)) {
+            free(value);
+            return NULL;
+        }
+
+        /* C-style \0 terminate.
+         */
+        value[length] = '\0';
+
+        if (eheader_check_vr(header, "UT")) {
+            return dcm_element_create_UT(error, tag, value);
+        } else if (eheader_check_vr(header, "LT")) {
+            return dcm_element_create_LT(error, tag, value);
+        } else if (eheader_check_vr(header, "ST")) {
+            return dcm_element_create_ST(error, tag, value);
+        } else if (eheader_check_vr(header, "UR")) {
+            return dcm_element_create_UR(error, tag, value);
+        } else {
+            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                          "Reading of Data Element failed",
+                          "Encountered unexpected Value Representation "
+                          "for Data Element '%08X'",
+                          tag);
+            free(value);
             return NULL;
         }
     } else if (eheader_check_vr(header, "SQ")) {
@@ -1384,6 +1362,7 @@ DcmBOT *dcm_file_read_bot(DcmError **error, DcmFile *file, DcmDataSet *metadata)
         return NULL;
     }
 
+    // measure distance to first frame from pixel_data_offset
     int64_t position = 0;
     EHeader *eheader = read_element_header(error, file, 
                                            &position, false);
@@ -1421,6 +1400,7 @@ DcmBOT *dcm_file_read_bot(DcmError **error, DcmFile *file, DcmDataSet *metadata)
 
     // The BOT Item must be present, but the value is optional
     uint32_t item_length = iheader_get_length(iheader);
+    ssize_t first_frame_offset;
     iheader_destroy(iheader);
     if (item_length > 0) {
         dcm_log_info("Read Basic Offset Table value.");
@@ -1444,8 +1424,11 @@ DcmBOT *dcm_file_read_bot(DcmError **error, DcmFile *file, DcmDataSet *metadata)
 
             offsets[i] = value;
         }
+
+        // and that's the offset to the item header on the first frame
+        first_frame_offset = position;
     } else {
-        dcm_log_info("Basic Offset Table is empty.");
+        dcm_log_info("Basic Offset Table is empty");
         // Handle Extended Offset Table attribute
         const DcmElement *eot_element = dcm_dataset_contains(metadata, 
                                                              0x7FE00001);
@@ -1468,12 +1451,12 @@ DcmBOT *dcm_file_read_bot(DcmError **error, DcmFile *file, DcmDataSet *metadata)
                 offsets[i] = value;
                 blob = end_ptr;
             }
-            // FIXME we should return the eot I guess?
+            // FIXME we should return the bot I guess?
         }
         return NULL;
     }
 
-    return dcm_bot_create(error, offsets, num_frames);
+    return dcm_bot_create(error, offsets, num_frames, first_frame_offset);
 }
 
 
@@ -1541,8 +1524,8 @@ static struct PixelDescription *create_pixel_description(DcmError **error,
         free(desc);
         return NULL;
     }
-    desc->photometric_interpretation = dcm_strdup(error,
-                                                  dcm_element_get_value_CS(element, 0));
+    desc->photometric_interpretation = 
+        dcm_strdup(error, dcm_element_get_value_CS(element, 0));
     if (desc->photometric_interpretation == NULL) {
         free(desc);
         return NULL;
@@ -1596,6 +1579,8 @@ DcmBOT *dcm_file_build_bot(DcmError **error,
     if (!dcm_seekset(error, file, file->pixel_data_offset)) {
         return NULL;
     }
+
+    // we measure offsets from this point
     int64_t position = 0;
 
     EHeader *eheader = read_element_header(error, 
@@ -1607,7 +1592,7 @@ DcmBOT *dcm_file_build_bot(DcmError **error,
         eheader_tag != TAG_DOUBLE_PIXEL_DATA) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                       "Building Basic Offset Table failed",
-                      "File pointer not positioned at Pixel Data Element");
+                      "Pixel data offset not positioned at Pixel Data Element");
         return NULL;
     }
 
@@ -1615,6 +1600,8 @@ DcmBOT *dcm_file_build_bot(DcmError **error,
     if (offsets == NULL) {
         return NULL;
     }
+
+    ssize_t first_frame_offset;
 
     if (dcm_is_encapsulated_transfer_syntax(file->transfer_syntax_uid)) {
         // The header of the BOT Item
@@ -1639,14 +1626,18 @@ DcmBOT *dcm_file_build_bot(DcmError **error,
         item_length = iheader_get_length(iheader);
         iheader_destroy(iheader);
 
-        // Move filepointer to first byte of first Frame item
-        // FIXME ... absolute seek? is this right?
-        if (!dcm_seekset(error, file, item_length)) {
+        // Move filepointer to the first byte of first Frame item
+        if (!dcm_seekcur(error, file, item_length, &position)) {
             free(offsets);
         }
 
-        i = 0;
+        // and that's the offset to the first frame
+        first_frame_offset = position;
+
+        // now measure positions from the start of the first frame
         position = 0;
+
+        i = 0;
         while (true) {
             iheader = read_item_header(error, file, &position);
             if (iheader == NULL) {
@@ -1673,7 +1664,8 @@ DcmBOT *dcm_file_build_bot(DcmError **error,
                 break;
             }
 
-            offsets[i] = position;
+            // step back to the start of the item for this frame
+            offsets[i] = position - 8;
 
             item_length = iheader_get_length(iheader);
             iheader_destroy(iheader);
@@ -1707,9 +1699,12 @@ DcmBOT *dcm_file_build_bot(DcmError **error,
                          desc->samples_per_pixel;
         }
         destroy_pixel_description(desc);
+
+        // Header of Pixel Data Element
+        first_frame_offset = 10;
     }
 
-    return dcm_bot_create(error, offsets, num_frames);
+    return dcm_bot_create(error, offsets, num_frames, first_frame_offset);
 }
 
 
@@ -1719,7 +1714,6 @@ DcmFrame *dcm_file_read_frame(DcmError **error,
                               DcmBOT *bot,
                               uint32_t number)
 {
-    ssize_t first_frame_offset, total_frame_offset;
     uint32_t length;
 
     dcm_log_debug("Read Frame Item #%d.", number);
@@ -1729,19 +1723,9 @@ DcmFrame *dcm_file_read_frame(DcmError **error,
                       "Frame Number must be positive");
         return NULL;
     }
-    ssize_t frame_offset = dcm_bot_get_frame_offset(bot, number);
-    uint32_t num_frames = dcm_bot_get_num_frames(bot);
-    if (dcm_is_encapsulated_transfer_syntax(file->transfer_syntax_uid)) {
-        // Header of Pixel Data Element and Basic Offset Table
-        first_frame_offset = 12 + 8 + 4 * num_frames;
-    } else {
-        // Header of Pixel Data Element
-        first_frame_offset = 10;
-    }
 
-    total_frame_offset = file->pixel_data_offset +
-                         first_frame_offset +
-                         frame_offset;
+    ssize_t frame_offset = dcm_bot_get_frame_offset(bot, number);
+    ssize_t total_frame_offset = file->pixel_data_offset + frame_offset;
     if (!dcm_seekset(error, file, total_frame_offset)) {
         return NULL;
     }

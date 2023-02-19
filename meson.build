@@ -178,12 +178,25 @@ executable(
   dependencies : [libdicom_dep],
   install : true,
 )
+executable(
+  'dcm-getframe',
+  'tools/dcm-getframe.c',
+  dependencies : [libdicom_dep],
+  install : true,
+)
+
 dcm_dump_man = configure_file(
   input : 'tools/dcm-dump.1.in',
   output : 'dcm-dump.1',
   configuration : version_data,
 )
 install_man(dcm_dump_man)
+dcm_getframe_man = configure_file(
+  input : 'tools/dcm-getframe.1.in',
+  output : 'dcm-getframe.1',
+  configuration : version_data,
+)
+install_man(dcm_getframe_man)
 
 # docs
 subdir('doc/env/bin')
