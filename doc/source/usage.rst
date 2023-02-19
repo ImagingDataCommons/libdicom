@@ -84,7 +84,7 @@ is destroyed, all contained Data Sets are also automatically destroyed.
 A File (:c:type:`DcmFile`) enables access of a `DICOM file
 <http://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_3.html#glossentry_DICOMFile>`_,
 which contains an encoded Data Set representing a SOP Instance.
-A File can be created via :c:func:`dcm_file_create()` and
+A File can be created via :c:func:`dcm_file_open()` and
 destroyed via :c:func:`dcm_file_destroy()`, which opens a Part10
 file stored on disk and closes it, respectively.  The content of a
 Part10 file can be read using various functions.  The `File Meta Information
@@ -144,7 +144,7 @@ For example:
         const char *file_path = "does not exist";
         DcmError *error = NULL;
 
-        DcmFile *file = dcm_file_create(&error, file_path, 'r');
+        DcmFile *file = dcm_file_open(&error, file_path);
         if (file == NULL) {
             printf("error detected: %s\n", dcm_error_code_str(dcm_error_code(error)));
             printf("summary: %s\n", dcm_error_summary(error));
@@ -158,6 +158,14 @@ For example:
         return 0;
     }
 
+Load from memory
+++++++++++++++++
+
+As well as :c:func:`dcm_file_open()`, there's :c:func:`dcm_memory_open()`
+to make a DcmFile from a memory area containing a DICOM image. You
+can make your own load functions to load from other IO sources, see
+:c:func:`dcm_file_create_io()`.
+
 Getting started
 +++++++++++++++
 
@@ -167,13 +175,13 @@ printing it to standard output:
 .. code:: c
 
     #include <stdlib.h>
-    #include <dicom.h>
+    #include <dicom/dicom.h>
 
     int main() {
         const char *file_path = "/path/to/file.dcm";
         DcmError *error = NULL;
 
-        DcmFile *file = dcm_file_create(&error, file_path, 'r');
+        DcmFile *file = dcm_file_open(&error, file_path);
         if (file == NULL) {
             dcm_error_log(error);
             dcm_error_clear(&error);

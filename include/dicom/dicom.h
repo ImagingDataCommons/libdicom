@@ -2372,16 +2372,53 @@ void dcm_bot_destroy(DcmBOT *bot);
  */
 
 /**
- * Create a File.
+ * A set of IO functions, see dcm_file_create_io().
+ */
+typedef struct _DcmIO {
+    /** Open an IO object */
+    void *(*open)(DcmError **error, void *client);
+    /** Close an IO object */
+    int (*close)(DcmError **error, void *data);
+    /** Read from an IO object, semantics as POSIX read() */
+    int64_t (*read)(DcmError **error, void *data, char *buffer, int64_t length);
+    /** Seek an IO object, semantics as POSIX seek() */
+    int64_t (*seek)(DcmError **error, void *data, int64_t offset, int whence);
+} DcmIO;
+
+/**
+ * Create a File that reads using a set of DcmIO functions.
  *
- * :param file_path: Path to the file on disk.
- * :param mode: File Mode to use when opening the file.
+ * :param error: Error structure pointer
+ * :param io: Set of read functions for this DcmFile
+ * :param client: Client data for read functions
  *
  * :return: file
  */
 DCM_EXTERN
-DcmFile *dcm_file_create(DcmError **error, 
-                         const char *file_path, const char mode);
+DcmFile *dcm_file_create_io(DcmError **error, DcmIO *io, void *client); 
+
+/**
+ * Open a file on disk as a DcmFile.
+ *
+ * :param error: Error structure pointer
+ * :param file_path: Path to the file on disk
+ *
+ * :return: file
+ */
+DCM_EXTERN
+DcmFile *dcm_file_open(DcmError **error, const char *file_path);
+
+/**
+ * Open an area of memory as a DcmFile.
+ *
+ * :param error: Error structure pointer
+ * :param buffer: Pointer to memory area
+ * :param length: Length of memory area in bytes
+ *
+ * :return: file
+ */
+DCM_EXTERN
+DcmFile *dcm_file_memory(DcmError **error, char *buffer, int64_t length);
 
 /**
  * Read File Metainformation from a File.
@@ -2427,9 +2464,8 @@ DcmDataSet *dcm_file_read_metadata(DcmError **error, DcmFile *file);
  * :return: Basic Offset Table
  */
 DCM_EXTERN
-DcmBOT *dcm_file_read_bot(DcmError **error,
-                          const DcmFile *file,
-                          const DcmDataSet *metadata);
+DcmBOT *dcm_file_read_bot(DcmError **error, DcmFile *file,
+                          DcmDataSet *metadata);
 
 /**
  * Build Basic Offset Table for a File.
@@ -2441,8 +2477,8 @@ DcmBOT *dcm_file_read_bot(DcmError **error,
  * :return: Basic Offset Table
  */
 DCM_EXTERN
-DcmBOT *dcm_file_build_bot(DcmError **error,
-                           const DcmFile *file, const DcmDataSet *metadata);
+DcmBOT *dcm_file_build_bot(DcmError **error, DcmFile *file, 
+			   DcmDataSet *metadata);
 
 /**
  * Read an individual Frame from a File.
@@ -2457,9 +2493,9 @@ DcmBOT *dcm_file_build_bot(DcmError **error,
  */
 DCM_EXTERN
 DcmFrame *dcm_file_read_frame(DcmError **error,
-                              const DcmFile *file,
-                              const DcmDataSet *metadata,
-                              const DcmBOT *bot,
+                              DcmFile *file,
+                              DcmDataSet *metadata,
+                              DcmBOT *bot,
                               uint32_t index);
 
 /**

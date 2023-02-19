@@ -1,29 +1,12 @@
 # TODO
 
-# IO vfuncs
+# bot support
 
-- wrappers for read() / seek() / etc. that include error checks 
+- need more tests and test images
 
-  part of allowing your own read funcs
+- extended offset table support seems to be broken? see FIXME comment
 
-  use posix open() / close() / read() / seek() semantics, not stdio, or we'll 
-  need ferror and feof as well
-
-	void *(*open)(DcmError **error, void *client);
-	int (*close)(DcmError **error, void *data);
-        int64_t (*read)(DcmError **error, void *data, 
-		char *buffer, size_t length );
-        int64_t (*seek)(DcmError **error void *data, 
-		int64_t offset, int whence);
-
-  add something to loop on read if we must have length bytes
-
-  * struct DcmIO holding those four funcs
-
-  * dcm_file_create_io() where you pass in an io object plus a 
-    client pointer (eg. filename)
-
-  * reimplement dcm_file_create() on top of this, include buffering
+- add something to read BOT to dcm-dump? or add dcm-getframe?
 
 
 # less copy-paste
@@ -39,6 +22,7 @@
 - element->vr should be an enum (not "UL" etc.)
 	- swap all the strcmps for ==
 
+- benchmark against the original 
 
 # data types
 
@@ -65,10 +49,6 @@
 
 
 # asserts
-
-- disable assert in production builds
-	there's eg. assert_vr() too, check this
-	what does DCM_DEBUG_ONLY() mean? is this sanity checking?
 
 - should the foreach funcs take two params (one for error)? are they used?
 

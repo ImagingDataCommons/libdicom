@@ -92,6 +92,12 @@ cfg.set_quoted(
   description : 'Define to the path to the source directory.',
 )
 
+if cc.has_header('io.h')
+    cfg.set('HAVE_IO_H', '1')
+endif
+if cc.has_header('unistd.h')
+    cfg.set('HAVE_UNISTD_H', '1')
+endif
 # we use a constructor attr for dcm_init()
 code = '''#include<stdio.h>
 __attribute__ ((constructor)) void func() { printf("constructor\n"); }
@@ -136,6 +142,7 @@ library_includes = include_directories('include')
 library_options = ['-DBUILDING_LIBDICOM']
 library_sources = [
   'src/dicom.c',
+  'src/dicom-io.c',
   'src/dicom-data.c',
   'src/dicom-dict.c',
   'src/dicom-file.c',
