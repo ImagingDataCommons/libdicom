@@ -113,6 +113,7 @@ struct _DcmFrame {
 struct _DcmBOT {
     uint32_t num_frames;
     ssize_t *offsets;
+    ssize_t first_frame_offset;
 };
 
 
@@ -2309,7 +2310,9 @@ void dcm_frame_destroy(DcmFrame *frame)
 
 // Basic Offset Table
 
-DcmBOT *dcm_bot_create(DcmError **error, ssize_t *offsets, uint32_t num_frames)
+DcmBOT *dcm_bot_create(DcmError **error, 
+                       ssize_t *offsets, uint32_t num_frames, 
+                       ssize_t first_frame_offset)
 {
     if (num_frames == 0) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
@@ -2333,6 +2336,7 @@ DcmBOT *dcm_bot_create(DcmError **error, ssize_t *offsets, uint32_t num_frames)
     }
     bot->num_frames = num_frames;
     bot->offsets = offsets;
+    bot->first_frame_offset = first_frame_offset;
     return bot;
 }
 
@@ -2344,10 +2348,11 @@ void dcm_bot_print(const DcmBOT *bot)
 
     printf("[");
     for(i = 0; i < bot->num_frames; i++) {
+        printf("%zd", bot->offsets[i] + bot->first_frame_offset);
         if (i == (bot->num_frames - 1)) {
-            printf("%zd]\n", bot->offsets[i]);
+            printf("]\n");
         } else {
-            printf("%zd,", bot->offsets[i]);
+            printf(",");
         }
     }
 }
@@ -2365,7 +2370,7 @@ ssize_t dcm_bot_get_frame_offset(const DcmBOT *bot, uint32_t number)
     assert(bot);
     assert(number > 0 && number < bot->num_frames + 1);
     uint32_t index = number - 1;
-    return bot->offsets[index];
+    return bot->offsets[index] + bot->first_frame_offset;
 }
 
 

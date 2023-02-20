@@ -16,7 +16,7 @@ static const char usage[] = "usage: dcm-getframe [-v] [-V] [-h] [-o OUTPUT-FILE]
 int main(int argc, char *argv[]) 
 {
     DcmError *error = NULL;
-    char *output_file = NULL;
+    char *output_filehandle = NULL;
     int i;
 
     dcm_log_level = DCM_LOG_ERROR;
@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
                 dcm_log_level = DCM_LOG_INFO;
                 break;
             case 'o':
-                output_file = argv[i + 1];
+                output_filehandle = argv[i + 1];
                 i += 1;
                 break;
             default:
@@ -50,30 +50,38 @@ int main(int argc, char *argv[])
 
     uint32_t frame_number = atoi(argv[i + 1]);
 
-    dcm_log_info("Read file '%s'", file_path);
-    DcmFile *file = dcm_file_open(&error, file_path);
-    if (file == NULL) {
+    dcm_log_info("Read filehandle '%s'", file_path);
+    DcmFilehandle *filehandle = dcm_filehandle_create_from_file(&error, 
+                                                                file_path);
+    if (filehandle == NULL) {
         dcm_error_log(error);
         dcm_error_clear(&error);
         return EXIT_FAILURE;
     }
 
     dcm_log_info("Read metadata");
-    DcmDataSet *metadata = dcm_file_read_metadata(&error, file);
+    DcmDataSet *metadata = dcm_filehandle_read_metadata(&error, filehandle);
     if (metadata == NULL) {
         dcm_error_log(error);
         dcm_error_clear(&error);
-        dcm_file_destroy(file);
+        dcm_filehandle_destroy(filehandle);
         return EXIT_FAILURE;
     }
 
     dcm_log_info("Read BOT");
-    DcmBOT *bot = dcm_file_read_bot(&error, file, metadata);
+    DcmBOT *bot = dcm_filehandle_read_bot(&error, filehandle, metadata);
+    if (bot == NULL) {
+        /* Try to build the BOT instead.
+         */
+        dcm_error_clear(&error);
+        dcm_log_info("Build BOT");
+        bot = dcm_filehandle_build_bot(&error, filehandle, metadata);
+    }
     if (bot == NULL) {
         dcm_error_log(error);
         dcm_error_clear(&error);
         dcm_dataset_destroy(metadata);
-        dcm_file_destroy(file);
+        dcm_filehandle_destroy(filehandle);
         return EXIT_FAILURE;
     }
 
@@ -87,19 +95,20 @@ int main(int argc, char *argv[])
         dcm_error_clear(&error);
         dcm_bot_destroy(bot);
         dcm_dataset_destroy(metadata);
-        dcm_file_destroy(file);
+        dcm_filehandle_destroy(filehandle);
         return EXIT_FAILURE;
     }
 
     dcm_log_info("Read frame %u", frame_number);
-    DcmFrame *frame = dcm_file_read_frame(&error, 
-                                          file, metadata, bot, frame_number);
+    DcmFrame *frame = dcm_filehandle_read_frame(&error, 
+                                                filehandle, metadata, 
+                                                bot, frame_number);
     if (frame == NULL) {
         dcm_error_log(error);
         dcm_error_clear(&error);
         dcm_bot_destroy(bot);
         dcm_dataset_destroy(metadata);
-        dcm_file_destroy(file);
+        dcm_filehandle_destroy(filehandle);
         return EXIT_FAILURE;
     }
 
@@ -125,12 +134,12 @@ int main(int argc, char *argv[])
                  dcm_frame_get_transfer_syntax_uid(frame));
 
     FILE *output_fp;
-    if (output_file != NULL) {
-        output_fp = fopen(output_file, "wb");
+    if (output_filehandle != NULL) {
+        output_fp = fopen(output_filehandle, "wb");
         if (output_fp == NULL) {
             dcm_error_set(&error, DCM_ERROR_CODE_INVALID,
-                          "Bad output file name",
-                          "Unable to open %s for output", output_file);
+                          "Bad output filehandle name",
+                          "Unable to open %s for output", output_filehandle);
         }
     }
     else
@@ -138,7 +147,7 @@ int main(int argc, char *argv[])
 
     fwrite(frame_value, 1, frame_length, output_fp);
 
-    if (output_file != NULL) {
+    if (output_filehandle != NULL) {
         fclose(output_fp);
         output_fp = NULL;
     }
@@ -146,7 +155,7 @@ int main(int argc, char *argv[])
     dcm_frame_destroy(frame);
     dcm_bot_destroy(bot);
     dcm_dataset_destroy(metadata);
-    dcm_file_destroy(file);
+    dcm_filehandle_destroy(filehandle);
 
     return EXIT_SUCCESS;
 }

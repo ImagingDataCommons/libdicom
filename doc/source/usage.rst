@@ -81,22 +81,23 @@ are immutable (locked).  When a Data Set is removed from a sequence, the
 Data Set is destroyed (i.e., the allocated memory is freed).  When a Sequence
 is destroyed, all contained Data Sets are also automatically destroyed.
 
-A File (:c:type:`DcmFile`) enables access of a `DICOM file
+A Filehandle (:c:type:`DcmFilehandle`) enables access of a `DICOM file
 <http://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_3.html#glossentry_DICOMFile>`_,
 which contains an encoded Data Set representing a SOP Instance.
-A File can be created via :c:func:`dcm_file_open()` and
-destroyed via :c:func:`dcm_file_destroy()`, which opens a Part10
-file stored on disk and closes it, respectively.  The content of a
-Part10 file can be read using various functions.  The `File Meta Information
+A Filehandle can be created via :c:func:`dcm_filehandle_create_from_file()`
+and destroyed via :c:func:`dcm_filehandle_destroy()`, which open a
+Part10 file stored on disk and closes it, respectively.  The content of
+a Part10 file can be read using various functions.  The `File Meta Information
 <http://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_3.html#glossentry_FileMetaInformation>`_
-can be read via :c:func:`dcm_file_read_file_meta()`.  The metadata of
-the Data Set (i.e., all Data Elements with the exception of the Pixel
-Data Element) can be read via :c:func:`dcm_file_read_metadata()`.
+can be read via :c:func:`dcm_filehandle_read_file_meta()`.  The metadata
+of the Data Set (i.e., all Data Elements with the exception of the Pixel
+Data Element) can be read via :c:func:`dcm_filehandle_read_metadata()`.
 In case the Data Set contained in a Part10 file represents an Image
 instance, individual Frame Items of the Pixel Data Element can be read
-via :c:func:`dcm_file_read_frame()` using a Basic Offset Table (BOT) Item.
-The BOT Item may either be read from a File via :c:func:`dcm_file_read_bot()`
-or built for a File via :c:func:`dcm_file_build_bot()`.
+via :c:func:`dcm_filehandle_read_frame()` using a Basic Offset Table
+(BOT) Item.  The BOT Item may either be read from a Filehandle via
+:c:func:`dcm_filehandle_read_bot()` or built for a Filehandle via
+:c:func:`dcm_filehandle_build_bot()`.
 
 Thread safety
 +++++++++++++
@@ -105,10 +106,10 @@ Data Elements are immutable and cannot be modified after creation.
 Data Sets are generally mutable (i.e., Data Elements can be inserted or
 removed), but they can be locked to prevent subsequent modification via
 :c:func:`dcm_dataset_lock()`.  A Data Set is automatically locked when
-retrieved from a Sequence via :c:func:`dcm_sequence_get()` or read from a
-File via :c:func:`dcm_file_read_metadata()`.  Sequences are also mutable
-(i.e., Data Sets can be appended or removed), but they can be locked
-to prevent subsequent modification via :c:func:`dcm_sequence_lock()`.
+retrieved from a Sequence via :c:func:`dcm_sequence_get()` or read from
+a Filehandle via :c:func:`dcm_filehandle_read_metadata()`.  Sequences are
+also mutable (i.e., Data Sets can be appended or removed), but they can be
+locked to prevent subsequent modification via :c:func:`dcm_sequence_lock()`.
 A Sequence is automatically locked when used as a value in a Data Element
 with Value Representation SQ (Sequence of Items).
 
@@ -144,8 +145,8 @@ For example:
         const char *file_path = "does not exist";
         DcmError *error = NULL;
 
-        DcmFile *file = dcm_file_open(&error, file_path);
-        if (file == NULL) {
+        DcmFilehandle *filehandle = dcm_filehandle_create_from_file(&error, file_path);
+        if (filehandle == NULL) {
             printf("error detected: %s\n", dcm_error_code_str(dcm_error_code(error)));
             printf("summary: %s\n", dcm_error_summary(error));
             printf("message: %s\n", dcm_error_message(error));
@@ -153,7 +154,7 @@ For example:
             return 1;
         }
 
-        dcm_file_destroy(file);
+        dcm_filehandle_destroy(filehandle);
 
         return 0;
     }
@@ -161,10 +162,10 @@ For example:
 Load from memory
 ++++++++++++++++
 
-As well as :c:func:`dcm_file_open()`, there's :c:func:`dcm_memory_open()`
-to make a DcmFile from a memory area containing a DICOM image. You
-can make your own load functions to load from other IO sources, see
-:c:func:`dcm_file_create_io()`.
+As well as :c:func:`dcm_filehandle_create_from_file()`, there's
+:c:func:`dcm_filehandle_create_from_memory()` to make a DcmFilehandle from
+a memory area containing a DICOM image. You can make your own load functions
+to load from other IO sources, see :c:func:`dcm_filehandle_create()`.
 
 Getting started
 +++++++++++++++
@@ -181,23 +182,23 @@ printing it to standard output:
         const char *file_path = "/path/to/file.dcm";
         DcmError *error = NULL;
 
-        DcmFile *file = dcm_file_open(&error, file_path);
-        if (file == NULL) {
+        DcmFilehandle *filehandle = dcm_filehandle_create_from_file(&error, file_path);
+        if (filehandle == NULL) {
             dcm_error_log(error);
             dcm_error_clear(&error);
             return 1;
         }
 
-        DcmDataSet *metadata = dcm_file_read_metadata(&error, file);
+        DcmDataSet *metadata = dcm_filehandle_read_metadata(&error, filehandle);
         if (metadata == NULL) {
             dcm_error_log(error);
             dcm_error_clear(&error);
-            dcm_file_destroy(file);
+            dcm_filehandle_destroy(filehandle);
             return 1;
         }
         dcm_dataset_print(metadata, 0);
 
-        dcm_file_destroy(file);
+        dcm_filehandle_destroy(filehandle);
         dcm_dataset_destroy(metadata);
 
         return 0;

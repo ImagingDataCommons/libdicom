@@ -16,8 +16,8 @@ int main(int argc, char *argv[])
     const char *file_path = NULL;
     DcmError *error = NULL;
     DcmDataSet *metadata = NULL;
-    DcmDataSet *file_meta = NULL;
-    DcmFile *file = NULL;
+    DcmDataSet *filehandle_meta = NULL;
+    DcmFilehandle *filehandle = NULL;
 
     dcm_log_level = DCM_LOG_ERROR;
 
@@ -44,40 +44,40 @@ int main(int argc, char *argv[])
     }
     file_path = argv[i];
 
-    dcm_log_info("Read file '%s'", file_path);
-    file = dcm_file_open(&error, file_path);
-    if (file == NULL) {
+    dcm_log_info("Read filehandle '%s'", file_path);
+    filehandle = dcm_filehandle_create_from_file(&error, file_path);
+    if (filehandle == NULL) {
         dcm_error_log(error);
         dcm_error_clear(&error);
         return EXIT_FAILURE;
     }
     dcm_log_info("Read File Meta Information");
-    file_meta = dcm_file_read_file_meta(&error, file);
-    if (file_meta == NULL) {
+    filehandle_meta = dcm_filehandle_read_filehandle_meta(&error, filehandle);
+    if (filehandle_meta == NULL) {
         dcm_error_log(error);
         dcm_error_clear(&error);
-        dcm_file_destroy(file);
+        dcm_filehandle_destroy(filehandle);
         return EXIT_FAILURE;
     }
 
     printf("===File Meta Information===\n");
-    dcm_dataset_print(file_meta, 0);
+    dcm_dataset_print(filehandle_meta, 0);
 
     dcm_log_info("Read metadata");
-    metadata = dcm_file_read_metadata(&error, file);
+    metadata = dcm_filehandle_read_metadata(&error, filehandle);
     if (metadata == NULL) {
         dcm_error_log(error);
         dcm_error_clear(&error);
-        dcm_file_destroy(file);
-        dcm_dataset_destroy(file_meta);
+        dcm_filehandle_destroy(filehandle);
+        dcm_dataset_destroy(filehandle_meta);
         return EXIT_FAILURE;
     }
 
     printf("===Dataset===\n");
     dcm_dataset_print(metadata, 0);
 
-    dcm_file_destroy(file);
-    dcm_dataset_destroy(file_meta);
+    dcm_filehandle_destroy(filehandle);
+    dcm_dataset_destroy(filehandle_meta);
     dcm_dataset_destroy(metadata);
 
     return EXIT_SUCCESS;

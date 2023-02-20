@@ -46,7 +46,7 @@ static size_t compute_length_of_string_value_multi(char **values, uint32_t vm)
 }
 
 
-static char *load_file_to_memory(const char *name, long *length_out)
+static char *load_filehandle_to_memory(const char *name, long *length_out)
 {
     FILE *fp;
 
@@ -93,8 +93,8 @@ START_TEST(test_error)
 {
     DcmError *error = NULL;
 
-    DcmFile *file = dcm_file_open(&error, "banana");
-    ck_assert_ptr_null(file);
+    DcmFilehandle *filehandle = dcm_filehandle_create_from_file(&error, "banana");
+    ck_assert_ptr_null(filehandle);
     ck_assert_ptr_nonnull(error);
 
     ck_assert_int_eq(dcm_error_code(error), DCM_ERROR_CODE_IO);
@@ -506,44 +506,44 @@ START_TEST(test_dataset)
 END_TEST
 
 
-START_TEST(test_file_sm_image_file_meta)
+START_TEST(test_filehandle_sm_image_filehandle_meta)
 {
     uint32_t tag;
     DcmElement *element;
 
     char *file_path = fixture_path("data/test_files/sm_image.dcm");
-    DcmFile *file = dcm_file_open(NULL, file_path);
+    DcmFilehandle *filehandle = dcm_filehandle_create_from_file(NULL, file_path);
     free(file_path);
 
-    DcmDataSet *file_meta = dcm_file_read_file_meta(NULL, file);
+    DcmDataSet *filehandle_meta = dcm_filehandle_read_filehandle_meta(NULL, filehandle);
 
     // Transfer Syntax UID
     tag = 0x00020010;
-    element = dcm_dataset_get(NULL, file_meta, tag);
+    element = dcm_dataset_get(NULL, filehandle_meta, tag);
     ck_assert_str_eq(dcm_element_get_value_UI(element, 0),
                      "1.2.840.10008.1.2.1");
 
     // Media Storage SOP Class UID
     tag = 0x00020002;
-    element = dcm_dataset_get(NULL, file_meta, tag);
+    element = dcm_dataset_get(NULL, filehandle_meta, tag);
     ck_assert_str_eq(dcm_element_get_value_UI(element, 0),
                      "1.2.840.10008.5.1.4.1.1.77.1.6");
 
-    dcm_dataset_print(file_meta, 0);
+    dcm_dataset_print(filehandle_meta, 0);
 
-    dcm_dataset_destroy(file_meta);
-    dcm_file_destroy(file);
+    dcm_dataset_destroy(filehandle_meta);
+    dcm_filehandle_destroy(filehandle);
 }
 END_TEST
 
 
-START_TEST(test_file_sm_image_metadata)
+START_TEST(test_filehandle_sm_image_metadata)
 {
     char *file_path = fixture_path("data/test_files/sm_image.dcm");
-    DcmFile *file = dcm_file_open(NULL, file_path);
+    DcmFilehandle *filehandle = dcm_filehandle_create_from_file(NULL, file_path);
     free(file_path);
 
-    DcmDataSet *metadata = dcm_file_read_metadata(NULL, file);
+    DcmDataSet *metadata = dcm_filehandle_read_metadata(NULL, filehandle);
 
     // SOP Class UID
     DcmElement *element = dcm_dataset_get(NULL, metadata, 0x00080016);
@@ -553,26 +553,26 @@ START_TEST(test_file_sm_image_metadata)
     dcm_dataset_print(metadata, 0);
 
     dcm_dataset_destroy(metadata);
-    dcm_file_destroy(file);
+    dcm_filehandle_destroy(filehandle);
 }
 END_TEST
 
 
-START_TEST(test_file_sm_image_frame)
+START_TEST(test_filehandle_sm_image_frame)
 {
     const uint32_t frame_number = 1;
 
     char *file_path = fixture_path("data/test_files/sm_image.dcm");
-    DcmFile *file = dcm_file_open(NULL, file_path);
+    DcmFilehandle *filehandle = dcm_filehandle_create_from_file(NULL, file_path);
     free(file_path);
-    ck_assert_ptr_nonnull(file);
+    ck_assert_ptr_nonnull(filehandle);
 
-    DcmDataSet *metadata = dcm_file_read_metadata(NULL, file);
+    DcmDataSet *metadata = dcm_filehandle_read_metadata(NULL, filehandle);
     ck_assert_ptr_nonnull(metadata);
 
     dcm_log_level = DCM_LOG_INFO;
     DcmError *error = NULL;
-    DcmBOT *bot = dcm_file_build_bot(&error, file, metadata);
+    DcmBOT *bot = dcm_filehandle_build_bot(&error, filehandle, metadata);
     if (!bot) {
         dcm_error_log(error);
         dcm_error_clear(&error);
@@ -581,8 +581,8 @@ START_TEST(test_file_sm_image_frame)
     ck_assert_ptr_nonnull(bot);
     ck_assert_uint_eq(dcm_bot_get_num_frames(bot), 25);
 
-    DcmFrame *frame = dcm_file_read_frame(NULL, 
-                                          file, metadata, bot, frame_number);
+    DcmFrame *frame = dcm_filehandle_read_frame(NULL, 
+                                          filehandle, metadata, bot, frame_number);
     ck_assert_uint_eq(dcm_frame_get_number(frame), frame_number);
     ck_assert_uint_eq(dcm_frame_get_rows(frame), 10);
     ck_assert_uint_eq(dcm_frame_get_columns(frame), 10);
@@ -598,40 +598,40 @@ START_TEST(test_file_sm_image_frame)
 
     dcm_bot_destroy(bot);
     dcm_dataset_destroy(metadata);
-    dcm_file_destroy(file);
+    dcm_filehandle_destroy(filehandle);
 }
 END_TEST
 
 
-START_TEST(test_file_sm_image_file_meta_memory)
+START_TEST(test_filehandle_sm_image_filehandle_meta_memory)
 {
     uint32_t tag;
     DcmElement *element;
 
     long length;
-    char *memory = load_file_to_memory("data/test_files/sm_image.dcm", &length);
+    char *memory = load_filehandle_to_memory("data/test_files/sm_image.dcm", &length);
     ck_assert_ptr_nonnull(memory);
-    DcmFile *file = dcm_file_memory(NULL, memory, length);
-    ck_assert_ptr_nonnull(file);
+    DcmFilehandle *filehandle = dcm_filehandle_create_from_memory(NULL, memory, length);
+    ck_assert_ptr_nonnull(filehandle);
 
-    DcmDataSet *file_meta = dcm_file_read_file_meta(NULL, file);
+    DcmDataSet *filehandle_meta = dcm_filehandle_read_filehandle_meta(NULL, filehandle);
 
     // Transfer Syntax UID
     tag = 0x00020010;
-    element = dcm_dataset_get(NULL, file_meta, tag);
+    element = dcm_dataset_get(NULL, filehandle_meta, tag);
     ck_assert_str_eq(dcm_element_get_value_UI(element, 0),
                      "1.2.840.10008.1.2.1");
 
     // Media Storage SOP Class UID
     tag = 0x00020002;
-    element = dcm_dataset_get(NULL, file_meta, tag);
+    element = dcm_dataset_get(NULL, filehandle_meta, tag);
     ck_assert_str_eq(dcm_element_get_value_UI(element, 0),
                      "1.2.840.10008.5.1.4.1.1.77.1.6");
 
-    dcm_dataset_print(file_meta, 0);
+    dcm_dataset_print(filehandle_meta, 0);
 
-    dcm_dataset_destroy(file_meta);
-    dcm_file_destroy(file);
+    dcm_dataset_destroy(filehandle_meta);
+    dcm_filehandle_destroy(filehandle);
     free(memory);
 }
 END_TEST
@@ -689,24 +689,24 @@ static Suite *create_data_suite(void)
 }
 
 
-static Suite *create_file_suite(void)
+static Suite *create_filehandle_suite(void)
 {
-    Suite *suite = suite_create("file");
+    Suite *suite = suite_create("filehandle");
 
-    TCase *file_meta_case = tcase_create("file_meta");
-    tcase_add_test(file_meta_case, test_file_sm_image_file_meta);
-    suite_add_tcase(suite, file_meta_case);
+    TCase *filehandle_meta_case = tcase_create("filehandle_meta");
+    tcase_add_test(filehandle_meta_case, test_filehandle_sm_image_filehandle_meta);
+    suite_add_tcase(suite, filehandle_meta_case);
 
     TCase *metadata_case = tcase_create("metadata");
-    tcase_add_test(metadata_case, test_file_sm_image_metadata);
+    tcase_add_test(metadata_case, test_filehandle_sm_image_metadata);
     suite_add_tcase(suite, metadata_case);
 
     TCase *frame_case = tcase_create("frame");
-    tcase_add_test(frame_case, test_file_sm_image_frame);
+    tcase_add_test(frame_case, test_filehandle_sm_image_frame);
     suite_add_tcase(suite, frame_case);
 
     TCase *memory_case = tcase_create("memory");
-    tcase_add_test(memory_case, test_file_sm_image_file_meta_memory);
+    tcase_add_test(memory_case, test_filehandle_sm_image_filehandle_meta_memory);
     suite_add_tcase(suite, memory_case);
 
     return suite;
@@ -717,7 +717,7 @@ int main(void)
 {
     SRunner *runner = srunner_create(create_main_suite());
     srunner_add_suite(runner, create_data_suite());
-    srunner_add_suite(runner, create_file_suite());
+    srunner_add_suite(runner, create_filehandle_suite());
     srunner_run_all(runner, CK_VERBOSE);
     int number_failed = srunner_ntests_failed(runner);
     srunner_free(runner);
