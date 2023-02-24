@@ -45,6 +45,45 @@ char *dcm_strdup(DcmError **error, const char *str);
 
 void dcm_free_string_array(char **strings, int n);
 
-bool dcm_dict_vr_is_bytes(DcmVR vr);
-bool dcm_dict_vr_is_string(DcmVR vr);
+/* The general class of the value associated with a VR.
+ *
+ * STRING_MULTI -- one or more null-terminated strings, cannot contain backslash
+ *
+ * STRING_SINGLE -- a single null-terminated string, backslash allowed
+ *
+ * NUMERIC -- one or more binary numeric values (float etc.), other fields
+ * give sizeof(type)
+ *
+ * BINARY -- an uninterpreted array of bytes, length in the element header
+ */
+typedef enum _DcmVRClass {
+    DCM_CLASS_ERROR,
+    DCM_CLASS_STRING_MULTI,
+    DCM_CLASS_STRING_SINGLE,
+    DCM_CLASS_NUMERIC,
+    DCM_CLASS_BINARY,
+    DCM_CLASS_SEQUENCE
+} DcmVRClass;
+
 size_t dcm_dict_vr_size(DcmVR vr);
+DcmVRClass dcm_dict_vr_class(DcmVR vr);
+uint32_t dcm_dict_vr_capacity(DcmVR vr);
+DcmVR dcm_dict_lookup_vr(uint32_t tag);
+const char *dcm_dict_lookup_keyword(uint32_t tag);
+
+char **dcm_parse_character_string(DcmError **error, 
+                                  char *string, uint32_t *vm);
+
+#define DCM_SWITCH_NUMERIC(VR, OPERATION) \
+    switch (VR) { \
+        case DCM_VR_FL: OPERATION(float); break; \
+	case DCM_VR_FD: OPERATION(double); break; \
+	case DCM_VR_SL: OPERATION(int32_t); break; \
+	case DCM_VR_SS: OPERATION(int16_t); break; \
+	case DCM_VR_UL: OPERATION(uint32_t); break; \
+	case DCM_VR_US: OPERATION(uint16_t); break; \
+	case DCM_VR_SV: OPERATION(int64_t); break; \
+	case DCM_VR_UV: OPERATION(uint64_t); break; \
+	default: \
+    }
+

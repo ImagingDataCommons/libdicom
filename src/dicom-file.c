@@ -460,8 +460,8 @@ static void eheader_destroy(EHeader *header)
 }
 
 
-static char **parse_character_string(DcmError **error, 
-                                     char *string, uint32_t *vm)
+char **dcm_parse_character_string(DcmError **error, 
+                                  char *string, uint32_t *vm)
 {
     uint32_t i;
     uint32_t n;
@@ -666,7 +666,7 @@ static DcmElement *read_element(DcmError **error,
         value[length] = '\0';
 
         // Parse value and create array of strings
-        char **strings = parse_character_string(error, value, &vm);
+        char **strings = dcm_parse_character_string(error, value, &vm);
 
         if (eheader_check_vr(header, "AE")) {
             return dcm_element_create_AE_multi(error, tag, strings, vm);

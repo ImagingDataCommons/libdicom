@@ -125,8 +125,6 @@ struct SequenceItem {
 static struct SequenceItem *create_sequence_item(DcmError **error,
                                                  DcmDataSet *dataset)
 {
-    assert(dataset);
-
     struct SequenceItem *item = DCM_NEW(error, struct SequenceItem);
     if (item == NULL) {
         return NULL;
@@ -175,23 +173,19 @@ static int compare_tags(const void *a, const void *b)
 }
 
 
-// Data Elements
-
-static DcmElement *create_element(DcmError **error, 
-                                  uint32_t tag, DcmVR vr, uint32_t length)
+DcmElement *dcm_element_create(DcmError **error, uint32_t tag)
 {
-    dcm_log_debug("Create Data Element '%08X'.", tag);
     DcmElement *element = DCM_NEW(error, DcmElement);
     if (element == NULL) {
         return NULL;
     }
     element->tag = tag;
-    element->vr = vr;
-    if (length % 2 != 0) {
-        // Zero padding
-        length += 1;
+    element->vr = dcm_dict_lookup_vr(tag);
+    if (element->vr == DCM_VR_uk) {
+        dcm_element_destroy(element);
+        return NULL;
     }
-    element->length = length;
+
     return element;
 }
 
@@ -216,37 +210,51 @@ void dcm_element_destroy(DcmElement *element)
 
 uint16_t dcm_element_get_group_number(const DcmElement *element)
 {
-    assert(element);
     return (uint16_t)(element->tag >> 16);
 }
 
 
 uint16_t dcm_element_get_element_number(const DcmElement *element)
 {
-    assert(element);
     return (uint16_t)(element->tag);
 }
 
 
 uint32_t dcm_element_get_tag(const DcmElement *element)
 {
-    assert(element);
     return element->tag;
+}
+
+
+DcmVR dcm_element_get_vr(const DcmElement *element)
+{
+    return element->vr;
 }
 
 
 bool dcm_element_check_vr(const DcmElement *element, DcmVR vr)
 {
-    assert(element);
     return element->vr == vr;
 }
 
 
 uint32_t dcm_element_get_vm(const DcmElement *element)
 {
-    assert(element);
     return element->vm;
 }
+
+
+bool dcm_element_is_multivalued(const DcmElement *element)
+{
+    return element->vm > 1;
+}
+
+
+uint32_t dcm_element_get_length(const DcmElement *element)
+{
+    return element->length;
+}
+
 
 DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
 {
@@ -299,8 +307,7 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
                 return NULL;
             }
             clone->value_pointer = clone->value.single.str;
-        }
-        else if (clone->vm > 1 && element->value.multi.str) {
+        } else if (clone->vm > 1 && element->value.multi.str) {
             clone->value.multi.str = DCM_NEW_ARRAY(error, element->vm, char *);
             if (clone->value.multi.str == NULL) {
                 dcm_element_destroy(clone);
@@ -350,64 +357,83 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
 }
 
 
-bool dcm_element_is_multivalued(const DcmElement *element)
+// check, set, get string value representations
+
+
+static bool element_check_index(DcmError **error, 
+                                const DcmElement *element, uint32_t index)
 {
-    assert(element);
-    return element->vm > 1;
+    if (index >= element->vm) {
+        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
+                      "Data Element index out of range",
+                      "Element tag %08X has VM of %d, index %d is out of range",
+                      element->tag,
+                      element->vm,
+                      index);
+        return false;
+    }
+
+    return true;
 }
 
 
-uint32_t dcm_element_get_length(const DcmElement *element)
+static bool element_check_string(DcmError **error,
+                                 const DcmElement *element)
 {
-    assert(element);
-    return element->length;
+    DcmVRClass klass = dcm_dict_vr_class(element->vr);
+    if (klass != DCM_CLASS_STRING_MULTI || klass != DCM_CLASS_STRING_SINGLE) {
+        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
+                      "Data Element is not string",
+                      "Element tag %08X has VR %s with no string value",
+                      element->tag,
+                      dcm_dict_vr_to_str(element->vr));
+        return false;
+    }
+
+    return true;
 }
 
 
-static inline void assert_vr(const DcmElement *element, const char *vr)
+bool dcm_element_get_value_string(DcmError **error,
+                                  const DcmElement *element, 
+                                  uint32_t index,
+                                  const char **value)
 {
-    DCM_DEBUG_ONLY(bool success =) dcm_element_check_vr(element, vr);
-    assert(success);
+    if (!element_check_string(error, element) ||
+        !element_check_index(error, element, index)) {
+        return false;
+    }
+
+    if (element->vm == 1) {
+        *value = element->value.single.str;
+    } else {
+        *value = element->value.multi.str[index];
+    }
+
+    return true;
 }
 
 
-static inline bool check_value_index(const DcmElement *element, uint32_t index)
-{
-    return index <= (element->vm - 1);
-}
-
-
-static inline void assert_value_index(const DcmElement *element, uint32_t index)
-{
-    DCM_DEBUG_ONLY(bool success =) check_value_index(element, index);
-    assert(success);
-}
-
-
-// Data Elements with character string Value Representation
-
-static bool check_value_str_multi(const DcmElement *element,
-                                  char **values,
-                                  uint32_t vm,
-                                  uint32_t capacity)
+static bool element_check_capacity(DcmError **error, 
+                                   const DcmElement *element, uint32_t capacity)
 {
     uint32_t i;
-    size_t actual_length;
-    char *v;
 
-    for (i = 0; i < vm; i++) {
-        v = values[i];
-        actual_length = strlen(v);
-        if (actual_length > (capacity + 1)) {
-            dcm_log_warning("Checking value of Data Element failed. "
-                            "Value #%d of Data Element '%08X' exceeds "
-                            "maximum length of Value Representation '%s' "
-                            "(%d > %d).",
-                            i + 1,
-                            element->tag,
-                            element->vr,
-                            actual_length - 1,
-                            capacity);
+    for (i = 0; i < element->vm; i++) {
+        const char *value;
+        if (!dcm_element_get_value_string(error, element, i, &value)) {
+            return false;
+        }
+
+        size_t length = strlen(value);
+        if (length > capacity) {
+            dcm_error_set(error, DCM_ERROR_CODE_INVALID,
+                          "Data Element capacity check failed",
+                          "Value of Data Element '%08X' exceeds "
+                          "maximum length of Value Representation",
+                          "(%d)",
+                          element->tag,
+                          capacity);
             return false;
         }
     }
@@ -415,1216 +441,503 @@ static bool check_value_str_multi(const DcmElement *element,
 }
 
 
-static bool set_value_multi_str(DcmElement *element,
-                                char **values,
-                                uint32_t vm,
-                                uint32_t capacity) {
-    assert(element);
-    assert(values);
+static bool dcm_element_validate(DcmError **error, DcmElement *element)
+{
+    DcmVR correct_vr = dcm_dict_lookup_vr(element->vr);
+    DcmVRClass klass = dcm_dict_vr_class(element->vr);
 
-    if (!check_value_str_multi(element, values, vm, capacity)) {
-        if (values) {
-            dcm_free_string_array(values, vm);
-        }
+    if (element->vr != correct_vr || klass == DCM_CLASS_ERROR) {
+        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
+                      "Data Element validation failed",
+                      "Bad VR for tag %08X, should be %s",
+                      element->tag,
+                      dcm_dict_vr_to_str(element->vr));
         return false;
     }
-    element->value.multi.str = values;
-    element->value_pointer_array = values;
-    element->vm = vm;
+
+    if (element->vm == 0 || element->length == 0) {
+        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
+                      "Data Element validation failed",
+                      "Bad VM or length for tag %08X",
+                      element->tag);
+        return false;
+    }
+
+    if (klass == DCM_CLASS_STRING_MULTI || klass == DCM_CLASS_STRING_SINGLE) {
+        uint32_t capacity = dcm_dict_vr_capacity(element->vr);
+        if (!element_check_capacity(error, element, capacity)) {
+            return false;
+        }
+    }
+
+    if (klass == DCM_CLASS_NUMERIC) {
+        if (element->length != element->vm * dcm_dict_vr_size(element->vr)) {
+            dcm_error_set(error, DCM_ERROR_CODE_INVALID,
+                          "Data Element validation failed",
+                          "Bad length for numeric tag %08X",
+                          element->tag);
+            return false;
+        }
+    }
+
     return true;
 }
 
 
-static DcmElement *create_element_str(DcmError **error,
-                                      uint32_t tag,
-                                      const char *vr,
-                                      char *value,
-                                      uint32_t capacity)
+static bool element_set_value_string(DcmError **error, 
+                                     DcmElement *element, 
+                                     char *string,
+                                     bool steal)
 {
-    char **values = DCM_NEW_ARRAY(error, 1, char *);
-    if (values == NULL) {
-        free(value);
-        return NULL;
-    }
-    values[0] = value;
+    DcmVRClass klass = dcm_dict_vr_class(element->vr);
 
-    uint32_t length = strlen(value);
-    DcmElement *element = create_element(error, tag, vr, length);
-    if (element == NULL) {
-        free(value);
-        dcm_free_string_array(values, 1);
-        return NULL;
+    if (klass != DCM_VR_STRING && klass != DCM_VR_STRING_MULTI) {
+        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
+                      "Tag cannot take a string value",
+                      "Attempt to set a string value for tag %08X, "
+                      "should be %s",
+                      element->tag,
+                      dcm_dict_vr_to_str(element->vr));
+        return false;
     }
-    if (!set_value_str_multi(element, values, 1, capacity)) {
-        free(value);
-        dcm_element_destroy(element);
-        return NULL;
-    }
-    return element;
-}
 
-static DcmElement *create_element_str_multi(DcmError **error,
-                                            uint32_t tag,
-                                            const char *vr,
-                                            char **values,
-                                            uint32_t vm,
-                                            uint32_t capacity)
-{
-    uint32_t i;
-    uint32_t length;
-    char *v;
-
-    length = 0;
-    for (i = 0; i < vm; i++) {
-        v = values[i];
-        length += strlen(v);
-        if (i < (vm - 1)) {
-            // Separator "\\"
-            length += 2;
+    if (klass == DCM_VR_STRING_MULTI) {
+        uint32_t vm;
+        char **strings = dcm_parse_character_string(error, string, &vm);
+        if (strings == NULL) {
+            return false;
         }
+
+        element->value.multi.str = strings;
+        element->vm = vm;
+        element->value_pointer_array = strings;
+    } else {
+        element->value.single.str = string;
+        element->vm = 1;
     }
 
-    DcmElement *element = create_element(error, tag, vr, length);
-    if (element == NULL) {
-        dcm_free_string_array(values, vm);
-        return NULL;
+    size_t length = strlen(string);
+    element->length = length % 2 != 0 ? length + 1 : length;
+
+    if (!dcm_element_validate(error, element)) {
+        return false;
     }
 
-    if (!set_value_str_multi(element, values, vm, capacity)) {
-        dcm_element_destroy(element);
-        return NULL;
+    if (steal) {
+        element->value_pointer = string;
     }
 
-    return element;
+    return true;
 }
 
 
-DcmElement *dcm_element_create_AE(DcmError **error, uint32_t tag, char *value)
+bool dcm_element_set_value_string(DcmError **error, 
+                                  DcmElement *element, 
+                                  char *string)
 {
-    return create_element_str(error, tag, "AE", value, DCM_CAPACITY_AE);
+    return element_set_value_string(error, element, (char *) string, true);
 }
 
 
-DcmElement *dcm_element_create_AE_multi(DcmError **error, 
-                                        uint32_t tag,
-                                        char **values,
-                                        uint32_t vm)
+bool dcm_element_set_value_string_static(DcmError **error, 
+                                         DcmElement *element, 
+                                         const char *string)
 {
-    return create_element_str_multi(error, 
-                                    tag, "AE", values, vm, DCM_CAPACITY_AE);
+    return element_set_value_string(error, element, (char *) string, false);
 }
 
 
-DcmElement *dcm_element_create_AS(DcmError **error, uint32_t tag, char *value)
-{
-    return create_element_str(error, tag, "AS", value, DCM_CAPACITY_AS);
-}
-
-
-DcmElement *dcm_element_create_AS_multi(DcmError **error, 
-                                        uint32_t tag,
-                                        char **values,
-                                        uint32_t vm)
-{
-    return create_element_str_multi(error, 
-                                    tag, "AS", values, vm, DCM_CAPACITY_AS);
-}
-
-
-DcmElement *dcm_element_create_AT(DcmError **error, uint32_t tag, char *value)
-{
-    return create_element_str(error, tag, "AT", value, DCM_CAPACITY_AT);
-}
-
-
-DcmElement *dcm_element_create_AT_multi(DcmError **error, 
-                                        uint32_t tag,
-                                        char **values,
-                                        uint32_t vm)
-{
-    return create_element_str_multi(error, 
-                                    tag, "AT", values, vm, DCM_CAPACITY_AT);
-}
-
-
-DcmElement *dcm_element_create_CS(DcmError **error, uint32_t tag, char *value)
-{
-    return create_element_str(error, tag, "CS", value, DCM_CAPACITY_CS);
-}
-
-
-DcmElement *dcm_element_create_CS_multi(DcmError **error,
-                                        uint32_t tag,
-                                        char **values,
-                                        uint32_t vm)
-{
-    return create_element_str_multi(error, 
-                                    tag, "CS", values, vm, DCM_CAPACITY_CS);
-}
-
-
-DcmElement *dcm_element_create_DA(DcmError **error, uint32_t tag, char *value)
-{
-    return create_element_str(error, tag, "DA", value, DCM_CAPACITY_DA);
-}
-
-
-DcmElement *dcm_element_create_DA_multi(DcmError **error,
-                                        uint32_t tag,
-                                        char **values,
-                                        uint32_t vm)
-{
-    return create_element_str_multi(error, 
-                                    tag, "DA", values, vm, DCM_CAPACITY_DA);
-}
-
-
-DcmElement *dcm_element_create_DT(DcmError **error, uint32_t tag, char *value)
-{
-    return create_element_str(error, tag, "DT", value, DCM_CAPACITY_DT);
-}
-
-
-DcmElement *dcm_element_create_DT_multi(DcmError **error, 
-                                        uint32_t tag,
-                                        char **values,
-                                        uint32_t vm)
-{
-    return create_element_str_multi(error, 
-                                    tag, "DT", values, vm, DCM_CAPACITY_DT);
-}
-
-
-DcmElement *dcm_element_create_LO(DcmError **error, uint32_t tag, char *value)
-{
-    return create_element_str(error, tag, "LO", value, DCM_CAPACITY_LO);
-}
-
-
-DcmElement *dcm_element_create_LO_multi(DcmError **error,
-                                        uint32_t tag,
-                                        char **values,
-                                        uint32_t vm)
-{
-    return create_element_str_multi(error, 
-                                    tag, "LO", values, vm, DCM_CAPACITY_LO);
-}
-
-
-DcmElement *dcm_element_create_PN(DcmError **error, uint32_t tag, char *value)
-{
-    return create_element_str(error, tag, "PN", value, DCM_CAPACITY_PN);
-}
-
-
-
-DcmElement *dcm_element_create_PN_multi(DcmError **error, 
-                                        uint32_t tag,
-                                        char **values,
-                                        uint32_t vm)
-{
-    return create_element_str_multi(error, 
-                                    tag, "PN", values, vm, DCM_CAPACITY_PN);
-}
-
-
-DcmElement *dcm_element_create_SH(DcmError **error, uint32_t tag, char *value)
-{
-    return create_element_str(error, tag, "SH", value, DCM_CAPACITY_SH);
-}
-
-
-DcmElement *dcm_element_create_SH_multi(DcmError **error, 
-                                        uint32_t tag,
-                                        char **values,
-                                        uint32_t vm)
-{
-    return create_element_str_multi(error, 
-                                    tag, "SH", values, vm, DCM_CAPACITY_SH);
-}
-
-
-DcmElement *dcm_element_create_TM(DcmError **error, uint32_t tag, char *value)
-{
-    return create_element_str(error, tag, "TM", value, DCM_CAPACITY_TM);
-}
-
-
-DcmElement *dcm_element_create_TM_multi(DcmError **error, 
-                                        uint32_t tag,
-                                        char **values,
-                                        uint32_t vm)
-{
-    return create_element_str_multi(error,
-                                    tag, "TM", values, vm, DCM_CAPACITY_TM);
-}
-
-
-DcmElement *dcm_element_create_ST(DcmError **error, uint32_t tag, char *value)
-{
-    return create_element_str(error, tag, "ST", value, DCM_CAPACITY_ST);
-}
-
-
-DcmElement *dcm_element_create_UI(DcmError **error, uint32_t tag, char *value)
-{
-    return create_element_str(error, tag, "UI", value, DCM_CAPACITY_UI);
-}
-
-
-DcmElement *dcm_element_create_UI_multi(DcmError **error, 
-                                        uint32_t tag,
-                                        char **values,
-                                        uint32_t vm)
-{
-    return create_element_str_multi(error,
-                                    tag, "UI", values, vm, DCM_CAPACITY_UI);
-}
-
-
-static char *get_value_str_multi(const DcmElement *element, uint32_t index)
-{
-    assert_value_index(element, index);
-    return element->value.str_multi[index];
-}
-
-
-const char *dcm_element_get_value_AE(const DcmElement *element, uint32_t index)
-{
-    assert(element);
-    assert_vr(element, "AE");
-    return get_value_str_multi(element, index);
-}
-
-
-const char *dcm_element_get_value_AS(const DcmElement *element, uint32_t index)
-{
-    assert(element);
-    assert_vr(element, "AS");
-    return get_value_str_multi(element, index);
-}
-
-
-const char *dcm_element_get_value_AT(const DcmElement *element, uint32_t index)
-{
-    assert(element);
-    assert_vr(element, "AT");
-    return get_value_str_multi(element, index);
-}
-
-
-const char *dcm_element_get_value_CS(const DcmElement *element, uint32_t index)
-{
-    assert(element);
-    assert_vr(element, "CS");
-    return get_value_str_multi(element, index);
-}
-
-
-const char *dcm_element_get_value_DA(const DcmElement *element, uint32_t index)
-{
-    assert(element);
-    assert_vr(element, "DA");
-    return get_value_str_multi(element, index);
-}
-
-
-const char *dcm_element_get_value_DS(const DcmElement *element, uint32_t index)
-{
-    assert(element);
-    assert_vr(element, "DS");
-    return get_value_str_multi(element, index);
-}
-
-
-const char *dcm_element_get_value_DT(const DcmElement *element, uint32_t index)
-{
-    assert(element);
-    assert_vr(element, "DT");
-    return get_value_str_multi(element, index);
-}
-
-
-double dcm_element_get_value_FD(const DcmElement *element, uint32_t index)
-{
-    assert(element);
-    assert_vr(element, "FD");
-    assert_value_index(element, index);
-    return element->value.fd_multi[index];
-}
-
-
-float dcm_element_get_value_FL(const DcmElement *element, uint32_t index)
-{
-    assert(element);
-    assert_vr(element, "FL");
-    assert_value_index(element, index);
-    return element->value.fl_multi[index];
-}
+// integer numeric types
 
 
-const char *dcm_element_get_value_IS(const DcmElement *element, uint32_t index)
+// use a VR to marshall an int pointer into a int64_t
+static int64_t value_to_int64(DcmVr vr, int *value)
 {
-    assert(element);
-    assert_vr(element, "IS");
-    return get_value_str_multi(element, index);
-}
-
-
-const char *dcm_element_get_value_LO(const DcmElement *element)
-{
-    assert(element);
-    assert_vr(element, "LO");
-    return get_value_str_multi(element, 0);
-}
-
-
-const char *dcm_element_get_value_PN(const DcmElement *element)
-{
-    assert(element);
-    assert_vr(element, "PN");
-    return get_value_str_multi(element, 0);
-}
-
-
-const char *dcm_element_get_value_SH(const DcmElement *element)
-{
-    assert(element);
-    assert_vr(element, "SH");
-    return get_value_str_multi(element, 0);
-}
-
-
-const char *dcm_element_get_value_TM(const DcmElement *element)
-{
-    assert(element);
-    assert_vr(element, "TM");
-    return get_value_str_multi(element, 0);
-}
-
-
-int16_t dcm_element_get_value_SS(const DcmElement *element, uint32_t index)
-{
-    assert_vr(element, "SS");
-    assert_value_index(element, index);
-    return element->value.ss_multi[index];
-}
-
-
-int32_t dcm_element_get_value_SL(const DcmElement *element, uint32_t index)
-{
-    assert_vr(element, "SL");
-    assert_value_index(element, index);
-    return element->value.sl_multi[index];
-}
-
-
-int64_t dcm_element_get_value_SV(const DcmElement *element, uint32_t index)
-{
-    assert_vr(element, "SV");
-    assert_value_index(element, index);
-    return element->value.sv_multi[index];
-}
-
-
-const char *dcm_element_get_value_ST(const DcmElement *element)
-{
-    assert(element);
-    assert_vr(element, "ST");
-    return get_value_str_multi(element, 0);
-}
-
-
-const char *dcm_element_get_value_UI(const DcmElement *element, uint32_t index)
-{
-    assert(element);
-    assert_vr(element, "UI");
-    return get_value_str_multi(element, index);
-}
-
-uint32_t dcm_element_get_value_UL(const DcmElement *element, uint32_t index)
-{
-    assert_vr(element, "UL");
-    assert_value_index(element, index);
-    return element->value.ul_multi[index];
-}
-
-
-uint16_t dcm_element_get_value_US(const DcmElement *element, uint32_t index)
-{
-    assert_vr(element, "US");
-    assert_value_index(element, index);
-    return element->value.us_multi[index];
-}
-
-
-uint64_t dcm_element_get_value_UV(const DcmElement *element, uint32_t index)
-{
-    assert_vr(element, "UV");
-    assert_value_index(element, index);
-    return element->value.uv_multi[index];
-}
-
-
-const char *dcm_element_get_value_UR(const DcmElement *element)
-{
-    assert(element);
-    assert_vr(element, "UR");
-    return get_value_str_multi(element, 0);
-}
-
-
-const char *dcm_element_get_value_UT(const DcmElement *element)
-{
-    assert(element);
-    assert_vr(element, "UT");
-    return get_value_str_multi(element, 0);
-}
-
-
-const char *dcm_element_get_value_OB(const DcmElement *element)
-{
-    assert_vr(element, "OB");
-    return element->value.bytes;
-}
-
+    uint64_t result;
 
-const char *dcm_element_get_value_OD(const DcmElement *element)
-{
-    assert_vr(element, "OD");
-    return element->value.bytes;
-}
-
-
-const char *dcm_element_get_value_OF(const DcmElement *element)
-{
-    assert_vr(element, "OF");
-    return element->value.bytes;
-}
-
-
-const char *dcm_element_get_value_OL(const DcmElement *element)
-{
-    assert_vr(element, "OL");
-    return element->value.bytes;
-}
-
-
-const char *dcm_element_get_value_OV(const DcmElement *element)
-{
-    assert_vr(element, "OV");
-    return element->value.bytes;
-}
-
-
-const char *dcm_element_get_value_OW(const DcmElement *element)
-{
-    assert_vr(element, "OW");
-    return element->value.bytes;
-}
-
-
-const char *dcm_element_get_value_UC(const DcmElement *element)
-{
-    assert_vr(element, "UC");
-    return element->value.bytes;
-}
-
-
-const char *dcm_element_get_value_UN(const DcmElement *element)
-{
-    assert_vr(element, "UN");
-    return element->value.bytes;
-}
-
-
-static inline void print_element_value_AE(const DcmElement *element,
-                                          uint32_t index)
-{
-    printf("%s", element->value.str_multi[index]);
-}
-
+#define PEEK(TYPE) result = *((TYPE *) value)
+    DCM_SWITCH_NUMERIC(vr, PEEK);
+#undef PEEK
 
-static inline void print_element_value_AT(const DcmElement *element,
-                                          uint32_t index)
-{
-    printf("%s", element->value.str_multi[index]);
-}
-
-
-static inline void print_element_value_AS(const DcmElement *element,
-                                          uint32_t index)
-{
-    printf("%s", element->value.str_multi[index]);
-}
-
-
-static inline void print_element_value_CS(const DcmElement *element,
-                                          uint32_t index)
-{
-    printf("%s", element->value.str_multi[index]);
-}
-
-
-static inline void print_element_value_DA(const DcmElement *element,
-                                          uint32_t index)
-{
-    printf("%s", element->value.str_multi[index]);
-}
-
-
-static inline void print_element_value_DT(const DcmElement *element,
-                                          uint32_t index)
-{
-    printf("%s", element->value.str_multi[index]);
-}
-
-
-static inline void print_element_value_LO(const DcmElement *element,
-                                          uint32_t index)
-{
-    printf("%s", element->value.str_multi[index]);
-}
-
-
-static inline void print_element_value_PN(const DcmElement *element,
-                                          uint32_t index)
-{
-    printf("%s", element->value.str_multi[index]);
-}
-
-
-static inline void print_element_value_SH(const DcmElement *element,
-                                          uint32_t index)
-{
-    printf("%s", element->value.str_multi[index]);
+    return result;
 }
 
 
-static inline void print_element_value_TM(const DcmElement *element,
-                                          uint32_t index)
+// use a VR to write an int64_t to an int pointer
+static void int64_to_value(DcmVr vr, int *result, int64_t value)
 {
-    printf("%s", element->value.str_multi[index]);
+#define POKE(TYPE) *((TYPE *) result) = value;
+    DCM_SWITCH_NUMERIC(vr, POKE);
+#undef POKE
 }
 
 
-static inline void print_element_value_UI(const DcmElement *element,
-                                          uint32_t index)
+// use a VR to copy any numeric value (not just int as above)
+static void value_to_value(DcmVr vr, int *result, int *value)
 {
-    printf("%s", element->value.str_multi[index]);
+#define COPY(TYPE) *((TYPE *)result) = *((TYPE *)value);
+    DCM_SWITCH_NUMERIC(vr, COPY);
+#undef COPY
 }
-
-
 
-// Data Elements with numeric Value Representation
 
-DcmElement *dcm_element_create_FD(DcmError **error, uint32_t tag, double value)
+static bool element_check_numeric(DcmError **error,
+                                  const DcmElement *element)
 {
-    uint32_t length = sizeof(double);
-    double *values = DCM_NEW_ARRAY(error, 1, double);
-    if (values == NULL) {
-        return NULL;
+    DcmVRClass klass = dcm_dict_vr_class(element->vr);
+    if (klass != DCM_CLASS_NUMERIC) {
+      dcm_error_set(error, DCM_ERROR_CODE_INVALID,
+                    "Data Element is not numeric",
+                    "Element tag %08X is not numeric",
+                    element->tag);
+      return false;
     }
-    values[0] = value;
-    DcmElement *element = create_element(error, tag, "FD", length);
-    if (element == NULL) {
-        free(values);
-        return NULL;
+
+    return true;
+}
+
+
+static bool element_check_integer(DcmError **error,
+                                  const DcmElement *element)
+{
+    if (element->vr == DCM_VR_FL || element->vr == DCM_VR_FD) {
+      dcm_error_set(error, DCM_ERROR_CODE_INVALID,
+                    "Data Element is not integer",
+                    "Element tag %08X is not integer",
+                    element->tag);
+      return false;
     }
-    element->value.fd_multi = values;
-    element->value_pointer = values;
+
+    return true;
+}
+
+
+
+bool dcm_element_get_value_integer(DcmError **error,
+                                   const DcmElement *element, 
+                                   uint32_t index,
+                                   int64_t *value)
+{
+    if (!element_check_numeric(error, element) || 
+        !element_check_integer(error, element) ||
+        !element_check_index(error, element, index)) {
+        return false;
+    }
+
+    int *element_value;
+    if (vm == 1) {
+        element_value = (int *) &element->value.single.sl;
+    } else {
+        size_t size = dcm_dict_vr_size(element->vr);
+        unsigned char *base = (unsigned char *) element->value.multi.sl;
+        element_value = (int *)(base + size * index);
+    }
+    *value = value_to_int64(element->vr, element_value);
+
+    return true;
+}
+
+
+bool dcm_element_set_value_integer(DcmError **error, 
+                                   DcmElement *element, 
+                                   int64_t value)
+{
+    if (!element_check_numeric(error, element) || 
+        !element_check_integer(error, element)) {
+        return false;
+    }
+
+    int *element_value = (int *) &element->value.single.sl;
+    int64_to_value(element->vr, element_result, value);
     element->vm = 1;
-    return element;
+    element->length = dcm_dict_vr_size(element->vr);
+
+    if (!dcm_element_validate(error, element)) {
+        return false;
+    }
+
+    return true;
 }
 
 
-DcmElement *dcm_element_create_FD_multi(DcmError **error, 
-                                        uint32_t tag,
-                                        double *values,
-                                        uint32_t vm)
+bool dcm_element_set_value_numeric_multi(DcmError **error, 
+                                         DcmElement *element, 
+                                         int *value,
+                                         uint32_t vm,
+                                         gboolean steal)
 {
-    uint32_t length = vm * sizeof(double);
-    DcmElement *element = create_element(error, tag, "FD", length);
-    if (element == NULL) {
-        free(values);
-        return NULL;
+    if (!element_check_numeric(error, element)) {
+        return false;
     }
-    element->value.fd_multi = values;
-    element->value_pointer = values;
+
+    if (vm == 1) {
+        // actually does all numeric types
+        value_to_value(element->vr, (int *)&element->value.single.sl, value);
+    } else {
+        // this will work for all numeric types, since we're just setting a
+        // pointer
+        element->value.multi.sl = (int32_t *)value;
+    }
+
     element->vm = vm;
-    return element;
+    element->length = vm * dcm_dict_vr_size(element->vr);
+
+    if (!dcm_element_validate(error, element)) {
+        return false;
+    }
+
+    if (steal) {
+        element->value_pointer = value;
+    }
+
+    return true;
 }
 
 
-DcmElement *dcm_element_create_FL(DcmError **error, uint32_t tag, float value)
+// the float values
+
+// use a VR to marshall a double pointer into a float
+static double value_to_double(DcmVr vr, double *value)
 {
-    uint32_t length = sizeof(double);
-    float *values = DCM_NEW_ARRAY(error, 1, float);
-    if (values == NULL) {
-        return NULL;
+    double result;
+
+#define PEEK(TYPE) result = *((TYPE *) value)
+    DCM_SWITCH_NUMERIC(vr, PEEK);
+#undef PEEK
+
+    return result;
+}
+
+
+// use a VR to write a double to a double pointer
+static void double_to_value(DcmVr vr, double *result, double value)
+{
+#define POKE(TYPE) *((TYPE *) result) = value;
+    DCM_SWITCH_NUMERIC(vr, POKE);
+#undef POKE
+}
+
+
+static bool element_check_float(DcmError **error,
+                                const DcmElement *element)
+{
+    if (element->vr != DCM_VR_FL && element->vr != DCM_VR_FD) {
+      dcm_error_set(error, DCM_ERROR_CODE_INVALID,
+                    "Data Element is not float",
+                    "Element tag %08X is not one of the float types",
+                    element->tag);
+      return false;
     }
-    values[0] = value;
-    DcmElement *element = create_element(error, tag, "FL", length);
-    if (element == NULL) {
-        free(values);
-        return NULL;
+
+    return true;
+}
+
+
+bool dcm_element_get_value_double(DcmError **error,
+                                  DcmElement *element,   
+                                  uint32_t index,
+                                  double *value)
+{
+    if (!element_check_numeric(error, element) || 
+        !element_check_float(error, element) ||
+        !element_check_index(error, element, index)) {
+        return false;
     }
-    element->value.fl_multi = values;
-    element->value_pointer = values;
+
+    double *element_value;
+    if (vm == 1) {
+        element_value = (double *) &element->value.single.fd;
+    } else {
+        size_t size = dcm_dict_vr_size(element->vr);
+        unsigned char *base = (unsigned char *) element->value.multi.fd;
+        element_value = (double *)(base + size * index);
+    }
+    *value = value_to_double(element->vr, element_value);
+
+    return true;
+}
+
+
+bool dcm_element_set_value_double(DcmError **error, 
+                                  DcmElement *element, 
+                                  double value)
+{
+    if (!element_check_numeric(error, element) || 
+        !element_check_float(error, element)) {
+        return false;
+    }
+
+    double *element_value = (double *) &element->value.single.fd;
+    double_to_value(element->vr, element_result, value);
     element->vm = 1;
-    return element;
-}
+    element->length = dcm_dict_vr_size(element->vr);
 
-
-DcmElement *dcm_element_create_FL_multi(DcmError **error,
-                                        uint32_t tag,
-                                        float *values,
-                                        uint32_t vm)
-{
-    uint32_t length = vm * sizeof(float);
-    DcmElement *element = create_element(error, tag, "FL", length);
-    if (element == NULL) {
-        free(values);
-        return NULL;
+    if (!dcm_element_validate(error, element)) {
+        return false;
     }
-    element->value.fl_multi = values;
-    element->value_pointer = values;
-    element->vm = vm;
-    return element;
+
+    return true;
 }
 
 
-DcmElement *dcm_element_create_DS(DcmError **error, uint32_t tag, char *value)
+// The VRs with binary values
+
+static bool element_check_binary(DcmError **error,
+                                 const DcmElement *element)
 {
-    return create_element_str(error, tag, "DS", value, DCM_CAPACITY_DS);
-}
-
-
-DcmElement *dcm_element_create_DS_multi(DcmError **error,
-                                        uint32_t tag,
-                                        char **values,
-                                        uint32_t vm)
-{
-    return create_element_str_multi(error, 
-                                    tag, "DS", values, vm, DCM_CAPACITY_DS);
-}
-
-
-DcmElement *dcm_element_create_IS(DcmError **error, uint32_t tag, char *value)
-{
-    return create_element_str(error, tag, "IS", value, DCM_CAPACITY_IS);
-}
-
-
-DcmElement *dcm_element_create_IS_multi(DcmError **error, 
-                                        uint32_t tag,
-                                        char **values,
-                                        uint32_t vm)
-{
-    return create_element_str_multi(error, 
-                                    tag, "IS", values, vm, DCM_CAPACITY_IS);
-}
-
-
-DcmElement *dcm_element_create_SS(DcmError **error, uint32_t tag, int16_t value)
-{
-    uint32_t length = sizeof(int16_t);
-    int16_t *values = DCM_NEW_ARRAY(error, 1, int16_t);
-    if (values == NULL) {
-        return NULL;
+    DcmVRClass klass = dcm_dict_vr_class(element->vr);
+    if (klass != DCM_CLASS_BINARY) {
+      dcm_error_set(error, DCM_ERROR_CODE_INVALID,
+                    "Data Element is not binary",
+                    "Element tag %08X does not have a binary value",
+                    element->tag);
+      return false;
     }
-    values[0] = value;
-    DcmElement *element = create_element(error, tag, "SS", length);
-    if (element == NULL) {
-        free(values);
-        return NULL;
+
+    return true;
+}
+
+
+bool dcm_element_get_value_binary(DcmError **error,
+                                  DcmElement *element,   
+                                  const char **value)
+{
+    if (!element_check_binary(error, element)) {
+        return false;
     }
-    element->value.ss_multi = values;
-    element->value_pointer = values;
+
+    *value = element->value.single.bytes;
+
+    return true;
+}
+
+
+bool dcm_element_set_value_binary(DcmError **error, 
+                                  DcmElement *element, 
+                                  char *value,
+                                  uint32_t length,
+                                  gboolean steal)
+{
+    if (!element_check_binary(error, element)) {
+        return false;
+    }
+
     element->vm = 1;
-    return element;
-}
+    element->length = dcm_dict_vr_size(element->vr);
+    element->value.single.bytes = value;
 
-
-DcmElement *dcm_element_create_SS_multi(DcmError **error, 
-                                        uint32_t tag,
-                                        int16_t *values,
-                                        uint32_t vm)
-{
-    uint32_t length = vm * sizeof(int16_t);
-    DcmElement *element = create_element(error, tag, "SS", length);
-    if (element == NULL) {
-        free(values);
-        return NULL;
+    if (!dcm_element_validate(error, element)) {
+        return false;
     }
-    element->value.ss_multi = values;
-    element->value_pointer = values;
-    element->vm = vm;
-    return element;
-}
 
-
-DcmElement *dcm_element_create_SL(DcmError **error,
-                                  uint32_t tag, int32_t value)
-{
-    uint32_t length = sizeof(int32_t);
-    int32_t *values = DCM_NEW_ARRAY(error, 1, int32_t);
-    if (values == NULL) {
-        return NULL;
+    if (steal) {
+        element->value_pointer = value;
     }
-    values[0] = value;
-    DcmElement *element = create_element(error, tag, "SL", length);
-    if (element == NULL) {
-        free(values);
-        return NULL;
-    }
-    element->value.sl_multi = values;
-    element->value_pointer = values;
-    element->vm = 1;
-    return element;
-}
 
-
-DcmElement *dcm_element_create_SL_multi(DcmError **error,
-                                        uint32_t tag,
-                                        int32_t *values,
-                                        uint32_t vm)
-{
-    uint32_t length = vm * sizeof(int32_t);
-    DcmElement *element = create_element(error, tag, "SL", length);
-    if (element == NULL) {
-        free(values);
-        return NULL;
-    }
-    element->value.sl_multi = values;
-    element->value_pointer = values;
-    element->vm = vm;
-    return element;
-}
-
-
-DcmElement *dcm_element_create_SV(DcmError **error, uint32_t tag, int64_t value)
-{
-    uint32_t length = sizeof(int64_t);
-    int64_t *values = DCM_NEW_ARRAY(error, 1, int64_t);
-    if (values == NULL) {
-        return NULL;
-    }
-    values[0] = value;
-    DcmElement *element = create_element(error, tag, "SV", length);
-    if (element == NULL) {
-        free(values);
-        return NULL;
-    }
-    element->value.sv_multi = values;
-    element->value_pointer = values;
-    element->vm = 1;
-    return element;
-}
-
-
-DcmElement *dcm_element_create_SV_multi(DcmError **error,
-                                        uint32_t tag,
-                                        int64_t *values,
-                                        uint32_t vm)
-{
-    uint32_t length = vm * sizeof(int64_t);
-    DcmElement *element = create_element(error, tag, "SV", length);
-    if (element == NULL) {
-        free(values);
-        return NULL;
-    }
-    element->value.sv_multi = values;
-    element->value_pointer = values;
-    element->vm = vm;
-    return element;
-}
-
-
-DcmElement *dcm_element_create_UL(DcmError **error, 
-                                  uint32_t tag, uint32_t value)
-{
-    uint32_t length = sizeof(uint32_t);
-    uint32_t *values = DCM_NEW_ARRAY(error, 1, uint32_t);
-    if (values == NULL) {
-        return NULL;
-    }
-    values[0] = value;
-    DcmElement *element = create_element(error, tag, "UL", length);
-    if (element == NULL) {
-        free(values);
-        return NULL;
-    }
-    element->value.ul_multi = values;
-    element->value_pointer = values;
-    element->vm = 1;
-    return element;
-}
-
-
-DcmElement *dcm_element_create_UL_multi(DcmError **error,
-                                        uint32_t tag,
-                                        uint32_t *values,
-                                        uint32_t vm)
-{
-    uint32_t length = vm * sizeof(uint32_t);
-    DcmElement *element = create_element(error, tag, "UL", length);
-    if (element == NULL) {
-        free(values);
-        return NULL;
-    }
-    element->value.ul_multi = values;
-    element->value_pointer = values;
-    element->vm = vm;
-    return element;
-}
-
-
-DcmElement *dcm_element_create_US(DcmError **error, 
-                                  uint32_t tag, uint16_t value)
-{
-    uint32_t length = sizeof(uint16_t);
-    uint16_t *values = DCM_NEW_ARRAY(error, 1, uint16_t);
-    if (values == NULL) {
-        return NULL;
-    }
-    values[0] = value;
-    DcmElement *element = create_element(error, tag, "US", length);
-    if (element == NULL) {
-        free(values);
-        return NULL;
-    }
-    element->value.us_multi = values;
-    element->value_pointer = values;
-    element->vm = 1;
-    return element;
-}
-
-DcmElement *dcm_element_create_US_multi(DcmError **error,
-                                        uint32_t tag,
-                                        uint16_t *values,
-                                        uint32_t vm)
-{
-    uint32_t length = vm * sizeof(uint16_t);
-    DcmElement *element = create_element(error, tag, "US", length);
-    if (element == NULL) {
-        free(values);
-        return NULL;
-    }
-    element->value.us_multi = values;
-    element->value_pointer = values;
-    element->vm = vm;
-    return element;
-}
-
-
-DcmElement *dcm_element_create_UV(DcmError **error, 
-                                  uint32_t tag, uint64_t value)
-{
-    uint32_t length = sizeof(uint64_t);
-    uint64_t *values = DCM_NEW_ARRAY(error, 1, uint64_t);
-    if (values == NULL) {
-        return NULL;
-    }
-    values[0] = value;
-    DcmElement *element = create_element(error, tag, "UV", length);
-    if (element == NULL) {
-        free(values);
-        return NULL;
-    }
-    element->value.uv_multi = values;
-    element->value_pointer = values;
-    element->vm = 1;
-    return element;
-}
-
-
-DcmElement *dcm_element_create_UV_multi(DcmError **error,
-                                        uint32_t tag,
-                                        uint64_t *values,
-                                        uint32_t vm)
-{
-    uint32_t length = vm * sizeof(uint64_t);
-    DcmElement *element = create_element(error, tag, "UV", length);
-    if (element == NULL) {
-        free(values);
-        return NULL;
-    }
-    element->value.uv_multi = values;
-    element->value_pointer = values;
-    element->vm = vm;
-    return element;
-}
-
-
-inline static void print_element_value_DS(const DcmElement *element,
-                                          uint32_t index)
-{
-    printf("%s", element->value.str_multi[index]);
-}
-
-
-inline static void print_element_value_FD(const DcmElement *element,
-                                          uint32_t index)
-{
-    printf("%f", element->value.fd_multi[index]);
-}
-
-
-inline static void print_element_value_FL(const DcmElement *element,
-                                          uint32_t index)
-{
-    printf("%f", element->value.fl_multi[index]);
-}
-
-
-inline static void print_element_value_IS(const DcmElement *element,
-                                          uint32_t index)
-{
-    printf("%s", element->value.str_multi[index]);
-}
-
-
-inline static void print_element_value_SS(const DcmElement *element,
-                                          uint32_t index)
-{
-    printf("%d", element->value.ss_multi[index]);
-}
-
-
-inline static void print_element_value_SL(const DcmElement *element,
-                                          uint32_t index)
-{
-    printf("%d", element->value.sl_multi[index]);
-}
-
-
-inline static void print_element_value_ST(const DcmElement *element,
-                                          uint32_t index)
-{
-    printf("%s", element->value.str_multi[index]);
-}
-
-
-inline static void print_element_value_SV(const DcmElement *element,
-                                          uint32_t index)
-{
-    // Cast seems necessary for some platforms
-    printf("%lld", (long long)element->value.sv_multi[index]);
-}
-
-
-inline static void print_element_value_US(const DcmElement *element,
-                                          uint32_t index)
-{
-    printf("%hu", element->value.us_multi[index]);
-}
-
-
-inline static void print_element_value_UT(const DcmElement *element)
-{
-    printf("%s", element->value.str_multi[0]);
-}
-
-
-inline static void print_element_value_UL(const DcmElement *element,
-                                          uint32_t index)
-{
-    printf("%u", element->value.ul_multi[index]);
-}
-
-
-
-// Data Elements with binary Value Representation
-
-static void set_value_bytes(DcmElement *element, char *value)
-{
-    assert(element);
-    assert(value);
-    element->value.bytes = value;
-    element->value_pointer = value;
-}
-
-
-DcmElement *dcm_element_create_LT(DcmError **error, uint32_t tag, char *value)
-{
-    return create_element_str(error, tag, "LT", value, DCM_CAPACITY_LT);
-}
-
-
-DcmElement *dcm_element_create_OB(DcmError **error, 
-                                  uint32_t tag, char *value, uint32_t length)
-{
-    DcmElement *element = create_element(error, tag, "OB", length);
-    if (element == NULL) {
-        free(value);
-        return NULL;
-    }
-    set_value_bytes(element, value);
-    element->vm = 1;
-    return element;
-}
-
-
-DcmElement *dcm_element_create_OD(DcmError **error, 
-                                  uint32_t tag, char *value, uint32_t length)
-{
-    DcmElement *element = create_element(error, tag, "OD", length);
-    if (element == NULL) {
-        free(value);
-        return NULL;
-    }
-    set_value_bytes(element, value);
-    element->vm = 1;
-    return element;
-}
-
-
-DcmElement *dcm_element_create_OF(DcmError **error,
-                                  uint32_t tag, char *value, uint32_t length)
-{
-    DcmElement *element = create_element(error, tag, "OF", length);
-    if (element == NULL) {
-        free(value);
-        return NULL;
-    }
-    set_value_bytes(element, value);
-    element->vm = 1;
-    return element;
-}
-
-
-DcmElement *dcm_element_create_OL(DcmError **error, 
-                                  uint32_t tag, char *value, uint32_t length)
-{
-    DcmElement *element = create_element(error, tag, "OL", length);
-    if (element == NULL) {
-        free(value);
-        return NULL;
-    }
-    set_value_bytes(element, value);
-    element->vm = 1;
-    return element;
-}
-
-
-DcmElement *dcm_element_create_OV(DcmError **error,
-                                  uint32_t tag, char *value, uint32_t length)
-{
-    DcmElement *element = create_element(error, tag, "OV", length);
-    if (element == NULL) {
-        free(value);
-        return NULL;
-    }
-    set_value_bytes(element, value);
-    element->vm = 1;
-    return element;
-}
-
-
-DcmElement *dcm_element_create_OW(DcmError **error,
-                                  uint32_t tag, char *value, uint32_t length)
-{
-    DcmElement *element = create_element(error, tag, "OW", length);
-    if (element == NULL) {
-        free(value);
-        return NULL;
-    }
-    set_value_bytes(element, value);
-    element->vm = 1;
-    return element;
-}
-
-
-DcmElement *dcm_element_create_UC(DcmError **error, 
-                                  uint32_t tag, char *value, uint32_t length)
-{
-    DcmElement *element = create_element(error, tag, "UC", length);
-    if (element == NULL) {
-        free(value);
-        return NULL;
-    }
-    set_value_bytes(element, value);
-    element->vm = 1;
-    return element;
-}
-
-
-DcmElement *dcm_element_create_UN(DcmError **error, 
-                                  uint32_t tag, char *value, uint32_t length)
-{
-    DcmElement *element = create_element(error, tag, "UN", length);
-    if (element == NULL) {
-        free(value);
-        return NULL;
-    }
-    set_value_bytes(element, value);
-    element->vm = 1;
-    return element;
-}
-
-
-DcmElement *dcm_element_create_UR(DcmError **error, uint32_t tag, char *value)
-{
-    return create_element_str(error, tag, "UR", value, DCM_CAPACITY_UR);
-}
-
-
-DcmElement *dcm_element_create_UT(DcmError **error, uint32_t tag, char *value)
-{
-    return create_element_str(error, tag, "UT", value, DCM_CAPACITY_UT);
+    return true;
 }
 
 
 // Sequence Data Element
 
-DcmElement *dcm_element_create_SQ(DcmError **error, 
-                                  uint32_t tag, DcmSequence *value)
+static bool element_check_sequence(DcmError **error,
+                                   const DcmElement *element)
 {
-    uint32_t length;
-    uint32_t i;
-    DcmDataSet *item;
-    DcmElement *elem;
-
-    uint32_t seq_length = dcm_sequence_count(value);
-    length = 0;
-    for (i = 0; i < seq_length; i++) {
-        item = dcm_sequence_get(error, value, i);
-        if (item == NULL) {
-            dcm_sequence_destroy(value);
-            return NULL;
-        }
-        for (elem = item->elements; elem; elem = elem->hh.next) {
-            length += elem->length;
-        }
+    DcmVRClass klass = dcm_dict_vr_class(element->vr);
+    if (klass != DCM_CLASS_SEQUENCE) {
+      dcm_error_set(error, DCM_ERROR_CODE_INVALID,
+                    "Data Element is not seeuence",
+                    "Element tag %08X does not have a seeuence value",
+                    element->tag);
+      return false;
     }
 
-    DcmElement *element = create_element(error, tag, "SQ", length);
-    if (element == NULL) {
-        dcm_sequence_destroy(value);
-        return NULL;
-    }
-    element->value.sq = value;
-    element->sequence_pointer = value;
-    element->vm = 1;
-
-    return element;
+    return true;
 }
 
 
-DcmSequence *dcm_element_get_value_SQ(const DcmElement *element)
+bool dcm_element_get_value_sequence(DcmError **error,
+                                    DcmElement *element,   
+                                    DcmSequence **value)
 {
-    assert(element);
-    assert_vr(element, "SQ");
-    assert(element->value.sq);
-    dcm_sequence_lock(element->value.sq);
-    return element->value.sq;
+    if (!element_check_sequence(error, element)) {
+        return false;
+    }
+
+    dcm_sequence_lock(element->value.single.sq);
+    *value = element->value.single.sq;
+
+    return true;
+}
+
+
+bool dcm_element_set_value_sequence(DcmError **error, 
+                                           DcmElement *element,   
+                                           DcmSequence *value)
+{
+    if (!element_check_sequence(error, element)) {
+        return false;
+    }
+
+    uint32_t seq_count = dcm_sequence_count(value);
+    uint32_t length = 0;
+    for (uint32_t i = 0; i < seq_count; i++) {
+        DcmDataSet *item = dcm_sequence_get(error, value, i);
+        if (item == NULL) {
+            return false;
+        }
+        for (DcmElement *element = item->elements;
+            element; 
+            element = element->hh.next) {
+            length += element->length;
+        }
+    }
+
+    element->value.single.sq = value;
+    element->sequence_pointer = value;
+    element->vm = 1;
+    element->length = length;
+
+    return true;
+}
+
+
+// printing elements
+
+static void element_print_integer(const DcmElement *element,
+                                  uint32_t index)
+{
+    int64_t value;
+    (void) dcm_element_get_value_integer(NULL, element, index, &value);
+    if (element->vr == DCM_VR_UV) {
+        printf("%llu", (uint64_t)value);
+    } else {
+        printf("%lld", value);
+    }
+}
+
+
+static void element_print_float(const DcmElement *element,
+                                uint32_t index)
+{
+    double value;
+    (void) dcm_element_get_value_double(NULL, element, index, &value);
+    printf("%g", value);
+}
+
+
+static void element_print_string(const DcmElement *element,
+                                 uint32_t index)
+{
+    const char *value
+    (void) dcm_element_get_value_string(NULL, element, index, &value);
+    printf("%s", value);
 }
 
 
 void dcm_element_print(const DcmElement *element, uint8_t indentation)
 {
-    assert(element);
+    DcmVRClass klass = dcm_dict_vr_class(element->vr);
     const uint8_t num_indent = indentation * 2;
     const uint8_t num_indent_next = (indentation + 1) * 2;
 
@@ -1639,7 +952,7 @@ void dcm_element_print(const DcmElement *element, uint8_t indentation)
                dcm_element_get_group_number(element),
                dcm_element_get_element_number(element),
                keyword,
-               element->vr);
+               dcm_dict_vr_to_str(element->vr));
     } else {
         printf("%*.*s (%04X,%04X) | %s",
                num_indent,
@@ -1647,62 +960,58 @@ void dcm_element_print(const DcmElement *element, uint8_t indentation)
                "                                   ",
                dcm_element_get_group_number(element),
                dcm_element_get_element_number(element),
-               element->vr);
+               dcm_dict_vr_to_str(element->vr));
     }
 
-    if (strcmp(element->vr, "SQ") != 0) {
+    if (element->vr != DCM_VR_SQ) {
+        DcmSequence *sequence = dcm_element_get_value_SQ(element);
+        (void) dcm_element_get_value_sequence(NULL, element, &sequence);
+        uint32_t sequence_count = dcm_sequence_count(sequence);
+        if (sequence_count == 0) {
+            printf(" | [");
+        } else {
+            printf(" | [\n");
+        }
+        for (i = 0; i < sequence_count; i++) {
+            printf("%*.*s---Item #%d---\n",
+                   num_indent_next,
+                   num_indent_next,
+                   "                                   ",
+                   i + 1);
+            DcmDataSet *item = dcm_sequence_get(NULL, sequence, i);
+            dcm_dataset_print(item, indentation + 1);
+        }
+        printf("%*.*s]\n",
+               num_indent,
+               num_indent,
+               "                                   ");
+    } else {
         printf(" | %u | ", element->length);
 
         if (element->vm > 1) {
             printf("[");
         }
         for (i = 0; i < element->vm; i++) {
-            if (strcmp(element->vr, "AE") == 0) {
-                print_element_value_AE(element, i);
-            } else if (strcmp(element->vr, "AS") == 0) {
-                print_element_value_AS(element, i);
-            } else if (strcmp(element->vr, "AT") == 0) {
-                print_element_value_AT(element, i);
-            } else if (strcmp(element->vr, "CS") == 0) {
-                print_element_value_CS(element, i);
-            } else if (strcmp(element->vr, "DA") == 0) {
-                print_element_value_DA(element, i);
-            } else if (strcmp(element->vr, "DS") == 0) {
-                print_element_value_DS(element, i);
-            } else if (strcmp(element->vr, "DT") == 0) {
-                print_element_value_DT(element, i);
-            } else if (strcmp(element->vr, "FD") == 0) {
-                print_element_value_FD(element, i);
-            } else if (strcmp(element->vr, "FL") == 0) {
-                print_element_value_FL(element, i);
-            } else if (strcmp(element->vr, "IS") == 0) {
-                print_element_value_IS(element, i);
-            } else if (strcmp(element->vr, "LO") == 0) {
-                print_element_value_LO(element, i);
-            } else if (strcmp(element->vr, "PN") == 0) {
-                print_element_value_PN(element, i);
-            } else if (strcmp(element->vr, "SH") == 0) {
-                print_element_value_SH(element, i);
-            } else if (strcmp(element->vr, "SS") == 0) {
-                print_element_value_SS(element, i);
-            } else if (strcmp(element->vr, "SL") == 0) {
-                print_element_value_SL(element, i);
-            } else if (strcmp(element->vr, "ST") == 0) {
-                print_element_value_ST(element, i);
-            } else if (strcmp(element->vr, "SV") == 0) {
-                print_element_value_SV(element, i);
-            } else if (strcmp(element->vr, "TM") == 0) {
-                print_element_value_TM(element, i);
-            } else if (strcmp(element->vr, "UI") == 0) {
-                print_element_value_UI(element, i);
-            } else if (strcmp(element->vr, "US") == 0) {
-                print_element_value_US(element, i);
-            } else if (strcmp(element->vr, "UT") == 0) {
-                print_element_value_UT(element);
-            } else if (strcmp(element->vr, "UL") == 0) {
-                print_element_value_UL(element, i);
-            } else {
-                dcm_log_warning("Encountered unexpected Value Representation.");
+            switch (klass) {
+                case DCM_CLASS_NUMERIC:
+                    if (element->vr == DCM_VR_FL || element->vr == DCM_VR_FD) {
+                        element_print_float(element, i);
+                    } else {
+                        element_print_integer(element, i);
+                    }
+                    break;
+
+                case DCM_CLASS_STRING:
+                case DCM_CLASS_STRING_MULTI:
+                    element_print_string(element, i);
+                    break;
+
+                case DCM_CLASS_BINARY:
+                    break;
+
+                case DCM_CLASS_SEQUENCE:
+                default:
+                    dcm_log_warning("Unexpected Value Representation.");
             }
 
             if (element->vm > 1) {
@@ -1714,27 +1023,6 @@ void dcm_element_print(const DcmElement *element, uint8_t indentation)
             }
         }
         printf("\n");
-    } else {
-        DcmSequence *sequence = dcm_element_get_value_SQ(element);
-        uint32_t n_items = dcm_sequence_count(sequence);
-        if (n_items == 0) {
-            printf(" | [");
-        } else {
-            printf(" | [\n");
-        }
-        for (i = 0; i < n_items; i++) {
-            printf("%*.*s---Item #%d---\n",
-                   num_indent_next,
-                   num_indent_next,
-                   "                                   ",
-                   i + 1);
-            DcmDataSet *item = dcm_sequence_get(NULL, sequence, i);
-            dcm_dataset_print(item, indentation+1);
-        }
-        printf("%*.*s]\n",
-               num_indent,
-               num_indent,
-               "                                   ");
     }
 }
 
