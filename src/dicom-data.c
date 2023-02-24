@@ -31,6 +31,7 @@ struct _DcmElement {
     DcmVR vr;
     uint32_t length;
     uint32_t vm;
+    bool assigned;
 
     // Store values for multiplicity 1 (the most common case) 
     // inside the element to reduce malloc/frees during build
@@ -394,12 +395,43 @@ static bool element_check_string(DcmError **error,
 }
 
 
+static bool element_check_assigned(DcmError **error,
+                                   const DcmElement *element)
+{
+    if (!element->assigned) {
+        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
+                      "Data Element not assigned a value",
+                      "Element tag %08X has not been assigned a value",
+                      element->tag);
+        return false;
+    }
+
+    return true;
+}
+
+
+static bool element_check_not_assigned(DcmError **error,
+                                       const DcmElement *element)
+{
+    if (element->assigned) {
+        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
+                      "Data Element assigned twice",
+                      "Element tag %08X has been previously assigned a value",
+                      element->tag);
+        return false;
+    }
+
+    return true;
+}
+
+
 bool dcm_element_get_value_string(DcmError **error,
                                   const DcmElement *element, 
                                   uint32_t index,
                                   const char **value)
 {
-    if (!element_check_string(error, element) ||
+    if (!element_check_assigned(error, element) ||
+        !element_check_string(error, element) ||
         !element_check_index(error, element, index)) {
         return false;
     }
@@ -446,6 +478,10 @@ static bool dcm_element_validate(DcmError **error, DcmElement *element)
     DcmVR correct_vr = dcm_dict_lookup_vr(element->vr);
     DcmVRClass klass = dcm_dict_vr_class(element->vr);
 
+    if (!element_check_not_assigned(error, element)) {
+        return false;
+    }
+
     if (element->vr != correct_vr || klass == DCM_CLASS_ERROR) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                       "Data Element validation failed",
@@ -480,6 +516,8 @@ static bool dcm_element_validate(DcmError **error, DcmElement *element)
         }
     }
 
+    element->assigned = true;
+
     return true;
 }
 
@@ -489,15 +527,8 @@ static bool element_set_value_string(DcmError **error,
                                      char *string,
                                      bool steal)
 {
-    DcmVRClass klass = dcm_dict_vr_class(element->vr);
-
-    if (klass != DCM_VR_STRING && klass != DCM_VR_STRING_MULTI) {
-        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Tag cannot take a string value",
-                      "Attempt to set a string value for tag %08X, "
-                      "should be %s",
-                      element->tag,
-                      dcm_dict_vr_to_str(element->vr));
+    if (!element_check_not_assigned(error, element) ||
+        !element_check_string(error, element)) {
         return false;
     }
 
@@ -533,17 +564,17 @@ static bool element_set_value_string(DcmError **error,
 
 bool dcm_element_set_value_string(DcmError **error, 
                                   DcmElement *element, 
-                                  char *string)
+                                  char *value)
 {
-    return element_set_value_string(error, element, (char *) string, true);
+    return element_set_value_string(error, element, value, true);
 }
 
 
 bool dcm_element_set_value_string_static(DcmError **error, 
                                          DcmElement *element, 
-                                         const char *string)
+                                         const char *value)
 {
-    return element_set_value_string(error, element, (char *) string, false);
+    return element_set_value_string(error, element, (char *) value, false);
 }
 
 
@@ -612,13 +643,13 @@ static bool element_check_integer(DcmError **error,
 }
 
 
-
 bool dcm_element_get_value_integer(DcmError **error,
                                    const DcmElement *element, 
                                    uint32_t index,
                                    int64_t *value)
 {
-    if (!element_check_numeric(error, element) || 
+    if (!element_check_assigned(error, element) || 
+        !element_check_numeric(error, element) || 
         !element_check_integer(error, element) ||
         !element_check_index(error, element, index)) {
         return false;
@@ -642,7 +673,8 @@ bool dcm_element_set_value_integer(DcmError **error,
                                    DcmElement *element, 
                                    int64_t value)
 {
-    if (!element_check_numeric(error, element) || 
+    if (!element_check_not_assigned(error, element) || 
+        !element_check_numeric(error, element) || 
         !element_check_integer(error, element)) {
         return false;
     }
@@ -666,7 +698,8 @@ bool dcm_element_set_value_numeric_multi(DcmError **error,
                                          uint32_t vm,
                                          gboolean steal)
 {
-    if (!element_check_numeric(error, element)) {
+    if (!element_check_not_assigned(error, element) || 
+        !element_check_numeric(error, element)) {
         return false;
     }
 
@@ -738,7 +771,8 @@ bool dcm_element_get_value_double(DcmError **error,
                                   uint32_t index,
                                   double *value)
 {
-    if (!element_check_numeric(error, element) || 
+    if (!element_check_assigned(error, element) || 
+        !element_check_numeric(error, element) || 
         !element_check_float(error, element) ||
         !element_check_index(error, element, index)) {
         return false;
@@ -762,7 +796,8 @@ bool dcm_element_set_value_double(DcmError **error,
                                   DcmElement *element, 
                                   double value)
 {
-    if (!element_check_numeric(error, element) || 
+    if (!element_check_not_assigned(error, element) || 
+        !element_check_numeric(error, element) || 
         !element_check_float(error, element)) {
         return false;
     }
@@ -802,7 +837,8 @@ bool dcm_element_get_value_binary(DcmError **error,
                                   DcmElement *element,   
                                   const char **value)
 {
-    if (!element_check_binary(error, element)) {
+    if (!element_check_assigned(error, element) || 
+        !element_check_binary(error, element)) {
         return false;
     }
 
@@ -818,7 +854,8 @@ bool dcm_element_set_value_binary(DcmError **error,
                                   uint32_t length,
                                   gboolean steal)
 {
-    if (!element_check_binary(error, element)) {
+    if (!element_check_not_assigned(error, element) || 
+        !element_check_binary(error, element)) {
         return false;
     }
 
@@ -860,7 +897,8 @@ bool dcm_element_get_value_sequence(DcmError **error,
                                     DcmElement *element,   
                                     DcmSequence **value)
 {
-    if (!element_check_sequence(error, element)) {
+    if (!element_check_assigned(error, element) || 
+        !element_check_sequence(error, element)) {
         return false;
     }
 
@@ -872,10 +910,11 @@ bool dcm_element_get_value_sequence(DcmError **error,
 
 
 bool dcm_element_set_value_sequence(DcmError **error, 
-                                           DcmElement *element,   
-                                           DcmSequence *value)
+                                    DcmElement *element,   
+                                    DcmSequence *value)
 {
-    if (!element_check_sequence(error, element)) {
+    if (!element_check_not_assigned(error, element) || 
+        !element_check_sequence(error, element)) {
         return false;
     }
 
@@ -894,9 +933,14 @@ bool dcm_element_set_value_sequence(DcmError **error,
     }
 
     element->value.single.sq = value;
-    element->sequence_pointer = value;
     element->vm = 1;
     element->length = length;
+
+    if (!dcm_element_validate(error, element)) {
+        return false;
+    }
+
+    element->sequence_pointer = value;
 
     return true;
 }
@@ -1593,7 +1637,6 @@ void dcm_frame_destroy(DcmFrame *frame)
         frame = NULL;
     }
 }
-
 
 
 // Basic Offset Table
