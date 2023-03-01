@@ -5043,7 +5043,7 @@ static const struct _DcmAttribute attribute_table[] = {
     {0X7FE00002, DCM_VR_OV, "ExtendedOffsetTableLengths"},
     {0X7FE00008, DCM_VR_OF, "FloatPixelData"},
     {0X7FE00009, DCM_VR_OD, "DoubleFloatPixelData"},
-    {0X7FE00010, DCM_VR_OW, "PixelData"},
+    {0X7FE00010, DCM_VR_OB, "PixelData"},
     {0X7FE00020, DCM_VR_OW, "CoefficientsSDVN"},
     {0X7FE00030, DCM_VR_OW, "CoefficientsSDHN"},
     {0X7FE00040, DCM_VR_OW, "CoefficientsSDDN"},

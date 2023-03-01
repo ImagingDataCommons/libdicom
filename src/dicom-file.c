@@ -409,7 +409,6 @@ static bool read_element_sequence(DcmError **error,
                                   int64_t *position,
                                   bool implicit)
 {
-
     int index = 0;
     int64_t seq_position = 0;
     while (seq_position < length) {
@@ -417,7 +416,7 @@ static bool read_element_sequence(DcmError **error,
         uint32_t item_tag;
         uint32_t item_length;
         if (!read_iheader(error, filehandle, 
-                          &item_tag, &item_length, position)) {
+                          &item_tag, &item_length, &seq_position)) {
             return false;
         }
 
@@ -838,7 +837,6 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
         }
         tag = dcm_element_get_tag(element);
         group_number = dcm_element_get_group_number(element);
-        dcm_element_destroy(element);
 
         if (tag == TAG_TRAILING_PADDING) {
             dcm_log_info("Stop reading Data Set",
@@ -854,6 +852,7 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
             if (implicit) {
                 // Tag: 4 bytes, Value Length: 4 bytes
                 if (!dcm_seekcur(error, filehandle, -8, &position)) {
+                    dcm_element_destroy(element);
                     dcm_dataset_destroy(dataset);
                     return NULL;
                 }
@@ -861,6 +860,7 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
             } else {
                 // Tag: 4 bytes, VR: 2 bytes + 2 bytes, Value Length: 4 bytes
                 if (!dcm_seekcur(error, filehandle, -12, &position)) {
+                    dcm_element_destroy(element);
                     dcm_dataset_destroy(dataset);
                     return NULL;
                 }
@@ -868,6 +868,7 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
 
             if (!dcm_offset(error, 
                             filehandle, &filehandle->pixel_data_offset)) {
+                dcm_element_destroy(element);
                 dcm_dataset_destroy(dataset);
                 return NULL;
             }
@@ -881,16 +882,14 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                           "Reading of Data Set failed",
                           "Encountered File Meta Information group");
+            dcm_element_destroy(element);
             dcm_dataset_destroy(dataset);
             return NULL;
         }
 
-        element = read_element(error, filehandle, &position, implicit);
-        if (element == NULL) {
-            dcm_dataset_destroy(dataset);
-            return NULL;
-        }
-        if (!dcm_dataset_insert(error, dataset, element)) {
+        if (!read_element_body(error, 
+                               element, filehandle, &position, implicit) ||
+            !dcm_dataset_insert(error, dataset, element)) {
             dcm_element_destroy(element);
             dcm_dataset_destroy(dataset);
             return NULL;
@@ -1255,7 +1254,7 @@ DcmBOT *dcm_filehandle_build_bot(DcmError **error,
         }
     } else {
         struct PixelDescription desc;
-        if (set_pixel_description(error, &desc, metadata)) {
+        if (!set_pixel_description(error, &desc, metadata)) {
             free(offsets);
             return NULL;
         }

@@ -40,9 +40,11 @@ static char *fixture_path(const char *relpath)
 static size_t compute_length_of_string_value(const char *value)
 {
     size_t length = strlen(value);
+
     if (length % 2 != 0) {
         length += 1;  // zero padding
     }
+
     return length;
 }
 
@@ -50,16 +52,20 @@ static size_t compute_length_of_string_value(const char *value)
 static size_t compute_length_of_string_value_multi(char **values, 
                                                    uint32_t vm)
 {
-    uint32_t i;
-    size_t length;
-
-    length = 3 * 2;  // separators between values
-    for (i = 0; i < vm; i++) {
+    size_t length = 0;
+    for (uint32_t i = 0; i < vm; i++) {
         length += strlen(values[i]);
     }
+
+    if (vm > 1) {
+        // add the separator characters
+        length += vm - 1;
+    }
+
     if (length % 2 != 0) {
         length += 1;  // zero padding
     }
+
     return length;
 }
 
@@ -259,7 +265,7 @@ START_TEST(test_element_CS_multivalue)
     char **values = malloc(vm * sizeof(char *));
     values[0] = my_strdup("ORIGINAL");
     values[1] = my_strdup("PRIMARY");
-    values[2] = my_strdup("VOLUME");
+    values[2] = my_strdup("LABEL");
     values[3] = my_strdup("NONE");
 
     DcmElement *element = dcm_element_create(NULL, tag, 0);
@@ -593,6 +599,7 @@ END_TEST
 START_TEST(test_filehandle_sm_image_metadata)
 {
     char *file_path = fixture_path("data/test_files/sm_image.dcm");
+
     DcmFilehandle *filehandle = 
         dcm_filehandle_create_from_file(NULL, file_path);
     free(file_path);
@@ -628,7 +635,7 @@ START_TEST(test_filehandle_sm_image_frame)
     DcmDataSet *metadata = dcm_filehandle_read_metadata(NULL, filehandle);
     ck_assert_ptr_nonnull(metadata);
 
-    dcm_log_level = DCM_LOG_INFO;
+    dcm_log_level = DCM_LOG_DEBUG;
     DcmError *error = NULL;
     DcmBOT *bot = dcm_filehandle_build_bot(&error, filehandle, metadata);
     if (!bot) {
