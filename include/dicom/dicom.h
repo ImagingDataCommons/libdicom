@@ -512,10 +512,12 @@ bool dcm_is_encapsulated_transfer_syntax(const char *transfer_syntax_uid);
  *
  * :param error: Error structure pointer
  * :param tag: Tag
+ * :param length: Length in bytes of the value, or 0 if unknown 
  *
  * :return: Pointer to Data Element
  */
-DcmElement *dcm_element_create(DcmError **error, uint32_t tag)
+DCM_EXTERN
+DcmElement *dcm_element_create(DcmError **error, uint32_t tag, uint32_t length);
 
 /**
  * Get group number (first part of Tag) of a Data Element.
@@ -650,6 +652,28 @@ bool dcm_element_set_value_string_static(DcmError **error,
                                          const char *value);
 
 /**
+ * Set the value of an element to a multi-valued string. The element must 
+ * have an appropriate tag. 
+ *
+ * On success, if "steal" is true, ownership of values passes to the 
+ * element, ie. it will be freed when the element is destroyed.
+ *
+ * :param error: Error structure pointer
+ * :param element: Pointer to Data Element
+ * :param values: String value 
+ * :param vm: Number of values
+ * :param steal: if true, ownership of values passes to element
+ *
+ * :return: true on success
+ */
+DCM_EXTERN
+bool dcm_element_set_value_string_multi(DcmError **error,
+                                        DcmElement *element,
+                                        char **values,
+                                        uint32_t vm,
+                                        bool steal);
+
+/**
  * Get an integer from a 16, 32 or 64-bit integer-valued element.
  *
  * :param error: Error structure pointer
@@ -685,22 +709,23 @@ bool dcm_element_set_value_integer(DcmError **error,
  * have an appropriate tag. 
  *
  * Although the value passed is `int*`, it should
- * be a pointer to an array of 16- to 64-bit numberic values of the
+ * be a pointer to an array of 16- to 64-bit numeric values of the
  * appropriate type for the tag.
  *
  * :param error: Error structure pointer
  * :param element: Pointer to Data Element
- * :param value: Integer value 
- * :param steal: if true, ownership of the array passes to element
+ * :param values: Array of values
+ * :param vm: Number of values
+ * :param steal: if true, ownership of values passes to element
  *
  * :return: true on success
  */
 DCM_EXTERN
 bool dcm_element_set_value_numeric_multi(DcmError **error, 
                                          DcmElement *element, 
-                                         int *value,
+                                         int *values,
                                          uint32_t vm,
-                                         gboolean steal)
+                                         bool steal);
 
 /**
  * Get a double from a 32- or 64-bit float element.
@@ -714,7 +739,7 @@ bool dcm_element_set_value_numeric_multi(DcmError **error,
  */
 DCM_EXTERN
 bool dcm_element_get_value_double(DcmError **error,
-                                  DcmElement *element,   
+                                  const DcmElement *element,   
                                   uint32_t index,
                                   double *value);
 
@@ -745,7 +770,7 @@ bool dcm_element_set_value_double(DcmError **error,
  */
 DCM_EXTERN
 bool dcm_element_get_value_binary(DcmError **error,
-                                  DcmElement *element,   
+                                  const DcmElement *element,   
                                   const char **value);
 
 /**
@@ -760,11 +785,44 @@ bool dcm_element_get_value_binary(DcmError **error,
  *
  * :return: true on success
  */
+DCM_EXTERN
 bool dcm_element_set_value_binary(DcmError **error, 
                                   DcmElement *element, 
                                   char *value,
                                   uint32_t length,
-                                  gboolean steal);
+                                  bool steal);
+
+/**
+ * Get a sequence value from an element.
+ *
+ * :param error: Error structure pointer
+ * :param element: Pointer to Data Element
+ * :param value: Sequence value return
+ *
+ * :return: true on success
+ */
+DCM_EXTERN
+bool dcm_element_get_value_sequence(DcmError **error,
+                                    const DcmElement *element,   
+                                    DcmSequence **value);
+
+
+/**
+ * Set the value of an element to a sequence. The element must 
+ * have an appropriate tag. 
+ *
+ * The element takes ownership of the value pointer on success.
+ *
+ * :param error: Error structure pointer
+ * :param element: Pointer to Data Element
+ * :param value: Pointer to sequence value 
+ *
+ * :return: true on success
+ */
+DCM_EXTERN
+bool dcm_element_set_value_sequence(DcmError **error, 
+                                    DcmElement *element,   
+                                    DcmSequence *value);
 
 /**
  * Print a Data Element.

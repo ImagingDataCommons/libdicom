@@ -1,5 +1,23 @@
 # TODO
 
+- we have eg.:
+
+    DcmElement *copied_element = dcm_dataset_get_clone(NULL, dataset, tag);
+
+  maybe should be:
+
+    bool dcm_dataset_get(NULL, dataset, tag, &copied_element);
+
+  perhaps the bool forms are only for non-pointer returns? check
+
+
+
+- add logic to check length against originally given value
+
+  in validate? no, probably needs to be done separately for each set
+
+
+
 # bot support
 
 - need more tests and test images

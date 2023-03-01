@@ -68,6 +68,7 @@ typedef enum _DcmVRClass {
 size_t dcm_dict_vr_size(DcmVR vr);
 DcmVRClass dcm_dict_vr_class(DcmVR vr);
 uint32_t dcm_dict_vr_capacity(DcmVR vr);
+int dcm_dict_vr_header_length(DcmVR vr);
 DcmVR dcm_dict_lookup_vr(uint32_t tag);
 const char *dcm_dict_lookup_keyword(uint32_t tag);
 
