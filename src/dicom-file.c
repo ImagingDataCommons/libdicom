@@ -803,10 +803,7 @@ DcmDataSet *dcm_filehandle_read_filehandle_meta(DcmError **error,
 DcmDataSet *dcm_filehandle_read_metadata(DcmError **error, 
                                          DcmFilehandle *filehandle)
 {
-    uint32_t tag;
-    uint16_t group_number;
     bool implicit;
-    DcmElement *element;
 
     if (filehandle->offset == 0) {
         DcmDataSet *filehandle_meta = 
@@ -841,30 +838,36 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
         }
 
         uint32_t length;
-        element = read_element_header(error, 
-                                      filehandle, &length, &position, implicit);
+        DcmElement *element = read_element_header(error, 
+                                                  filehandle, 
+                                                  &length, 
+                                                  &position, 
+                                                  implicit);
         if (element == NULL) {
             dcm_dataset_destroy(dataset);
             return NULL;
         }
-        tag = dcm_element_get_tag(element);
-        group_number = dcm_element_get_group_number(element);
+        uint32_t tag = dcm_element_get_tag(element);
 
         if (tag == TAG_TRAILING_PADDING) {
             dcm_log_info("Stop reading Data Set",
                          "Encountered Data Set Trailing Tag");
+            dcm_element_destroy(element);
             break;
         } 
        
         if (tag == TAG_PIXEL_DATA ||
             tag == TAG_FLOAT_PIXEL_DATA ||
             tag == TAG_DOUBLE_PIXEL_DATA) {
+            dcm_log_debug("Stop reading Data Set. "
+                          "Encountered Tag of Pixel Data Element.");
+            dcm_element_destroy(element);
+
             // Set filehandle pointer to the first byte of the 
             // pixel data element
             if (implicit) {
                 // Tag: 4 bytes, Value Length: 4 bytes
                 if (!dcm_seekcur(error, filehandle, -8, &position)) {
-                    dcm_element_destroy(element);
                     dcm_dataset_destroy(dataset);
                     return NULL;
                 }
@@ -872,7 +875,6 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
             } else {
                 // Tag: 4 bytes, VR: 2 bytes + 2 bytes, Value Length: 4 bytes
                 if (!dcm_seekcur(error, filehandle, -12, &position)) {
-                    dcm_element_destroy(element);
                     dcm_dataset_destroy(dataset);
                     return NULL;
                 }
@@ -880,17 +882,14 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
 
             if (!dcm_offset(error, 
                             filehandle, &filehandle->pixel_data_offset)) {
-                dcm_element_destroy(element);
                 dcm_dataset_destroy(dataset);
                 return NULL;
             }
 
-            dcm_log_debug("Stop reading Data Set. "
-                          "Encountered Tag of Pixel Data Element.");
             break;
         }
 
-        if (group_number == 0x0002) {
+        if (dcm_element_get_group_number(element) == 0x0002) {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                           "Reading of Data Set failed",
                           "Encountered File Meta Information group");

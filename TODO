@@ -1,14 +1,15 @@
 # TODO
 
-- leak test
-
-
 
 # bot support
 
 - need more tests and test images
 
 - extended offset table support seems to be broken? see FIXME comment
+
+	probably will never be used
+
+- a fast scanner to find the BOT table
 
 
 # data types
@@ -60,3 +61,8 @@
 - debug failing test with eg.
 
 	CK_FORK=no CK_RUN_CASE=frame gdb ./check_dicom
+
+- leak check
+
+	CK_FORK=no valgrind --leak-check=full ./check_dicom
+

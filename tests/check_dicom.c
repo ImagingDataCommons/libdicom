@@ -392,7 +392,7 @@ START_TEST(test_element_SQ)
 
     dcm_element_print(element, 0);
 
-    dcm_element_destroy(element);
+    dcm_element_destroy(top);
 }
 END_TEST
 
@@ -662,6 +662,7 @@ START_TEST(test_filehandle_sm_image_frame)
     ck_assert_str_eq(dcm_frame_get_transfer_syntax_uid(frame),
                      "1.2.840.10008.1.2.1");
 
+    dcm_frame_destroy(frame);
     dcm_bot_destroy(bot);
     dcm_dataset_destroy(metadata);
     dcm_filehandle_destroy(filehandle);
