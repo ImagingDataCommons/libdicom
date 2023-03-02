@@ -210,10 +210,10 @@ END_TEST
 START_TEST(test_element_AE)
 {
     uint32_t tag = 0x00020016;
-    const char *value = "Application";
+    char *value = "Application";
 
     DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_AE);
-    (void) dcm_element_set_value_string_static(NULL, element, value);
+    (void) dcm_element_set_value_string(NULL, element, value, false);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
     ck_assert_int_eq(dcm_element_get_vr(element), DCM_VR_AE);
@@ -235,10 +235,10 @@ END_TEST
 START_TEST(test_element_AS)
 {
     uint32_t tag = 0x00101010;
-    const char *value = "99";
+    char *value = "99";
 
     DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_AS);
-    (void) dcm_element_set_value_string_static(NULL, element, value);
+    (void) dcm_element_set_value_string(NULL, element, value, false);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
     ck_assert_int_eq(dcm_element_get_vr(element), DCM_VR_AS);
@@ -293,10 +293,10 @@ END_TEST
 START_TEST(test_element_DS)
 {
     uint32_t tag = 0x0040072A;
-    const char *value = "0.0025";
+    char *value = "0.0025";
 
     DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_DS);
-    (void) dcm_element_set_value_string_static(NULL, element, value);
+    (void) dcm_element_set_value_string(NULL, element, value, false);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
     ck_assert_int_eq(dcm_element_get_vr(element), DCM_VR_DS);
@@ -318,10 +318,10 @@ END_TEST
 START_TEST(test_element_IS)
 {
     uint32_t tag = 0x00280008;
-    const char *value = "10";
+    char *value = "10";
 
     DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_IS);
-    (void) dcm_element_set_value_string_static(NULL, element, value);
+    (void) dcm_element_set_value_string(NULL, element, value, false);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
     ck_assert_int_eq(dcm_element_get_vr(element), DCM_VR_IS);
@@ -343,10 +343,10 @@ END_TEST
 START_TEST(test_element_ST)
 {
     uint32_t tag = 0x00080092;
-    const char *value = "Random Street, Sometown";
+    char *value = "Random Street, Sometown";
 
     DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_ST);
-    (void) dcm_element_set_value_string_static(NULL, element, value);
+    (void) dcm_element_set_value_string(NULL, element, value, false);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
     ck_assert_int_eq(dcm_element_get_vr(element), DCM_VR_ST);
@@ -368,7 +368,7 @@ END_TEST
 START_TEST(test_element_SQ)
 {
     DcmElement *element = dcm_element_create(NULL, 0x00180050, DCM_VR_DS);
-    (void) dcm_element_set_value_string_static(NULL, element, "0.01");
+    (void) dcm_element_set_value_string(NULL, element, "0.01", false);
 
     DcmDataSet *dataset = dcm_dataset_create(NULL);
     ck_assert_int_eq(dcm_dataset_insert(NULL, dataset, element), true);
@@ -424,10 +424,10 @@ END_TEST
 START_TEST(test_element_UI)
 {
     uint32_t tag = 0x00080018;
-    const char *value = "2.25.1";
+    char *value = "2.25.1";
 
     DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_UI);
-    (void) dcm_element_set_value_string_static(NULL, element, value);
+    (void) dcm_element_set_value_string(NULL, element, value, false);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
     ck_assert_int_eq(dcm_element_get_vr(element), DCM_VR_UI);

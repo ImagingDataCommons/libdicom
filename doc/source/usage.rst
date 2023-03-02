@@ -1,23 +1,6 @@
 Usage
 -----
 
-Memory management
-+++++++++++++++++
-
-Each data structure (Data Element, Data Set, Sequence, Frame Item,
-etc.) takes over ownership of allocated memory for passed arguments upon
-successful object creation (``*_create()`` functions) and deallocates the
-memory upon object destruction (``*_destroy()`` functions).
-
-If creation fails for some reason, ownership is not transferred.
-
-Some API calls take pointers to externally managed memory, for example 
-:c:func:`dcm_element_set_value_numeric_multi()` takes a pointer to an array of
-numeric values. If you set the parameter `steal`, then libdicom will take
-ownership of this pointer and will free the memory when the element is freed.
-If you do not set `steal`, then libdicom will take a copy of the data.
-
-
 API overview
 ++++++++++++
 
@@ -36,18 +19,18 @@ using a standard C type (e.g,. VR ``"US"`` has type ``uint16_t`` and VR
 at runtime (e.g., the maximal capacity of a character string).  Depending
 on the VR, an individual Data Element may have a `Value Multiplicity (VM)
 <http://dicom.nema.org/medical/dicom/current/output/chtml/part05/sect_6.4.html>`_
-greater than one, i.e., contain more than one value.  Under the
-hood, a Data Element thus generally contains an array of values.
+greater than one, i.e., contain more than one value.  Under the hood,
+a Data Element thus generally contains an array of values.
 
 A Data Element can be created with :c:func:`dcm_element_create()`, it can have
 a value assigned to it with eg.
-:c:func:`dcm_element_set_value_numeric_multi()`, and it can be destroyed with 
-:c:func:`dcm_element_destroy()`.  
+:c:func:`dcm_element_set_value_integer()`, and it can be destroyed with 
+:c:func:`dcm_element_destroy()`. See MEMORY MANAGEMENT below for details on
+pointer ownership.
 
-Upon creation, the Data Element
-takes over ownership of the memory allocated for the contained values.
-An individual value can be retrieved via the VR-specific getter function
-(e.g., :c:func:`dcm_element_get_value_UI()`).  Note that in case of character
+An individual value can be retrieved via the getter functions like
+(e.g., :c:func:`dcm_element_get_value_integer()`).  Note that in case of 
+character
 string or binary values, the getter function returns the pointer to the
 stored character array  (``const char *``) and that pointer is only valid
 for the lifetime of the Data Element.  When a Data Element is destroyed,
@@ -62,17 +45,20 @@ created via :c:func:`dcm_dataset_create()` and destroyed via
 :c:func:`dcm_dataset_destroy()`.  Data Elements can be added to a
 Data Set via :c:func:`dcm_dataset_insert()`, removed from a Data Set
 via :c:func:`dcm_dataset_remove()`, and retrieved from a Data Set via
-:c:func:`dcm_dataset_get()` or :c:func:`dcm_dataset_get_clone()`.  When a
-Data Element is added to a Data Set, the Data Set takes over ownership
+:c:func:`dcm_dataset_get()` or :c:func:`dcm_dataset_get_clone()`.
+
+When a Data Element is added to a Data Set, the Data Set takes over ownership
 of the memory allocated for contained Data Elements.  When a Data Element
 is retrieved from a Data Set, it may either be borrowed with ownership of
 the memory allocated for the Data Element remaining with the Data Set in
 case of :c:func:`dcm_dataset_get()` or copied with the caller taking on
 ownership of the memory newly allocated for the Data Element in case of
-:c:func:`dcm_dataset_get_clone()`.  Furthermore, an individual Data Element
-can only be part of only one Data Set.  When a Data Element is removed from a
-Data Set, the memory allocated for the Data Element is freed.  When a Data Set
-is destroyed, all contained Data Elements are also automatically destroyed.
+:c:func:`dcm_dataset_get_clone()`.
+
+An individual Data Element can only be part of only one Data Set.  When a
+Data Element is removed from a Data Set, the memory allocated for the Data
+Element is freed.  When a Data Set is destroyed, all contained Data Elements
+are also automatically destroyed.
 
 A `Sequence
 <http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_3.html#glossentry_SequenceOfItems>`_
@@ -83,22 +69,27 @@ via :c:func:`dcm_sequence_create()` and destroyed via
 :c:func:`dcm_sequence_destroy()`.  Data Sets can be added to a Sequence
 via :c:func:`dcm_sequence_append()`, removed from a Sequence via
 :c:func:`dcm_sequence_remove()`, and retrieved from a Sequence via
-:c:func:`dcm_sequence_get()`.  When a Data Set is added to a sequence,
-the sequence takes over ownership of the memory allocated for the Data Set
-(and consequently of each contained Data Element).  When a Data Set is
-retrieved from a sequence, it is only borrowed and ownership of the memory
-allocated for the Data Set remains with the sequence.  Retrieved Data Sets
-are immutable (locked).  When a Data Set is removed from a sequence, the
-Data Set is destroyed (i.e., the allocated memory is freed).  When a Sequence
-is destroyed, all contained Data Sets are also automatically destroyed.
+:c:func:`dcm_sequence_get()`.  
+
+When a Data Set is added to a sequence, the sequence takes over ownership of
+the memory allocated for the Data Set (and consequently of each contained
+Data Element).  When a Data Set is retrieved from a sequence, it is only
+borrowed and ownership of the memory allocated for the Data Set remains
+with the sequence.  Retrieved Data Sets are immutable (locked).  When a
+Data Set is removed from a sequence, the Data Set is destroyed (i.e., the
+allocated memory is freed).  When a Sequence is destroyed, all contained
+Data Sets are also automatically destroyed.
 
 A Filehandle (:c:type:`DcmFilehandle`) enables access of a `DICOM file
 <http://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_3.html#glossentry_DICOMFile>`_,
 which contains an encoded Data Set representing a SOP Instance.
 A Filehandle can be created via :c:func:`dcm_filehandle_create_from_file()`
-and destroyed via :c:func:`dcm_filehandle_destroy()`, which open a
-Part10 file stored on disk and closes it, respectively.  The content of
-a Part10 file can be read using various functions.  The `File Meta Information
+or :c:func:`dcm_filehandle_create_from_memory()` , and destroyed via
+:c:func:`dcm_filehandle_destroy()`.  You can make your own load functions
+to load from other IO sources, see :c:func:`dcm_filehandle_create()`.
+
+The content of a Part10 file can be read
+using various functions.  The `File Meta Information
 <http://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_3.html#glossentry_FileMetaInformation>`_
 can be read via :c:func:`dcm_filehandle_read_file_meta()`.  The metadata
 of the Data Set (i.e., all Data Elements with the exception of the Pixel
@@ -170,13 +161,44 @@ For example:
         return 0;
     }
 
-Load from memory
-++++++++++++++++
+Memory management
++++++++++++++++++
 
-As well as :c:func:`dcm_filehandle_create_from_file()`, there's
-:c:func:`dcm_filehandle_create_from_memory()` to make a DcmFilehandle from
-a memory area containing a DICOM image. You can make your own load functions
-to load from other IO sources, see :c:func:`dcm_filehandle_create()`.
+libdicom objects (Data Element, Data Set, Sequence, Frame Item, etc.) can
+contain references to other libdicom objects. For example, you can set a
+sequence as the value of an element like this:
+
+.. code-block:: c
+
+    if (!dcm_element_set_value_sequence(error, element, sequence)) {
+        handle error;
+    }
+
+If this function succeeeds, ownership of the sequence object passes to the
+element, ie. when the element is destroyed, the sequence will also be
+destroyed.
+
+If this function fails, ownership does not transfer.
+
+libdicom objects can also contain references to datastructures allocated by
+other programs, for example, arrays of numeric values. 
+
+.. code-block:: c
+
+    int *values = pointer to array of integers;
+    uint32_t vm = number of ints in array;
+    if( !dcm_element_set_value_numeric_multi(error, 
+                                             element, 
+                                             values, 
+                                             vm, 
+                                             true)) {
+      handle error;
+    }
+
+The final parameter, `steal` sets whether ownership of the pointer to the 
+array should be "stolen" by libdicom. If it is true, then libdicom will use 
+:c:func:`free()` to free the array when the element is freed. If it is false,
+libdiom will take a copy of the array.
 
 Getting started
 +++++++++++++++
@@ -207,6 +229,7 @@ printing it to standard output:
             dcm_filehandle_destroy(filehandle);
             return 1;
         }
+
         dcm_dataset_print(metadata, 0);
 
         dcm_filehandle_destroy(filehandle);

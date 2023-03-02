@@ -509,7 +509,7 @@ bool dcm_element_set_value_string_multi(DcmError **error,
 }
 
 
-static bool element_set_value_string(DcmError **error, 
+bool dcm_element_set_value_string(DcmError **error, 
                                      DcmElement *element, 
                                      char *value,
                                      bool steal)
@@ -559,23 +559,6 @@ static bool element_set_value_string(DcmError **error,
 
     return true;
 }
-
-
-bool dcm_element_set_value_string(DcmError **error, 
-                                  DcmElement *element, 
-                                  char *value)
-{
-    return element_set_value_string(error, element, value, true);
-}
-
-
-bool dcm_element_set_value_string_static(DcmError **error, 
-                                         DcmElement *element, 
-                                         const char *value)
-{
-    return element_set_value_string(error, element, (char *) value, false);
-}
-
 
 
 // integer numeric types

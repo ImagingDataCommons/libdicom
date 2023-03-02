@@ -545,7 +545,7 @@ static bool read_element_body(DcmError **error,
                 }
             }
 
-            if (!dcm_element_set_value_string(error, element, value)) {
+            if (!dcm_element_set_value_string(error, element, value, true)) {
                 free(value);
                 return false;
             }

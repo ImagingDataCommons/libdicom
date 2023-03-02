@@ -636,43 +636,30 @@ bool dcm_element_get_value_string(DcmError **error,
  * Set the value of an element to a string. The element must have an
  * appropriate tag. 
  *
- * On success, ownership of the value passes to the element,
- * ie. it will be freed when the element is destroyed.
+ * On success, if `steal` is true, ownership of `value` passes to 
+ * `element`, ie. it will be freed when `element` is destroyed. If `steal` is
+ * false, then a copy is made of `value` and ownership is not transferred.
  *
  * :param error: Error structure pointer
  * :param element: Pointer to Data Element
  * :param value: String value 
+ * :param steal: if true, ownership of value passes to element
  *
  * :return: true on success
  */
 DCM_EXTERN
 bool dcm_element_set_value_string(DcmError **error, 
                                   DcmElement *element, 
-                                  char *value);
-
-/**
- * Set the value of an element to a string. The element must have an
- * appropriate tag. 
- *
- * The string will not be freed when element is destroyed.
- *
- * :param error: Error structure pointer
- * :param element: Pointer to Data Element
- * :param value: String value 
- *
- * :return: true on success
- */
-DCM_EXTERN
-bool dcm_element_set_value_string_static(DcmError **error, 
-                                         DcmElement *element, 
-                                         const char *value);
+                                  char *value,
+                                  bool steal);
 
 /**
  * Set the value of an element to a multi-valued string. The element must 
  * have an appropriate tag. 
  *
- * On success, if "steal" is true, ownership of values passes to the 
- * element, ie. it will be freed when the element is destroyed.
+ * On success, if `steal` is true, ownership of `value` passes to 
+ * `element`, ie. it will be freed when `element` is destroyed. If `steal` is
+ * false, then a copy is made of `value` and ownership is not transferred.
  *
  * :param error: Error structure pointer
  * :param element: Pointer to Data Element
@@ -726,7 +713,11 @@ bool dcm_element_set_value_integer(DcmError **error,
  *
  * Although the value passed is `int*`, it should
  * be a pointer to an array of 16- to 64-bit numeric values of the
- * appropriate type for the tag.
+ * appropriate type for the element VR.
+ *
+ * On success, if `steal` is true, ownership of `values` passes to 
+ * `element`, ie. it will be freed when `element` is destroyed. If `steal` is
+ * false, then a copy is made of `values` and ownership is not transferred.
  *
  * :param error: Error structure pointer
  * :param element: Pointer to Data Element
@@ -792,6 +783,10 @@ bool dcm_element_get_value_binary(DcmError **error,
 /**
  * Set the value of an element to a binary value. The element must 
  * have an appropriate tag. 
+ *
+ * On success, if `steal` is true, ownership of `value` passes to 
+ * `element`, ie. it will be freed when `element` is destroyed. If `steal` is
+ * false, then a copy is made of `value` and ownership is not transferred.
  *
  * :param error: Error structure pointer
  * :param element: Pointer to Data Element
