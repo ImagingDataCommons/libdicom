@@ -1043,34 +1043,39 @@ DcmBOT *dcm_filehandle_read_bot(DcmError **error,
         // Handle Extended Offset Table attribute
         const DcmElement *eot_element = dcm_dataset_contains(metadata, 
                                                              0x7FE00001);
-        if (eot_element) {
-            dcm_log_info("Found Extended Offset Table.");
+        if (eot_element == NULL) {
+            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                          "Reading Basic Offset Table failed",
+                          "No Basic Offset Table, "
+                          "and no Extended Offset Table");
+            free(offsets);
+            return NULL;
+        }
 
-            const char *blob;
-            if (!dcm_element_get_value_binary(error, eot_element, &blob)) {
+        dcm_log_info("Found Extended Offset Table.");
+
+        const char *blob;
+        if (!dcm_element_get_value_binary(error, eot_element, &blob)) {
+            free(offsets);
+            return NULL;
+        }
+
+        for (uint32_t i = 0; i < num_frames; i++) {
+            char *end_ptr;
+            value = (uint64_t) strtoull(blob, &end_ptr, 64);
+            // strtoull returns 0 in case of error
+            // FIXME and also sets end_ptr to blob
+            if (value == 0 && i > 0) {
+                dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                              "Reading Basic Offset Table failed",
+                              "Failed to parse value of Extended Offset "
+                              "Table element for frame #%d", i + 1);
                 free(offsets);
                 return NULL;
             }
-
-            for (uint32_t i = 0; i < num_frames; i++) {
-                char *end_ptr;
-                value = (uint64_t) strtoull(blob, &end_ptr, 64);
-                // strtoull returns 0 in case of error
-                // FIXME and also sets end_ptr to blob
-                if (value == 0 && i > 0) {
-                    dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                                  "Reading Basic Offset Table failed",
-                                  "Failed to parse value of Extended Offset "
-                                  "Table element for frame #%d", i + 1);
-                    free(offsets);
-                    return NULL;
-                }
-                offsets[i] = value;
-                blob = end_ptr;
-            }
-            // FIXME we should return the bot I guess?
+            offsets[i] = value;
+            blob = end_ptr;
         }
-        return NULL;
     }
 
     return dcm_bot_create(error, offsets, num_frames, first_frame_offset);
