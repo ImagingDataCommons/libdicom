@@ -510,9 +510,9 @@ bool dcm_element_set_value_string_multi(DcmError **error,
 
 
 bool dcm_element_set_value_string(DcmError **error, 
-                                     DcmElement *element, 
-                                     char *value,
-                                     bool steal)
+                                  DcmElement *element, 
+                                  char *value,
+                                  bool steal)
 {
     if (!element_check_not_assigned(error, element) ||
         !element_check_string(error, element)) {
