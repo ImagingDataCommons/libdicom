@@ -520,13 +520,15 @@ static bool read_element_body(DcmError **error,
     uint32_t tag = dcm_element_get_tag(element);
     DcmVR vr = dcm_element_get_vr(element);
     DcmVRClass klass = dcm_dict_vr_class(vr);
+    size_t size = dcm_dict_vr_size(vr);
+    char *value;
 
     dcm_log_debug("Read Data Element body '%08X'", tag);
 
     switch (klass) {
         case DCM_CLASS_STRING_SINGLE:
         case DCM_CLASS_STRING_MULTI:
-            char *value = DCM_MALLOC(error, length + 1);
+            value = DCM_MALLOC(error, length + 1);
             if (value == NULL) {
                 return false;
             }
@@ -553,7 +555,6 @@ static bool read_element_body(DcmError **error,
             break;
 
         case DCM_CLASS_NUMERIC:
-            size_t size = dcm_dict_vr_size(vr);
             if (length % size != 0) {
                 dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                               "Reading of Data Element failed",
@@ -589,19 +590,19 @@ static bool read_element_body(DcmError **error,
             break;
 
         case DCM_CLASS_BINARY:
-            char *binary = DCM_MALLOC(error, length);
-            if (binary == NULL) {
+            value = DCM_MALLOC(error, length);
+            if (value == NULL) {
                 return false;
             }
 
-            if (!dcm_require(error, filehandle, binary, length, position)) {
-                free(binary);
+            if (!dcm_require(error, filehandle, value, length, position)) {
+                free(value);
                 return false;
             }
 
             if( !dcm_element_set_value_binary(error, element, 
-                                              binary, length, true)) {
-                free(binary);
+                                              value, length, true)) {
+                free(value);
                 return false;
             }
 

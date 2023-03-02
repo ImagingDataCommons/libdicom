@@ -959,6 +959,7 @@ bool dcm_element_set_value_sequence(DcmError **error,
 DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
 {
     uint32_t i;
+    DcmSequence *from_seq;
 
     dcm_log_debug("Clone Data Element '%08X'.", element->tag);
 
@@ -971,7 +972,6 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
     DcmVRClass klass = dcm_dict_vr_class(element->vr);
     switch (klass) {
         case DCM_CLASS_SEQUENCE:
-            DcmSequence *from_seq;
             if (!dcm_element_get_value_sequence(error, element, &from_seq)) {
                 dcm_element_destroy(clone);
                 return NULL;
