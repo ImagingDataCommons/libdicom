@@ -1076,6 +1076,9 @@ DcmBOT *dcm_filehandle_read_bot(DcmError **error,
             offsets[i] = value;
             blob = end_ptr;
         }
+
+        // FIXME is this correct?
+        first_frame_offset = position;
     }
 
     return dcm_bot_create(error, offsets, num_frames, first_frame_offset);
