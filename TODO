@@ -4,72 +4,12 @@
 
 
 
-- we have eg.:
-
-    DcmElement *copied_element = dcm_dataset_get_clone(NULL, dataset, tag);
-
-  maybe should be:
-
-    bool dcm_dataset_get(NULL, dataset, tag, &copied_element);
-
-  perhaps the bool forms are only for non-pointer returns? check
-
-
-
-- add logic to check length against originally given value
-
-  in validate? no, probably needs to be done separately for each set
-
-
 
 # bot support
 
 - need more tests and test images
 
 - extended offset table support seems to be broken? see FIXME comment
-
-
-
-# less copy-paste
-
-- right now, _create funcs free passed in objects on error which feels very 
-  error-prone
-
-  instead, pattern should be:
-
-	DcmElement *element = dcm_element_create(&error, tag);
-
-  this sets VR for you, then:
-
-	dcm_element_set_value_sequence(&error, sq);
-
-	dcm_element_set_value_string(&error, element, string_to_free);
-	dcm_element_set_value_string_multi(&error, element, string_to_free);
-
-	dcm_element_set_value_string_static(&error, element, "hello!");
-	dcm_element_set_value_string_multi_static(&error, element, "hello\\there");
-
-	dcm_element_set_value_uint16(&error, element, 12);
-	dcm_element_set_value_uint16_multi_steal(&error, element, array, 4);
-
-  verifies that this element can have that value
-
-  also computes length for you
-
-  also sets vm for you
-
-  _multi() steals ownership of the pointer on success, 
-
-
-- replace copy-paste code over types with a table
-	dcm_element_clone()
-
-- use a table for dcm_element_create_* as well
-
-- element->vr should be an enum (not "UL" etc.)
-	- swap all the strcmps for ==
-
-- benchmark against the original 
 
 
 # data types

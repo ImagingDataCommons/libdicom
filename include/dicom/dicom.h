@@ -528,11 +528,12 @@ bool dcm_is_encapsulated_transfer_syntax(const char *transfer_syntax_uid);
  *
  * :param error: Error structure pointer
  * :param tag: Tag
+ * :param vr: The VR for this element
  *
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create(DcmError **error, uint32_t tag);
+DcmElement *dcm_element_create(DcmError **error, uint32_t tag, DcmVR vr);
 
 /**
  * Get group number (first part of Tag) of a Data Element.

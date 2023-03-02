@@ -174,15 +174,22 @@ static int compare_tags(const void *a, const void *b)
 }
 
 
-DcmElement *dcm_element_create(DcmError **error, uint32_t tag)
+DcmElement *dcm_element_create(DcmError **error, uint32_t tag, DcmVR vr)
 {
     DcmElement *element = DCM_NEW(error, DcmElement);
     if (element == NULL) {
         return NULL;
     }
     element->tag = tag;
-    element->vr = dcm_dict_lookup_vr(tag);
-    if (element->vr == DCM_VR_uk) {
+    element->vr = vr;
+
+    DcmVR expected_vr = dcm_dict_lookup_vr(tag);
+    if (!dcm_dict_vr_equal(vr, expected_vr)) {
+        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
+                      "Incorrect tag",
+                      "Element tag %08X has expected VR of %s",
+                      element->tag,
+                      dcm_dict_vr_to_str(expected_vr));
         dcm_element_destroy(element);
         return NULL;
     }
@@ -377,14 +384,13 @@ static bool element_check_capacity(DcmError **error,
 
 static bool dcm_element_validate(DcmError **error, DcmElement *element)
 {
-    DcmVR correct_vr = dcm_dict_lookup_vr(element->tag);
     DcmVRClass klass = dcm_dict_vr_class(element->vr);
 
     if (!element_check_not_assigned(error, element)) {
         return false;
     }
 
-    if (element->vr != correct_vr || klass == DCM_CLASS_ERROR) {
+    if (!dcm_dict_vr_equal(element->vr, dcm_dict_lookup_vr(element->tag))) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                       "Data Element validation failed",
                       "Bad VR for tag %08X, should be %s",
@@ -438,8 +444,17 @@ bool dcm_element_set_value_string_multi(DcmError **error,
     }
 
     if (vm == 1) {
-        element->value.single.str = values[0];
-        element->vm = 1;
+        if (steal) {
+            element->value.single.str = values[0];
+        } else {
+            char *value_copy = dcm_strdup(error, values[0]);
+            if (value_copy == NULL) {
+                return false;
+            }
+
+            element->value.single.str = value_copy;
+            element->value_pointer = value_copy;
+        }
     } else {
         DcmVRClass klass = dcm_dict_vr_class(element->vr);
         if (klass != DCM_CLASS_STRING_MULTI) {
@@ -451,9 +466,26 @@ bool dcm_element_set_value_string_multi(DcmError **error,
             return false;
         }
 
-        element->value.multi.str = values;
-        element->vm = vm;
+        if (steal) {
+            element->value.multi.str = values;
+        } else {
+            char **values_copy = DCM_NEW_ARRAY(error, vm, char *);
+            if (values_copy == NULL) {
+                return false;
+            }
+            element->value.multi.str = values_copy;
+            element->value_pointer_array = values_copy;
+
+            for (uint32_t i = 0; i < vm; i++) {
+                values_copy[i] = dcm_strdup(error, values[i]);
+                if (values_copy[i] == NULL) {
+                    return false;
+                }
+            }
+        }
     }
+
+    element->vm = vm;
 
     size_t length = 0;
     for (uint32_t i = 0; i < vm; i++) {
@@ -501,7 +533,18 @@ static bool element_set_value_string(DcmError **error,
             return false;
         }
     } else {
-        element->value.single.str = value;
+        if (steal) {
+            element->value.single.str = value;
+        } else {
+            char *value_copy = dcm_strdup(error, value);
+            if (value_copy == NULL) {
+                return false;
+            }
+
+            element->value.single.str = value_copy;
+            element->value_pointer = value_copy;
+        }
+
         element->vm = 1;
         element_set_length(element, strlen(value));
 
@@ -660,17 +703,30 @@ bool dcm_element_set_value_numeric_multi(DcmError **error,
         return false;
     }
 
+    size_t size_in_bytes = vm * dcm_dict_vr_size(element->vr);
+
+    // this will work for all numeric types, since we're just setting a
+    // pointer
     if (vm == 1) {
-        // actually does all numeric types
         value_to_value(element->vr, (int *)&element->value.single.sl, value);
     } else {
-        // this will work for all numeric types, since we're just setting a
-        // pointer
-        element->value.multi.sl = (int32_t *)value;
+        if (steal) {
+            element->value.multi.sl = (int32_t *)value;
+        } else {
+            char *value_copy = DCM_NEW_ARRAY(error, size_in_bytes, char);
+            if (value_copy == NULL) {
+                return false;
+            }
+
+            memcpy(value_copy, value, size_in_bytes);
+
+            element->value.multi.sl = (int32_t *)value_copy;
+            element->value_pointer = value_copy;
+        }
     }
 
     element->vm = vm;
-    element_set_length(element, vm * dcm_dict_vr_size(element->vr));
+    element_set_length(element, size_in_bytes);
 
     if (!dcm_element_validate(error, element)) {
         return false;
@@ -817,8 +873,21 @@ bool dcm_element_set_value_binary(DcmError **error,
         return false;
     }
 
+    if (steal) {
+        element->value.single.bytes = value;
+    } else {
+        char *value_copy = DCM_NEW_ARRAY(error, length, char);
+        if (value_copy == NULL) {
+            return false;
+        }
+
+        memcpy(value_copy, value, length);
+
+        element->value.single.bytes = value_copy;
+        element->value_pointer = value_copy;
+    }
+
     element->vm = 1;
-    element->value.single.bytes = value;
     element_set_length(element, length);
 
     if (!dcm_element_validate(error, element)) {
@@ -910,7 +979,7 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
 
     dcm_log_debug("Clone Data Element '%08X'.", element->tag);
 
-    DcmElement *clone = dcm_element_create(error, element->tag);
+    DcmElement *clone = dcm_element_create(error, element->tag, element->vr);
     if (clone == NULL) {
         return NULL;
     }

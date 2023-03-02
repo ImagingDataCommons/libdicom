@@ -4,11 +4,18 @@ Usage
 Memory management
 +++++++++++++++++
 
-Each data structure (Data Element, Data Set, Sequence, Frame Item, etc.) takes
-over ownership of allocated memory for passed arguments upon object creation
-(``*_create()`` functions) and deallocates the memory upon object destruction
-(``*_destroy()`` functions).  Note that if the creation of a data structure
-fails, the memory of the passed arguments will also be freed.
+Each data structure (Data Element, Data Set, Sequence, Frame Item,
+etc.) takes over ownership of allocated memory for passed arguments upon
+successful object creation (``*_create()`` functions) and deallocates the
+memory upon object destruction (``*_destroy()`` functions).
+
+If creation fails for some reason, ownership is not transferred.
+
+Some API calls take pointers to externally managed memory, for example 
+:c:func:`dcm_element_set_value_numeric_multi()` takes a pointer to an array of
+numeric values. If you set the parameter `steal`, then libdicom will take
+ownership of this pointer and will free the memory when the element is freed.
+If you do not set `steal`, then libdicom will take a copy of the data.
 
 
 API overview
@@ -31,9 +38,13 @@ on the VR, an individual Data Element may have a `Value Multiplicity (VM)
 <http://dicom.nema.org/medical/dicom/current/output/chtml/part05/sect_6.4.html>`_
 greater than one, i.e., contain more than one value.  Under the
 hood, a Data Element thus generally contains an array of values.
-A Data Element can be created via the VR-specific constructor
-function (e.g., :c:func:`dcm_element_create_UI()`) and destroyed
-via :c:func:`dcm_element_destroy()`.  Upon creation, the Data Element
+
+A Data Element can be created with :c:func:`dcm_element_create()`, it can have
+a value assigned to it with eg.
+:c:func:`dcm_element_set_value_numeric_multi()`, and it can be destroyed with 
+:c:func:`dcm_element_destroy()`.  
+
+Upon creation, the Data Element
 takes over ownership of the memory allocated for the contained values.
 An individual value can be retrieved via the VR-specific getter function
 (e.g., :c:func:`dcm_element_get_value_UI()`).  Note that in case of character

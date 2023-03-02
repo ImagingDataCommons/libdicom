@@ -349,7 +349,9 @@ static DcmElement *read_element_header(DcmError **error,
         return NULL;
     }
 
+    DcmVR vr;
     if (implicit) {
+        vr = dcm_dict_lookup_vr(tag);
         if (!read_uint32(error, filehandle, length, position)) {
             return NULL;
         }
@@ -360,7 +362,8 @@ static DcmElement *read_element_header(DcmError **error,
             return NULL;
         }
         vr_str[2] = '\0';
-        DcmVR vr = dcm_dict_str_to_vr(vr_str);
+        vr = dcm_dict_str_to_vr(vr_str);
+
         if (!dcm_dict_vr_equal(vr, dcm_dict_lookup_vr(tag))) {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                           "Reading of Data Element header failed",
@@ -394,7 +397,7 @@ static DcmElement *read_element_header(DcmError **error,
         }
     }
 
-    return dcm_element_create(error, tag);
+    return dcm_element_create(error, tag, vr);
 }
 
 

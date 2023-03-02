@@ -141,7 +141,16 @@ static const struct _DcmVRTable vr_table[] = {
     {DCM_VR_UV, "UV", DCM_CLASS_NUMERIC,      
         sizeof(uint64_t), 0,                4},
 
+    /* Extra composite VRs we handle. These are never implicit, so the
+     * metadata values don't matter.
+     */
     {DCM_VR_OB_OW, "BW", DCM_CLASS_BINARY,       
+        0,                0,                4},
+    {DCM_VR_US_OW, "SW", DCM_CLASS_BINARY,       
+        0,                0,                4},
+    {DCM_VR_US_SS, "ss", DCM_CLASS_BINARY,       
+        0,                0,                4},
+    {DCM_VR_US_SS_OW, "so", DCM_CLASS_BINARY,       
         0,                0,                4},
 
     {DCM_VR_uk, "uk", DCM_CLASS_ERROR,        
