@@ -220,7 +220,10 @@ typedef enum _DcmVR {
     DCM_VR_OV,
     DCM_VR_SV,
     DCM_VR_UV,
-    DCM_VR_OB_OW,		// some tags allow both VRs
+    DCM_VR_OB_OW,		// some tags allow several alternative VRs
+    DCM_VR_US_OW,
+    DCM_VR_US_SS,
+    DCM_VR_US_SS_OW,
     DCM_VR_uk,
 } DcmVR;
 
@@ -525,12 +528,11 @@ bool dcm_is_encapsulated_transfer_syntax(const char *transfer_syntax_uid);
  *
  * :param error: Error structure pointer
  * :param tag: Tag
- * :param length: Length in bytes of the value, or 0 if unknown 
  *
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create(DcmError **error, uint32_t tag, uint32_t length);
+DcmElement *dcm_element_create(DcmError **error, uint32_t tag);
 
 /**
  * Get group number (first part of Tag) of a Data Element.

@@ -1,7 +1,6 @@
 # TODO
 
-- don't record length in dcm_element_create() ... use locals for that
-
+- doc updates, esp. "usage.rst"
 
 
 

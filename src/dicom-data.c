@@ -174,29 +174,7 @@ static int compare_tags(const void *a, const void *b)
 }
 
 
-static void element_set_length(DcmElement *element, uint32_t length)
-{
-    uint32_t even_length = length % 2 != 0 ? length + 1 : length;
-
-    if (element->length == 0) {
-        element->length = even_length;
-    } 
-
-    // length is set in two ways: 
-    //
-    // - from the element header read in file parse
-    //
-    // - when we later set a value for the element, we compute a length from
-    //   the value
-    //
-    // the computed length won't always match the length in the header, since 
-    // the length of compound elements will change with the coding we use 
-    // (eg. implicit vs explicit), so we only record the length if it hasn't
-    // been set before, and we can't throw errors for mismatches
-}
-
-
-DcmElement *dcm_element_create(DcmError **error, uint32_t tag, uint32_t length)
+DcmElement *dcm_element_create(DcmError **error, uint32_t tag)
 {
     DcmElement *element = DCM_NEW(error, DcmElement);
     if (element == NULL) {
@@ -204,9 +182,6 @@ DcmElement *dcm_element_create(DcmError **error, uint32_t tag, uint32_t length)
     }
     element->tag = tag;
     element->vr = dcm_dict_lookup_vr(tag);
-    // don't use element_set_length() ... we don't want the  length recorded
-    // in the file to round up
-    element->length = length;
     if (element->vr == DCM_VR_uk) {
         dcm_element_destroy(element);
         return NULL;
@@ -441,6 +416,16 @@ static bool dcm_element_validate(DcmError **error, DcmElement *element)
 }
 
 
+static void element_set_length(DcmElement *element, uint32_t length)
+{
+    uint32_t even_length = length % 2 != 0 ? length + 1 : length;
+
+    if (element->length == 0) {
+        element->length = even_length;
+    } 
+}
+
+
 bool dcm_element_set_value_string_multi(DcmError **error,
                                         DcmElement *element,
                                         char **values,
@@ -555,7 +540,7 @@ bool dcm_element_set_value_string_static(DcmError **error,
 // use a VR to marshall an int pointer into a int64_t
 static int64_t value_to_int64(DcmVR vr, int *value)
 {
-    uint64_t result;
+    uint64_t result = 0;
 
 #define PEEK(TYPE) result = *((TYPE *) value)
     DCM_SWITCH_NUMERIC(vr, PEEK);
@@ -568,6 +553,7 @@ static int64_t value_to_int64(DcmVR vr, int *value)
 // use a VR to write an int64_t to an int pointer
 static void int64_to_value(DcmVR vr, int *result, int64_t value)
 {
+    *result = 0;
 #define POKE(TYPE) *((TYPE *) result) = value;
     DCM_SWITCH_NUMERIC(vr, POKE);
 #undef POKE
@@ -703,7 +689,7 @@ bool dcm_element_set_value_numeric_multi(DcmError **error,
 // use a VR to marshall a double pointer into a float
 static double value_to_double(DcmVR vr, double *value)
 {
-    double result;
+    double result = 0.0;
 
 #define PEEK(TYPE) result = *((TYPE *) value)
     DCM_SWITCH_NUMERIC(vr, PEEK);
@@ -716,6 +702,7 @@ static double value_to_double(DcmVR vr, double *value)
 // use a VR to write a double to a double pointer
 static void double_to_value(DcmVR vr, double *result, double value)
 {
+    *result = 0.0;
 #define POKE(TYPE) *((TYPE *) result) = value;
     DCM_SWITCH_NUMERIC(vr, POKE);
 #undef POKE
@@ -922,11 +909,12 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
     uint32_t i;
 
     dcm_log_debug("Clone Data Element '%08X'.", element->tag);
-    DcmElement *clone = dcm_element_create(error, 
-                                           element->tag, element->length);
+
+    DcmElement *clone = dcm_element_create(error, element->tag);
     if (clone == NULL) {
         return NULL;
     }
+    clone->length = element->length;
 
     DcmVRClass klass = dcm_dict_vr_class(element->vr);
     switch (klass) {

@@ -637,9 +637,9 @@ static const struct _DcmAttribute attribute_table[] = {
     {0X00143026, DCM_VR_DS, "VerticalOffsetOfSensor"},
     {0X00143028, DCM_VR_DS, "SensorTemperature"},
     {0X00143040, DCM_VR_SQ, "DarkCurrentSequence"},
-    {0X00143050, DCM_VR_OW, "DarkCurrentCounts"},
+    {0X00143050, DCM_VR_OB_OW, "DarkCurrentCounts"},
     {0X00143060, DCM_VR_SQ, "GainCorrectionReferenceSequence"},
-    {0X00143070, DCM_VR_OW, "AirCounts"},
+    {0X00143070, DCM_VR_OB_OW, "AirCounts"},
     {0X00143071, DCM_VR_DS, "KVUsedInGainCalibration"},
     {0X00143072, DCM_VR_DS, "MAUsedInGainCalibration"},
     {0X00143073, DCM_VR_DS, "NumberOfFramesUsedForIntegration"},
@@ -1688,7 +1688,7 @@ static const struct _DcmAttribute attribute_table[] = {
     {0X0018980D, DCM_VR_SQ, "TransducerGeometryCodeSequence"},
     {0X0018980E, DCM_VR_SQ, "TransducerBeamSteeringCodeSequence"},
     {0X0018980F, DCM_VR_SQ, "TransducerApplicationCodeSequence"},
-    {0X00189810, DCM_VR_US, "ZeroVelocityPixelValue"},
+    {0X00189810, DCM_VR_US_SS, "ZeroVelocityPixelValue"},
     {0X00189900, DCM_VR_LO, "ReferenceLocationLabel"},
     {0X00189901, DCM_VR_UT, "ReferenceLocationDescription"},
     {0X00189902, DCM_VR_SQ, "ReferenceBasisCodeSequence"},
@@ -2004,7 +2004,7 @@ static const struct _DcmAttribute attribute_table[] = {
     {0X00221443, DCM_VR_SQ, "OphthalmicThicknessMappingNormalsSequence"},
     {0X00221445, DCM_VR_SQ, "RetinalThicknessDefinitionCodeSequence"},
     {0X00221450, DCM_VR_SQ, "PixelValueMappingToCodedConceptSequence"},
-    {0X00221452, DCM_VR_US, "MappedPixelValue"},
+    {0X00221452, DCM_VR_US_SS, "MappedPixelValue"},
     {0X00221454, DCM_VR_LO, "PixelValueMappingExplanation"},
     {0X00221458, DCM_VR_SQ, "OphthalmicThicknessMapQualityThresholdSequence"},
     {0X00221460, DCM_VR_FL, "OphthalmicThicknessMapThresholdQualityRating"},
@@ -2177,7 +2177,7 @@ static const struct _DcmAttribute attribute_table[] = {
     {0X00280068, DCM_VR_US, "RepeatInterval"},
     {0X00280069, DCM_VR_US, "BitsGrouped"},
     {0X00280070, DCM_VR_US, "PerimeterTable"},
-    {0X00280071, DCM_VR_US, "PerimeterValue"},
+    {0X00280071, DCM_VR_US_SS, "PerimeterValue"},
     {0X00280080, DCM_VR_US, "PredictorRows"},
     {0X00280081, DCM_VR_US, "PredictorColumns"},
     {0X00280082, DCM_VR_US, "PredictorConstants"},
@@ -2190,16 +2190,16 @@ static const struct _DcmAttribute attribute_table[] = {
     {0X00280101, DCM_VR_US, "BitsStored"},
     {0X00280102, DCM_VR_US, "HighBit"},
     {0X00280103, DCM_VR_US, "PixelRepresentation"},
-    {0X00280104, DCM_VR_US, "SmallestValidPixelValue"},
-    {0X00280105, DCM_VR_US, "LargestValidPixelValue"},
-    {0X00280106, DCM_VR_US, "SmallestImagePixelValue"},
-    {0X00280107, DCM_VR_US, "LargestImagePixelValue"},
-    {0X00280108, DCM_VR_US, "SmallestPixelValueInSeries"},
-    {0X00280109, DCM_VR_US, "LargestPixelValueInSeries"},
-    {0X00280110, DCM_VR_US, "SmallestImagePixelValueInPlane"},
-    {0X00280111, DCM_VR_US, "LargestImagePixelValueInPlane"},
-    {0X00280120, DCM_VR_US, "PixelPaddingValue"},
-    {0X00280121, DCM_VR_US, "PixelPaddingRangeLimit"},
+    {0X00280104, DCM_VR_US_SS, "SmallestValidPixelValue"},
+    {0X00280105, DCM_VR_US_SS, "LargestValidPixelValue"},
+    {0X00280106, DCM_VR_US_SS, "SmallestImagePixelValue"},
+    {0X00280107, DCM_VR_US_SS, "LargestImagePixelValue"},
+    {0X00280108, DCM_VR_US_SS, "SmallestPixelValueInSeries"},
+    {0X00280109, DCM_VR_US_SS, "LargestPixelValueInSeries"},
+    {0X00280110, DCM_VR_US_SS, "SmallestImagePixelValueInPlane"},
+    {0X00280111, DCM_VR_US_SS, "LargestImagePixelValueInPlane"},
+    {0X00280120, DCM_VR_US_SS, "PixelPaddingValue"},
+    {0X00280121, DCM_VR_US_SS, "PixelPaddingRangeLimit"},
     {0X00280122, DCM_VR_FL, "FloatPixelPaddingValue"},
     {0X00280123, DCM_VR_FD, "DoubleFloatPixelPaddingValue"},
     {0X00280124, DCM_VR_FL, "FloatPixelPaddingRangeLimit"},
@@ -2237,16 +2237,16 @@ static const struct _DcmAttribute attribute_table[] = {
     {0X00281056, DCM_VR_CS, "VOILUTFunction"},
     {0X00281080, DCM_VR_CS, "GrayScale"},
     {0X00281090, DCM_VR_CS, "RecommendedViewingMode"},
-    {0X00281100, DCM_VR_US, "GrayLookupTableDescriptor"},
-    {0X00281101, DCM_VR_US, "RedPaletteColorLookupTableDescriptor"},
-    {0X00281102, DCM_VR_US, "GreenPaletteColorLookupTableDescriptor"},
-    {0X00281103, DCM_VR_US, "BluePaletteColorLookupTableDescriptor"},
+    {0X00281100, DCM_VR_US_SS, "GrayLookupTableDescriptor"},
+    {0X00281101, DCM_VR_US_SS, "RedPaletteColorLookupTableDescriptor"},
+    {0X00281102, DCM_VR_US_SS, "GreenPaletteColorLookupTableDescriptor"},
+    {0X00281103, DCM_VR_US_SS, "BluePaletteColorLookupTableDescriptor"},
     {0X00281104, DCM_VR_US, "AlphaPaletteColorLookupTableDescriptor"},
-    {0X00281111, DCM_VR_US, "LargeRedPaletteColorLookupTableDescriptor"},
-    {0X00281112, DCM_VR_US, "LargeGreenPaletteColorLookupTableDescriptor"},
-    {0X00281113, DCM_VR_US, "LargeBluePaletteColorLookupTableDescriptor"},
+    {0X00281111, DCM_VR_US_SS, "LargeRedPaletteColorLookupTableDescriptor"},
+    {0X00281112, DCM_VR_US_SS, "LargeGreenPaletteColorLookupTableDescriptor"},
+    {0X00281113, DCM_VR_US_SS, "LargeBluePaletteColorLookupTableDescriptor"},
     {0X00281199, DCM_VR_UI, "PaletteColorLookupTableUID"},
-    {0X00281200, DCM_VR_US, "GrayLookupTableData"},
+    {0X00281200, DCM_VR_US_SS_OW, "GrayLookupTableData"},
     {0X00281201, DCM_VR_OW, "RedPaletteColorLookupTableData"},
     {0X00281202, DCM_VR_OW, "GreenPaletteColorLookupTableData"},
     {0X00281203, DCM_VR_OW, "BluePaletteColorLookupTableData"},
@@ -2287,10 +2287,10 @@ static const struct _DcmAttribute attribute_table[] = {
     {0X00282112, DCM_VR_DS, "LossyImageCompressionRatio"},
     {0X00282114, DCM_VR_CS, "LossyImageCompressionMethod"},
     {0X00283000, DCM_VR_SQ, "ModalityLUTSequence"},
-    {0X00283002, DCM_VR_US, "LUTDescriptor"},
+    {0X00283002, DCM_VR_US_SS, "LUTDescriptor"},
     {0X00283003, DCM_VR_LO, "LUTExplanation"},
     {0X00283004, DCM_VR_LO, "ModalityLUTType"},
-    {0X00283006, DCM_VR_US, "LUTData"},
+    {0X00283006, DCM_VR_US_OW, "LUTData"},
     {0X00283010, DCM_VR_SQ, "VOILUTSequence"},
     {0X00283110, DCM_VR_SQ, "SoftcopyVOILUTSequence"},
     {0X00284000, DCM_VR_LT, "ImagePresentationComments"},
@@ -3108,8 +3108,8 @@ static const struct _DcmAttribute attribute_table[] = {
     {0X00541401, DCM_VR_CS, "DeadTimeCorrectionFlag"},
     {0X00603000, DCM_VR_SQ, "HistogramSequence"},
     {0X00603002, DCM_VR_US, "HistogramNumberOfBins"},
-    {0X00603004, DCM_VR_US, "HistogramFirstBinValue"},
-    {0X00603006, DCM_VR_US, "HistogramLastBinValue"},
+    {0X00603004, DCM_VR_US_SS, "HistogramFirstBinValue"},
+    {0X00603006, DCM_VR_US_SS, "HistogramLastBinValue"},
     {0X00603008, DCM_VR_US, "HistogramBinWidth"},
     {0X00603010, DCM_VR_LO, "HistogramExplanation"},
     {0X00603020, DCM_VR_UL, "HistogramData"},
@@ -5035,12 +5035,12 @@ static const struct _DcmAttribute attribute_table[] = {
     {0X52009229, DCM_VR_SQ, "SharedFunctionalGroupsSequence"},
     {0X52009230, DCM_VR_SQ, "PerFrameFunctionalGroupsSequence"},
     {0X54000100, DCM_VR_SQ, "WaveformSequence"},
-    {0X54000110, DCM_VR_OW, "ChannelMinimumValue"},
-    {0X54000112, DCM_VR_OW, "ChannelMaximumValue"},
+    {0X54000110, DCM_VR_OB_OW, "ChannelMinimumValue"},
+    {0X54000112, DCM_VR_OB_OW, "ChannelMaximumValue"},
     {0X54001004, DCM_VR_US, "WaveformBitsAllocated"},
     {0X54001006, DCM_VR_CS, "WaveformSampleInterpretation"},
-    {0X5400100A, DCM_VR_OW, "WaveformPaddingValue"},
-    {0X54001010, DCM_VR_OW, "WaveformData"},
+    {0X5400100A, DCM_VR_OB_OW, "WaveformPaddingValue"},
+    {0X54001010, DCM_VR_OB_OW, "WaveformData"},
     {0X56000010, DCM_VR_OF, "FirstOrderPhaseCorrectionAngle"},
     {0X56000020, DCM_VR_OF, "SpectroscopyData"},
     {0X7FE00001, DCM_VR_OV, "ExtendedOffsetTable"},
@@ -5169,6 +5169,29 @@ bool dcm_dict_vr_equal(DcmVR a, DcmVR b)
             a == DCM_VR_OB || 
             a == DCM_VR_OW || 
             b == DCM_VR_OB || 
+            b == DCM_VR_OW;
+    } else if (a == DCM_VR_US_OW || b == DCM_VR_US_OW) {
+        // VR DCM_VR_US_OW is equal to both
+        return 
+            a == DCM_VR_US || 
+            a == DCM_VR_OW || 
+            b == DCM_VR_US || 
+            b == DCM_VR_OW;
+    } else if (a == DCM_VR_US_SS || b == DCM_VR_US_SS) {
+        // VR DCM_VR_US_OW is equal to both
+        return 
+            a == DCM_VR_US || 
+            a == DCM_VR_SS || 
+            b == DCM_VR_US || 
+            b == DCM_VR_SS;
+    } else if (a == DCM_VR_US_SS_OW || b == DCM_VR_US_SS_OW) {
+        // VR DCM_VR_US_SS_OW is equal to any of these
+        return 
+            a == DCM_VR_US || 
+            a == DCM_VR_SS || 
+            a == DCM_VR_OW || 
+            b == DCM_VR_US || 
+            b == DCM_VR_SS ||
             b == DCM_VR_OW;
     } else {
         return false;

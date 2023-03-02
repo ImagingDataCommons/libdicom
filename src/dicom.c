@@ -225,8 +225,9 @@ DcmLogLevel dcm_log_level = DCM_LOG_NOTSET;
 #ifndef _WIN32
 static int ctime_s(char *buf, size_t size, const time_t *time)
 {
-    assert(size >= 26);
-    ctime_r(time, buf);
+    if (size >= 26) {
+        ctime_r(time, buf);
+    }
     return errno;
 }
 #endif
