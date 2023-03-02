@@ -204,7 +204,9 @@ DcmElement *dcm_element_create(DcmError **error, uint32_t tag, uint32_t length)
     }
     element->tag = tag;
     element->vr = dcm_dict_lookup_vr(tag);
-    element_set_length(element, length);
+    // don't use element_set_length() ... we don't want the  length recorded
+    // in the file to round up
+    element->length = length;
     if (element->vr == DCM_VR_uk) {
         dcm_element_destroy(element);
         return NULL;

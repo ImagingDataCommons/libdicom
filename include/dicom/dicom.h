@@ -220,6 +220,7 @@ typedef enum _DcmVR {
     DCM_VR_OV,
     DCM_VR_SV,
     DCM_VR_UV,
+    DCM_VR_OB_OW,		// some tags allow both VRs
     DCM_VR_uk,
 } DcmVR;
 
@@ -437,6 +438,18 @@ DCM_EXTERN const char *dcm_dict_vr_to_str(DcmVR vr);
  */
 DCM_EXTERN
 DcmVR dcm_dict_lookup_vr(uint32_t tag);
+
+/**
+ * Two VR codes are equal. This takes account of cases such as "unknown code"
+ * or "ambigious code".
+ *
+ * :param a: VR code
+ * :param a: VR code
+ *
+ * :return: true if the codes are considered equal
+ */
+DCM_EXTERN
+bool dcm_dict_vr_equal(DcmVR a, DcmVR b);
 
 /**
  * Look up the Keyword of an Attribute in the Dictionary.

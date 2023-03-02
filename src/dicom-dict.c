@@ -127,7 +127,8 @@ static const struct _DcmVRTable vr_table[] = {
         0,                DCM_CAPACITY_UT,  4},
     {DCM_VR_UR, "UR", DCM_CLASS_STRING_SINGLE, 
         0,                DCM_CAPACITY_UR,  4},
-    {DCM_VR_UC, "UC", DCM_CLASS_STRING_MULTI, 
+
+    {DCM_VR_UC, "UC", DCM_CLASS_BINARY, 
         0,                0,                4},
 
     {DCM_VR_OL, "OL", DCM_CLASS_BINARY,       
@@ -139,6 +140,9 @@ static const struct _DcmVRTable vr_table[] = {
         sizeof(int64_t),  0,                4},
     {DCM_VR_UV, "UV", DCM_CLASS_NUMERIC,      
         sizeof(uint64_t), 0,                4},
+
+    {DCM_VR_OB_OW, "BW", DCM_CLASS_BINARY,       
+        0,                0,                4},
 
     {DCM_VR_uk, "uk", DCM_CLASS_ERROR,        
         0,                0,                4},
@@ -5043,12 +5047,15 @@ static const struct _DcmAttribute attribute_table[] = {
     {0X7FE00002, DCM_VR_OV, "ExtendedOffsetTableLengths"},
     {0X7FE00008, DCM_VR_OF, "FloatPixelData"},
     {0X7FE00009, DCM_VR_OD, "DoubleFloatPixelData"},
-    {0X7FE00010, DCM_VR_OB, "PixelData"},
+    {0X7FE00010, DCM_VR_OB_OW, "PixelData"},
     {0X7FE00020, DCM_VR_OW, "CoefficientsSDVN"},
     {0X7FE00030, DCM_VR_OW, "CoefficientsSDHN"},
     {0X7FE00040, DCM_VR_OW, "CoefficientsSDDN"},
     {0XFFFAFFFA, DCM_VR_SQ, "DigitalSignaturesSequence"},
     {0XFFFCFFFC, DCM_VR_OB, "DataSetTrailingPadding"},
+    {0XFFFEE000, DCM_VR_uk, "Item"},
+    {0XFFFEE00D, DCM_VR_uk, "ItemDelimitationItem"},
+    {0XFFFEE0DD, DCM_VR_uk, "SequenceDelimitationItem"},
 };
 
 static const int n_attributes = sizeof(attribute_table) /
@@ -5145,6 +5152,27 @@ const char *dcm_dict_vr_to_str(DcmVR vr)
     }
 
     return vr_table[(int)vr].str;
+}
+
+
+bool dcm_dict_vr_equal(DcmVR a, DcmVR b)
+{
+    if (a == DCM_VR_uk || b == DCM_VR_uk) {
+        // one or both unknown, so they can't be equal
+        return false;
+    } else if (a == b) {
+        // trivially equal
+        return true;
+    } else if (a == DCM_VR_OB_OW || b == DCM_VR_OB_OW) {
+        // VR DCM_VR_OB_OW is equal to both
+        return 
+            a == DCM_VR_OB || 
+            a == DCM_VR_OW || 
+            b == DCM_VR_OB || 
+            b == DCM_VR_OW;
+    } else {
+        return false;
+    }
 }
 
 

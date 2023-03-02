@@ -1,5 +1,10 @@
 # TODO
 
+- don't record length in dcm_element_create() ... use locals for that
+
+
+
+
 - we have eg.:
 
     DcmElement *copied_element = dcm_dataset_get_clone(NULL, dataset, tag);
