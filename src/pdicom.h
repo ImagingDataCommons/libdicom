@@ -85,6 +85,6 @@ char **dcm_parse_character_string(DcmError **error,
 	case DCM_VR_US: OPERATION(uint16_t); break; \
 	case DCM_VR_SV: OPERATION(int64_t); break; \
 	case DCM_VR_UV: OPERATION(uint64_t); break; \
-	default: \
+	default: break; \
     }
 
