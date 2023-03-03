@@ -1099,9 +1099,9 @@ static void element_print_integer(const DcmElement *element,
     int64_t value;
     (void) dcm_element_get_value_integer(NULL, element, index, &value);
     if (element->vr == DCM_VR_UV) {
-        printf("%lu", (uint64_t)value);
+        printf("%" PRIu64, (uint64_t)value);
     } else {
-        printf("%ld", value);
+        printf("%" PRId64, value);
     }
 }
 
