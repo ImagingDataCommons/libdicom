@@ -5072,6 +5072,8 @@ static const int n_attributes = sizeof(attribute_table) /
 
 static struct _DcmAttribute_hash_entry *attribute_from_tag_dict = NULL;
 
+static struct _DcmAttribute_hash_entry *attribute_from_keyword_dict = NULL;
+
 
 void dcm_init(void)
 {
@@ -5103,14 +5105,44 @@ void dcm_init(void)
             HASH_FIND_INT(attribute_from_tag_dict, 
                           &attribute_table[i].tag, entry);
             if (entry) {
-                dcm_log_critical("Duplicate tag in attribute table %8X", 
-                                 attribute_table[i].tag);
+                dcm_log_critical("Duplicate tag in attribute table -- "
+                                 "%8X (%s) registered previously as '%s'", 
+                                 attribute_table[i].tag, 
+                                 attribute_table[i].keyword,
+                                 entry->keyword);
                 return;
             }
 
             entry = DCM_NEW(NULL, struct _DcmAttribute_hash_entry);
             *((struct _DcmAttribute *)entry) = attribute_table[i];
             HASH_ADD_INT(attribute_from_tag_dict, tag, entry);
+        }
+    }
+
+    if (!attribute_from_keyword_dict) {
+        int i;
+
+        for (i = 0; i < n_attributes; i++) {
+            struct _DcmAttribute_hash_entry *entry;
+
+            // The "" keyword appears several times and is used for retired
+            // tags ... we can't map this to tags unambigiously, so we skip it
+            // in the table
+            if (strcmp(attribute_table[i].keyword, "") == 0) {
+                continue;
+            }
+
+            HASH_FIND_STR(attribute_from_keyword_dict, 
+                          attribute_table[i].keyword, entry);
+            if (entry) {
+                dcm_log_critical("Duplicate keyword in attribute table '%s'", 
+                                 attribute_table[i].keyword);
+                return;
+            }
+
+            entry = DCM_NEW(NULL, struct _DcmAttribute_hash_entry);
+            *((struct _DcmAttribute *)entry) = attribute_table[i];
+            HASH_ADD_STR(attribute_from_keyword_dict, keyword, entry);
         }
     }
 }
@@ -5143,7 +5175,7 @@ bool dcm_is_valid_vr(const char *str)
 }
 
 
-DcmVR dcm_dict_str_to_vr(const char *vr)
+DcmVR dcm_dict_vr_from_str(const char *vr)
 {
     const struct _DcmVRTable *entry = vrtable_from_vr(vr);
     if (!entry) {
@@ -5154,7 +5186,7 @@ DcmVR dcm_dict_str_to_vr(const char *vr)
 }
 
 
-const char *dcm_dict_vr_to_str(DcmVR vr)
+const char *dcm_dict_str_from_vr(DcmVR vr)
 {
     if (vr < 0 || vr > DCM_VR_uk) {
         return "uk";
@@ -5281,7 +5313,7 @@ bool dcm_is_valid_tag(uint32_t tag)
 }
 
 
-DcmVR dcm_dict_lookup_vr(uint32_t tag)
+DcmVR dcm_dict_vr_from_tag(uint32_t tag)
 {
     const struct _DcmAttribute *attribute = attribute_from_tag(tag);
     if (!attribute) {
@@ -5291,12 +5323,35 @@ DcmVR dcm_dict_lookup_vr(uint32_t tag)
 }
 
 
-const char *dcm_dict_lookup_keyword(uint32_t tag)
+const char *dcm_dict_keyword_from_tag(uint32_t tag)
 {
     const struct _DcmAttribute *attribute = attribute_from_tag(tag);
     if (!attribute) {
         return NULL;
     }
     return attribute->keyword;
+}
+
+
+static const struct _DcmAttribute *attribute_from_keyword(const char *keyword)
+{
+    struct _DcmAttribute_hash_entry *entry;
+
+    dcm_init();
+
+    HASH_FIND_STR(attribute_from_keyword_dict, keyword, entry);
+
+    return (const struct _DcmAttribute *)entry;
+}
+
+
+uint32_t dcm_dict_tag_from_keyword(const char *keyword)
+{
+    const struct _DcmAttribute *attribute = attribute_from_keyword(keyword);
+    if (!attribute) {
+        // use this as "bad keyword"
+        return 0xffffffff;
+    }
+    return attribute->tag;
 }
 

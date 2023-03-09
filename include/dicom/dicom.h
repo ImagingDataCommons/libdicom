@@ -421,7 +421,8 @@ const char *dcm_get_version(void);
  *
  * :return: The enum for that VR.
  */
-DCM_EXTERN DcmVR dcm_dict_str_to_vr(const char *vr);
+DCM_EXTERN 
+DcmVR dcm_dict_vr_from_str(const char *vr);
 
 /** 
  * Turn an enum VR into a character string.
@@ -430,7 +431,8 @@ DCM_EXTERN DcmVR dcm_dict_str_to_vr(const char *vr);
  *
  * :return: The string representation of that VR.
  */
-DCM_EXTERN const char *dcm_dict_vr_to_str(DcmVR vr);
+DCM_EXTERN 
+const char *dcm_dict_str_from_vr(DcmVR vr);
 
 /**
  * Look up the Value Representation of an Attribute in the Dictionary.
@@ -440,7 +442,7 @@ DCM_EXTERN const char *dcm_dict_vr_to_str(DcmVR vr);
  * :return: name of attribute Value Representation
  */
 DCM_EXTERN
-DcmVR dcm_dict_lookup_vr(uint32_t tag);
+DcmVR dcm_dict_vr_from_tag(uint32_t tag);
 
 /**
  * Two VR codes are equal. This takes account of cases such as "unknown code"
@@ -455,14 +457,26 @@ DCM_EXTERN
 bool dcm_dict_vr_equal(DcmVR a, DcmVR b);
 
 /**
- * Look up the Keyword of an Attribute in the Dictionary.
+ * Look up the Keyword of an Attribute in the Dictionary. Retuirns NULL if the
+ * tag is not recognised.
  *
  * :param tag: Attribute Tag
  *
  * :return: attribute Keyword
  */
 DCM_EXTERN
-const char *dcm_dict_lookup_keyword(uint32_t tag);
+const char *dcm_dict_keyword_from_tag(uint32_t tag);
+
+/**
+ * Look up the tag of an Attribute in the Dictionary. Returns 0xffffffff if
+ * the keyword is not recognised.
+ *
+ * :param tag: Attribute keyword
+ *
+ * :return: attribute tag
+ */
+DCM_EXTERN
+uint32_t dcm_dict_tag_from_keyword(const char *keyword);
 
 /**
  * Determine whether a Tag is public.

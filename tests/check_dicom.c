@@ -171,38 +171,41 @@ END_TEST
 
 START_TEST(test_dict_tag_lookups)
 {
-    ck_assert_str_eq(dcm_dict_lookup_keyword(0x00020010), "TransferSyntaxUID");
-    ck_assert_str_eq(dcm_dict_lookup_keyword(0x00080018), "SOPInstanceUID");
-    ck_assert_str_eq(dcm_dict_lookup_keyword(0x00080030), "StudyTime");
-    ck_assert_str_eq(dcm_dict_lookup_keyword(0x00180050), "SliceThickness");
-    ck_assert_str_eq(dcm_dict_lookup_keyword(0x00185100), "PatientPosition");
-    ck_assert_str_eq(dcm_dict_lookup_keyword(0x00200035), "ImageOrientation");
-    ck_assert_str_eq(dcm_dict_lookup_keyword(0x00280008), "NumberOfFrames");
-    ck_assert_str_eq(dcm_dict_lookup_keyword(0x00280010), "Rows");
-    ck_assert_str_eq(dcm_dict_lookup_keyword(0x00400554), "SpecimenUID");
-    ck_assert_str_eq(dcm_dict_lookup_keyword(0x00480003), "ImagedVolumeDepth");
-    ck_assert_str_eq(dcm_dict_lookup_keyword(0x00620021), "TrackingUID");
-    ck_assert_str_eq(dcm_dict_lookup_keyword(0x00660031), "AlgorithmVersion");
-    ck_assert_str_eq(dcm_dict_lookup_keyword(0x00701305), "Plane");
+    ck_assert_str_eq(dcm_dict_keyword_from_tag(0x00020010), "TransferSyntaxUID");
+    ck_assert_str_eq(dcm_dict_keyword_from_tag(0x00080018), "SOPInstanceUID");
+    ck_assert_str_eq(dcm_dict_keyword_from_tag(0x00080030), "StudyTime");
+    ck_assert_str_eq(dcm_dict_keyword_from_tag(0x00180050), "SliceThickness");
+    ck_assert_str_eq(dcm_dict_keyword_from_tag(0x00185100), "PatientPosition");
+    ck_assert_str_eq(dcm_dict_keyword_from_tag(0x00200035), "ImageOrientation");
+    ck_assert_str_eq(dcm_dict_keyword_from_tag(0x00280008), "NumberOfFrames");
+    ck_assert_str_eq(dcm_dict_keyword_from_tag(0x00280010), "Rows");
+    ck_assert_str_eq(dcm_dict_keyword_from_tag(0x00400554), "SpecimenUID");
+    ck_assert_str_eq(dcm_dict_keyword_from_tag(0x00480003), "ImagedVolumeDepth");
+    ck_assert_str_eq(dcm_dict_keyword_from_tag(0x00620021), "TrackingUID");
+    ck_assert_str_eq(dcm_dict_keyword_from_tag(0x00660031), "AlgorithmVersion");
+    ck_assert_str_eq(dcm_dict_keyword_from_tag(0x00701305), "Plane");
+
+    ck_assert_int_eq(dcm_dict_tag_from_keyword("SpecimenUID"), 0x00400554);
+    ck_assert_int_eq(dcm_dict_tag_from_keyword("Banana"), 0xffffffff);
 }
 END_TEST
 
 
 START_TEST(test_dict_vr_lookups)
 {
-    ck_assert_int_eq(dcm_dict_lookup_vr(0x00020010), DCM_VR_UI);
-    ck_assert_int_eq(dcm_dict_lookup_vr(0x00080018), DCM_VR_UI);
-    ck_assert_int_eq(dcm_dict_lookup_vr(0x00080030), DCM_VR_TM);
-    ck_assert_int_eq(dcm_dict_lookup_vr(0x00180050), DCM_VR_DS);
-    ck_assert_int_eq(dcm_dict_lookup_vr(0x00185100), DCM_VR_CS);
-    ck_assert_int_eq(dcm_dict_lookup_vr(0x00200035), DCM_VR_DS);
-    ck_assert_int_eq(dcm_dict_lookup_vr(0x00280008), DCM_VR_IS);
-    ck_assert_int_eq(dcm_dict_lookup_vr(0x00280010), DCM_VR_US);
-    ck_assert_int_eq(dcm_dict_lookup_vr(0x00400554), DCM_VR_UI);
-    ck_assert_int_eq(dcm_dict_lookup_vr(0x00480003), DCM_VR_FL);
-    ck_assert_int_eq(dcm_dict_lookup_vr(0x00620021), DCM_VR_UI);
-    ck_assert_int_eq(dcm_dict_lookup_vr(0x00660031), DCM_VR_LO);
-    ck_assert_int_eq(dcm_dict_lookup_vr(0x00701305), DCM_VR_FD);
+    ck_assert_int_eq(dcm_dict_vr_from_tag(0x00020010), DCM_VR_UI);
+    ck_assert_int_eq(dcm_dict_vr_from_tag(0x00080018), DCM_VR_UI);
+    ck_assert_int_eq(dcm_dict_vr_from_tag(0x00080030), DCM_VR_TM);
+    ck_assert_int_eq(dcm_dict_vr_from_tag(0x00180050), DCM_VR_DS);
+    ck_assert_int_eq(dcm_dict_vr_from_tag(0x00185100), DCM_VR_CS);
+    ck_assert_int_eq(dcm_dict_vr_from_tag(0x00200035), DCM_VR_DS);
+    ck_assert_int_eq(dcm_dict_vr_from_tag(0x00280008), DCM_VR_IS);
+    ck_assert_int_eq(dcm_dict_vr_from_tag(0x00280010), DCM_VR_US);
+    ck_assert_int_eq(dcm_dict_vr_from_tag(0x00400554), DCM_VR_UI);
+    ck_assert_int_eq(dcm_dict_vr_from_tag(0x00480003), DCM_VR_FL);
+    ck_assert_int_eq(dcm_dict_vr_from_tag(0x00620021), DCM_VR_UI);
+    ck_assert_int_eq(dcm_dict_vr_from_tag(0x00660031), DCM_VR_LO);
+    ck_assert_int_eq(dcm_dict_vr_from_tag(0x00701305), DCM_VR_FD);
 }
 END_TEST
 
@@ -635,7 +638,7 @@ START_TEST(test_filehandle_sm_image_frame)
     DcmDataSet *metadata = dcm_filehandle_read_metadata(NULL, filehandle);
     ck_assert_ptr_nonnull(metadata);
 
-    dcm_log_level = DCM_LOG_DEBUG;
+    dcm_log_level = DCM_LOG_INFO;
     DcmError *error = NULL;
     DcmBOT *bot = dcm_filehandle_build_bot(&error, filehandle, metadata);
     if (!bot) {

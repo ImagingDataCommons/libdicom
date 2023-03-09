@@ -351,7 +351,7 @@ static DcmElement *read_element_header(DcmError **error,
 
     DcmVR vr;
     if (implicit) {
-        vr = dcm_dict_lookup_vr(tag);
+        vr = dcm_dict_vr_from_tag(tag);
         if (!read_uint32(error, filehandle, length, position)) {
             return NULL;
         }
@@ -362,9 +362,9 @@ static DcmElement *read_element_header(DcmError **error,
             return NULL;
         }
         vr_str[2] = '\0';
-        vr = dcm_dict_str_to_vr(vr_str);
+        vr = dcm_dict_vr_from_str(vr_str);
 
-        if (!dcm_dict_vr_equal(vr, dcm_dict_lookup_vr(tag))) {
+        if (!dcm_dict_vr_equal(vr, dcm_dict_vr_from_tag(tag))) {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                           "Reading of Data Element header failed",
                           "Unknown or mismatched VR %s", vr_str);

@@ -7,7 +7,16 @@ API overview
 A `Data Element
 <http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_3.html#glossentry_DataElement>`_
 (:c:type:`DcmElement`) is an immutable data container for
-storing values.  Every Data Element has a `Value Representation (VR)
+storing values.  
+
+Every data element has a tag indicating its purpose. Tags are 32-bit
+unsigned ints with the top 16 bits indicating the group and the bottom 16 the
+element. They are usually written in hexadecimal, perhaps 0x00400554, meaning
+element 0x554 of group 0x40, or as keywords, in this case `SpecimenUID`. You
+can get tags from their keyword with :c:func:`dcm_dict_tag_from_keyword()`,
+or find the keyword from a tag with :c:func:`dcm_dict_keyword_from_tag()`.
+
+Every Data Element has a `Value Representation (VR)
 <http://dicom.nema.org/medical/dicom/current/output/chtml/part05/sect_6.2.html>`_,
 which specifies the data type and format of the contained value.  VRs can
 be conceptually grouped into numbers (integers or floating-point values),
@@ -16,8 +25,14 @@ or scientific notation), character strings (text of restriction length and
 character repertoire), or byte strings (unicode).  Each VR is represented
 using a standard C type (e.g,. VR ``"US"`` has type ``uint16_t`` and VR
 ``"UI"`` has type ``char *``) and additional value constraints may be checked
-at runtime (e.g., the maximal capacity of a character string).  Depending
-on the VR, an individual Data Element may have a `Value Multiplicity (VM)
+at runtime (e.g., the maximal capacity of a character string).  
+
+The VR must be appropriate for the tag. Use :c:func:`dcm_dict_vr_from_tag()`
+to find the set of allowed VRs for a tag. Use :c:func:`dcm_dict_vr_equal()` to
+check if a specific VR is in an allowed set.
+
+Depending on the VR, an individual Data
+Element may have a `Value Multiplicity (VM)
 <http://dicom.nema.org/medical/dicom/current/output/chtml/part05/sect_6.4.html>`_
 greater than one, i.e., contain more than one value.  Under the hood,
 a Data Element thus generally contains an array of values.

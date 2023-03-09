@@ -183,13 +183,13 @@ DcmElement *dcm_element_create(DcmError **error, uint32_t tag, DcmVR vr)
     element->tag = tag;
     element->vr = vr;
 
-    DcmVR expected_vr = dcm_dict_lookup_vr(tag);
+    DcmVR expected_vr = dcm_dict_vr_from_tag(tag);
     if (!dcm_dict_vr_equal(vr, expected_vr)) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                       "Incorrect tag",
                       "Element tag %08X has expected VR of %s",
                       element->tag,
-                      dcm_dict_vr_to_str(expected_vr));
+                      dcm_dict_str_from_vr(expected_vr));
         dcm_element_destroy(element);
         return NULL;
     }
@@ -286,7 +286,7 @@ static bool element_check_string(DcmError **error,
                       "Data Element is not string",
                       "Element tag %08X has VR %s with no string value",
                       element->tag,
-                      dcm_dict_vr_to_str(element->vr));
+                      dcm_dict_str_from_vr(element->vr));
         return false;
     }
 
@@ -390,12 +390,12 @@ static bool dcm_element_validate(DcmError **error, DcmElement *element)
         return false;
     }
 
-    if (!dcm_dict_vr_equal(element->vr, dcm_dict_lookup_vr(element->tag))) {
+    if (!dcm_dict_vr_equal(element->vr, dcm_dict_vr_from_tag(element->tag))) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                       "Data Element validation failed",
                       "Bad VR for tag %08X, should be %s",
                       element->tag,
-                      dcm_dict_vr_to_str(element->vr));
+                      dcm_dict_str_from_vr(element->vr));
         return false;
     }
 
@@ -462,7 +462,7 @@ bool dcm_element_set_value_string_multi(DcmError **error,
                           "Data Element is not multi-valued string",
                           "Element tag %08X has VR %s with only a string value",
                           element->tag,
-                          dcm_dict_vr_to_str(element->vr));
+                          dcm_dict_str_from_vr(element->vr));
             return false;
         }
 
@@ -1133,7 +1133,7 @@ void dcm_element_print(const DcmElement *element, uint8_t indentation)
     uint32_t i;
 
     if (dcm_is_public_tag(element->tag)) {
-        const char *keyword = dcm_dict_lookup_keyword(element->tag);
+        const char *keyword = dcm_dict_keyword_from_tag(element->tag);
         printf("%*.*s(%04X,%04X) %s | %s",
                num_indent,
                num_indent,
@@ -1141,7 +1141,7 @@ void dcm_element_print(const DcmElement *element, uint8_t indentation)
                dcm_element_get_group_number(element),
                dcm_element_get_element_number(element),
                keyword,
-               dcm_dict_vr_to_str(element->vr));
+               dcm_dict_str_from_vr(element->vr));
     } else {
         printf("%*.*s (%04X,%04X) | %s",
                num_indent,
@@ -1149,7 +1149,7 @@ void dcm_element_print(const DcmElement *element, uint8_t indentation)
                "                                   ",
                dcm_element_get_group_number(element),
                dcm_element_get_element_number(element),
-               dcm_dict_vr_to_str(element->vr));
+               dcm_dict_str_from_vr(element->vr));
     }
 
     if (element->vr == DCM_VR_SQ) {
