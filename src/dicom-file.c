@@ -675,8 +675,8 @@ DcmElement *read_element(DcmError **error,
 }
 
 
-DcmDataSet *dcm_filehandle_read_filehandle_meta(DcmError **error, 
-                                                DcmFilehandle *filehandle)
+DcmDataSet *dcm_filehandle_read_file_metadata(DcmError **error, 
+                                              DcmFilehandle *filehandle)
 {
     const bool implicit = false;
 
@@ -684,8 +684,8 @@ DcmDataSet *dcm_filehandle_read_filehandle_meta(DcmError **error,
     uint16_t group_number;
     DcmElement *element;
 
-    DcmDataSet *filehandle_meta = dcm_dataset_create(error);
-    if (filehandle_meta == NULL) {
+    DcmDataSet *file_meta = dcm_dataset_create(error);
+    if (file_meta == NULL) {
         return NULL;
     }
 
@@ -695,7 +695,7 @@ DcmDataSet *dcm_filehandle_read_filehandle_meta(DcmError **error,
     char preamble[129];
     if (!dcm_require(error, 
                      filehandle, preamble, sizeof(preamble) - 1, &position)) {
-        dcm_dataset_destroy(filehandle_meta);
+        dcm_dataset_destroy(file_meta);
         return NULL;
     }
     preamble[128] = '\0';
@@ -704,7 +704,7 @@ DcmDataSet *dcm_filehandle_read_filehandle_meta(DcmError **error,
     char prefix[5];
     if (!dcm_require(error, 
                      filehandle, prefix, sizeof(prefix) - 1, &position)) {
-        dcm_dataset_destroy(filehandle_meta);
+        dcm_dataset_destroy(file_meta);
         return NULL;
     }
     prefix[4] = '\0';
@@ -713,7 +713,7 @@ DcmDataSet *dcm_filehandle_read_filehandle_meta(DcmError **error,
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                       "Reading of File Meta Information failed",
                       "Prefix 'DICM' not found.");
-        dcm_dataset_destroy(filehandle_meta);
+        dcm_dataset_destroy(file_meta);
         return NULL;
     }
 
@@ -722,14 +722,14 @@ DcmDataSet *dcm_filehandle_read_filehandle_meta(DcmError **error,
     // File Meta Information Group Length
     element = read_element(error, filehandle, &position, implicit);
     if (element == NULL) {
-        dcm_dataset_destroy(filehandle_meta);
+        dcm_dataset_destroy(file_meta);
         return NULL;
     }
 
     int64_t group_length;
     if (!dcm_element_get_value_integer(error, element, 0, &group_length)) {
         dcm_element_destroy(element);
-        dcm_dataset_destroy(filehandle_meta);
+        dcm_dataset_destroy(file_meta);
         return NULL;
     }
 
@@ -738,7 +738,7 @@ DcmDataSet *dcm_filehandle_read_filehandle_meta(DcmError **error,
     // File Meta Information Version
     element = read_element(error, filehandle, &position, implicit);
     if (element == NULL) {
-        dcm_dataset_destroy(filehandle_meta);
+        dcm_dataset_destroy(file_meta);
         return NULL;
     }
 
@@ -749,7 +749,7 @@ DcmDataSet *dcm_filehandle_read_filehandle_meta(DcmError **error,
         element = read_element_header(error, 
                                       filehandle, &length, &position, implicit);
         if (element == NULL) {
-            dcm_dataset_destroy(filehandle_meta);
+            dcm_dataset_destroy(file_meta);
             return NULL;
         }
 
@@ -761,22 +761,22 @@ DcmDataSet *dcm_filehandle_read_filehandle_meta(DcmError **error,
 
         if (!read_element_body(error, element, filehandle, 
                                length, &position, implicit) ||
-            !dcm_dataset_insert(error, filehandle_meta, element)) {
+            !dcm_dataset_insert(error, file_meta, element)) {
             dcm_element_destroy(element);
-            dcm_dataset_destroy(filehandle_meta);
+            dcm_dataset_destroy(file_meta);
             return NULL;
         }
     }
 
     if (!dcm_offset(error, filehandle, &filehandle->offset)) {
-        dcm_dataset_destroy(filehandle_meta);
+        dcm_dataset_destroy(file_meta);
         return NULL;
     }
 
-    element = dcm_dataset_get(error, filehandle_meta, 0x00020010);
+    element = dcm_dataset_get(error, file_meta, 0x00020010);
     if (element == NULL) {
         filehandle->offset = 0;
-        dcm_dataset_destroy(filehandle_meta);
+        dcm_dataset_destroy(file_meta);
         return NULL;
     }
 
@@ -784,20 +784,20 @@ DcmDataSet *dcm_filehandle_read_filehandle_meta(DcmError **error,
     if (!dcm_element_get_value_string(error, 
                                       element, 0, &transfer_syntax_uid)) {
         filehandle->offset = 0;
-        dcm_dataset_destroy(filehandle_meta);
+        dcm_dataset_destroy(file_meta);
         return NULL;
     }
 
     filehandle->transfer_syntax_uid = dcm_strdup(error, transfer_syntax_uid);
     if (filehandle->transfer_syntax_uid == NULL) {
         filehandle->offset = 0;
-        dcm_dataset_destroy(filehandle_meta);
+        dcm_dataset_destroy(file_meta);
         return NULL;
     }
 
-    dcm_dataset_lock(filehandle_meta);
+    dcm_dataset_lock(file_meta);
 
-    return filehandle_meta;
+    return file_meta;
 }
 
 
@@ -807,12 +807,12 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
     bool implicit;
 
     if (filehandle->offset == 0) {
-        DcmDataSet *filehandle_meta = 
-            dcm_filehandle_read_filehandle_meta(error, filehandle);
-        if (filehandle_meta == NULL) {
+        DcmDataSet *file_metadata = 
+            dcm_filehandle_read_file_metadata(error, filehandle);
+        if (file_metadata == NULL) {
             return NULL;
         }
-        dcm_dataset_destroy(filehandle_meta);
+        dcm_dataset_destroy(file_metadata);
     }
 
     if (!dcm_seekset(error, filehandle, filehandle->offset)) {

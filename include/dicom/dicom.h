@@ -1443,7 +1443,7 @@ DcmFilehandle *dcm_filehandle_create_from_memory(DcmError **error,
                                                  char *buffer, int64_t length);
 
 /**
- * Read File Metainformation from a File.
+ * Read File Meta Information from a Filehandle.
  *
  * Keeps track of the offset of the Data Set relative to the beginning of the
  * filehandle to speed up subsequent access, and determines the transfer 
@@ -1452,11 +1452,11 @@ DcmFilehandle *dcm_filehandle_create_from_memory(DcmError **error,
  * :param error: Error structure pointer
  * :param filehandle: File
  *
- * :return: File Metainformation
+ * :return: File Metadata
  */
 DCM_EXTERN
-DcmDataSet *dcm_filehandle_read_filehandle_meta(DcmError **error, 
-                                                DcmFilehandle *filehandle);
+DcmDataSet *dcm_filehandle_read_file_metadata(DcmError **error, 
+                                              DcmFilehandle *filehandle);
 
 /**
  * Read metadata from a File.

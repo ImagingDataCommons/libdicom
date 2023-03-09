@@ -10,7 +10,8 @@
 #include <dicom/dicom.h>
 
 
-static const char usage[] = "usage: dcm-getframe [-v] [-V] [-h] [-o OUTPUT-FILE] FILE_PATH FRAME_NUMBER\n";
+static const char usage[] = "usage: "
+    "dcm-getframe [-v] [-V] [-h] [-o OUTPUT-FILE] FILE_PATH FRAME_NUMBER\n";
 
 
 int main(int argc, char *argv[]) 

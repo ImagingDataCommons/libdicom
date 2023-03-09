@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
     const char *file_path = NULL;
     DcmError *error = NULL;
     DcmDataSet *metadata = NULL;
-    DcmDataSet *filehandle_meta = NULL;
+    DcmDataSet *file_metadata = NULL;
     DcmFilehandle *filehandle = NULL;
 
     dcm_log_level = DCM_LOG_ERROR;
@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
     }
     file_path = argv[i];
 
-    dcm_log_info("Read filehandle '%s'", file_path);
+    dcm_log_info("Read file '%s'", file_path);
     filehandle = dcm_filehandle_create_from_file(&error, file_path);
     if (filehandle == NULL) {
         dcm_error_log(error);
@@ -52,8 +52,8 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
     dcm_log_info("Read File Meta Information");
-    filehandle_meta = dcm_filehandle_read_filehandle_meta(&error, filehandle);
-    if (filehandle_meta == NULL) {
+    file_metadata = dcm_filehandle_read_file_metadata(&error, filehandle);
+    if (file_metadata == NULL) {
         dcm_error_log(error);
         dcm_error_clear(&error);
         dcm_filehandle_destroy(filehandle);
@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
     }
 
     printf("===File Meta Information===\n");
-    dcm_dataset_print(filehandle_meta, 0);
+    dcm_dataset_print(file_metadata, 0);
 
     dcm_log_info("Read metadata");
     metadata = dcm_filehandle_read_metadata(&error, filehandle);
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
         dcm_error_log(error);
         dcm_error_clear(&error);
         dcm_filehandle_destroy(filehandle);
-        dcm_dataset_destroy(filehandle_meta);
+        dcm_dataset_destroy(file_metadata);
         return EXIT_FAILURE;
     }
 
@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
     dcm_dataset_print(metadata, 0);
 
     dcm_filehandle_destroy(filehandle);
-    dcm_dataset_destroy(filehandle_meta);
+    dcm_dataset_destroy(file_metadata);
     dcm_dataset_destroy(metadata);
 
     return EXIT_SUCCESS;
