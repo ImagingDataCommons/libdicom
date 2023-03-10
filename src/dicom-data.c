@@ -126,33 +126,33 @@ struct SequenceItem {
 static struct SequenceItem *create_sequence_item(DcmError **error,
                                                  DcmDataSet *dataset)
 {
-    struct SequenceItem *item = DCM_NEW(error, struct SequenceItem);
-    if (item == NULL) {
+    struct SequenceItem *seq_item = DCM_NEW(error, struct SequenceItem);
+    if (seq_item == NULL) {
         return NULL;
     }
-    item->dataset = dataset;
-    dcm_dataset_lock(item->dataset);
-    return item;
+    seq_item->dataset = dataset;
+    dcm_dataset_lock(seq_item->dataset);
+    return seq_item;
 }
 
 
 static void copy_sequence_item_icd(void *_dst_item, const void *_src_item)
 {
-    struct SequenceItem *dst_item = (struct SequenceItem *) _dst_item;
-    struct SequenceItem *src_item = (struct SequenceItem *) _src_item;
-    dst_item->dataset = src_item->dataset;
-    dcm_dataset_lock(dst_item->dataset);
+    struct SequenceItem *dst_seq_item = (struct SequenceItem *) _dst_item;
+    struct SequenceItem *src_seq_item = (struct SequenceItem *) _src_item;
+    dst_seq_item->dataset = src_seq_item->dataset;
+    dcm_dataset_lock(dst_seq_item->dataset);
 }
 
 
 static void destroy_sequence_item_icd(void *_item)
 {
     if (_item) {
-        struct SequenceItem *item = (struct SequenceItem *) _item;
-        if (item) {
-            if (item->dataset) {
-                dcm_dataset_destroy(item->dataset);
-                item->dataset = NULL;
+        struct SequenceItem *seq_item = (struct SequenceItem *) _item;
+        if (seq_item) {
+            if (seq_item->dataset) {
+                dcm_dataset_destroy(seq_item->dataset);
+                seq_item->dataset = NULL;
             }
             // utarray frees the memory of the item itself
         }
@@ -1257,24 +1257,36 @@ DcmDataSet *dcm_dataset_clone(DcmError **error, const DcmDataSet *dataset)
 }
 
 
-bool dcm_dataset_insert(DcmError **error, 
-                        DcmDataSet *dataset, DcmElement *element)
+static bool dataset_check_not_locked(DcmError **error, DcmDataSet *dataset)
 {
-    assert(dataset);
-    assert(element);
-
-    dcm_log_debug("Insert Data Element '%08X' into Data Set.", element->tag);
     if (dataset->is_locked) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Data Set is locked and cannot be modified",
-                      "Inserting Data Element '%08X' into Data Set failed",
-                      element->tag);
-        dcm_element_destroy(element);
+                      "Data Set is locked", "");
         return false;
     }
 
-    DcmElement *matched_element;
-    HASH_FIND_INT(dataset->elements, &element->tag, matched_element);
+    return true;
+}
+
+
+DcmElement *dcm_dataset_contains(const DcmDataSet *dataset, uint32_t tag)
+{
+    DcmElement *element;
+    HASH_FIND_INT(dataset->elements, &tag, element);
+
+    return element;
+}
+
+
+bool dcm_dataset_insert(DcmError **error, 
+                        DcmDataSet *dataset, DcmElement *element)
+{
+    if (element_check_not_assigned(error, element) || 
+        !dataset_check_not_locked(error, dataset)) {
+        return false;
+    }
+
+    DcmElement *matched_element = dcm_dataset_contains(dataset, element->tag);
     if (matched_element) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                       "Element already exists",
@@ -1290,16 +1302,40 @@ bool dcm_dataset_insert(DcmError **error,
 }
 
 
+DcmElement *dcm_dataset_get(DcmError **error, 
+                            const DcmDataSet *dataset, uint32_t tag)
+{
+    dcm_log_debug("Get Data Element '%08X' from Data Set.", tag);
+
+    DcmElement *element = dcm_dataset_contains(dataset, tag);
+    if (element == NULL) {
+        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
+                      "Could not find Data Element",
+                      "Getting Data Element '%08X' from Data Set failed",
+                      tag);
+    }
+
+    return element;
+}
+
+
+DcmElement *dcm_dataset_get_clone(DcmError **error,
+                                  const DcmDataSet *dataset, uint32_t tag)
+{
+    dcm_log_debug("Copy Data Element '%08X' from Data Set.", tag);
+
+    DcmElement *element = dcm_dataset_get(error, dataset, tag);
+    if (element == NULL) {
+        return NULL;
+    }
+
+    return dcm_element_clone(error, element);
+}
+
+
 bool dcm_dataset_remove(DcmError **error, DcmDataSet *dataset, uint32_t tag)
 {
-    assert(dataset);
-
-    dcm_log_debug("Remove Data Element '%08X' from Data Set.", tag);
-    if (dataset->is_locked) {
-        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Data Set is locked and cannot be modified",
-                      "Removing Data Element '%08X' from Data Set failed",
-                      tag);
+    if (!dataset_check_not_locked(error, dataset)) {
         return false;
     }
 
@@ -1315,48 +1351,9 @@ bool dcm_dataset_remove(DcmError **error, DcmDataSet *dataset, uint32_t tag)
 }
 
 
-DcmElement *dcm_dataset_get_clone(DcmError **error,
-                                  const DcmDataSet *dataset, uint32_t tag)
-{
-    assert(dataset);
-    DcmElement *element;
-
-    dcm_log_debug("Copy Data Element '%08X' from Data Set.", tag);
-    HASH_FIND_INT(dataset->elements, &tag, element);
-    if (element == NULL) {
-        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Could not find Data Element",
-                      "Getting Data Element '%08X' from Data Set failed",
-                      tag);
-        return NULL;
-    }
-    return dcm_element_clone(error, element);
-}
-
-
-DcmElement *dcm_dataset_get(DcmError **error, 
-                            const DcmDataSet *dataset, uint32_t tag)
-{
-    assert(dataset);
-    DcmElement *element;
-
-    dcm_log_debug("Get Data Element '%08X' from Data Set.", tag);
-    element = dcm_dataset_contains(dataset, tag);
-    if (element == NULL) {
-        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Could not find Data Element",
-                      "Getting Data Element '%08X' from Data Set failed",
-                      tag);
-    }
-
-    return element;
-}
-
-
 void dcm_dataset_foreach(const DcmDataSet *dataset,
                          void (*fn)(const DcmElement *element))
 {
-    assert(dataset);
     DcmElement *element;
 
     for(element = dataset->elements; element; element = element->hh.next) {
@@ -1365,21 +1362,8 @@ void dcm_dataset_foreach(const DcmDataSet *dataset,
 }
 
 
-DcmElement *dcm_dataset_contains(const DcmDataSet *dataset, uint32_t tag)
-{
-    assert(dataset);
-
-    DcmElement *element;
-    HASH_FIND_INT(dataset->elements, &tag, element);
-
-    return element;
-}
-
-
 uint32_t dcm_dataset_count(const DcmDataSet *dataset)
 {
-    assert(dataset);
-
     uint32_t num_users = HASH_COUNT(dataset->elements);
     return num_users;
 }
@@ -1388,7 +1372,6 @@ uint32_t dcm_dataset_count(const DcmDataSet *dataset)
 void dcm_dataset_copy_tags(const DcmDataSet *dataset, 
                            uint32_t *tags, uint32_t n)
 {
-    assert(dataset);
     uint32_t i;
     DcmElement *element;
 
@@ -1404,7 +1387,6 @@ void dcm_dataset_copy_tags(const DcmDataSet *dataset,
 
 void dcm_dataset_print(const DcmDataSet *dataset, uint8_t indentation)
 {
-    assert(dataset);
     uint32_t i;
     DcmElement *element;
 
@@ -1481,19 +1463,25 @@ DcmSequence *dcm_sequence_create(DcmError **error)
 }
 
 
-bool dcm_sequence_append(DcmError **error, DcmSequence *seq, DcmDataSet *item)
+static bool sequence_check_not_locked(DcmError **error, DcmSequence *seq)
 {
-    assert(seq);
-    assert(item);
-
-    dcm_log_debug("Append item to Sequence.");
     if (seq->is_locked) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Appending item to Sequence failed",
-                      "Sequence is locked and cannot be modified.");
-        dcm_dataset_destroy(item);
+                      "Sequence is locked", "");
         return false;
     }
+
+    return true;
+}
+
+
+bool dcm_sequence_append(DcmError **error, DcmSequence *seq, DcmDataSet *item)
+{
+    if (!sequence_check_not_locked(error, seq)) {
+        return false;
+    }
+
+    dcm_log_debug("Append item to Sequence.");
 
     /**
      * The SequenceItem is just a thin wrapper around a DcmDataSet object as a
@@ -1502,9 +1490,39 @@ bool dcm_sequence_append(DcmError **error, DcmSequence *seq, DcmDataSet *item)
      * does not free the memory of the item handle. Therefore, we need to free
      * the memory of the item handle after the item was added to the array.
      */
-    struct SequenceItem *item_handle = create_sequence_item(error, item);
-    utarray_push_back(seq->items, item_handle);
-    free(item_handle);
+    struct SequenceItem *seq_item = create_sequence_item(error, item);
+    utarray_push_back(seq->items, seq_item);
+    free(seq_item);
+
+    return true;
+}
+
+
+static bool sequence_check_index(DcmError **error, 
+                                 const DcmSequence *seq, uint32_t index)
+{
+    uint32_t length = utarray_len(seq->items);
+    if (index >= length) {
+        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
+                      "Item of Sequence invalid",
+                      "Index %i exceeds length of sequence %i",
+                      index, length);
+        return false;
+    }
+
+    struct SequenceItem *seq_item = utarray_eltptr(seq->items, index);
+    if (seq_item == NULL) {
+        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
+                      "Item of Sequence invalid",
+                      "Getting item #%i of Sequence failed", index);
+        return false;
+    }
+    if (seq_item->dataset == NULL) {
+        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
+                      "Item of Sequence invalid",
+                      "Getting item #%i of Sequence failed", index);
+        return NULL;
+    }
 
     return true;
 }
@@ -1513,72 +1531,43 @@ bool dcm_sequence_append(DcmError **error, DcmSequence *seq, DcmDataSet *item)
 DcmDataSet *dcm_sequence_get(DcmError **error, 
                              const DcmSequence *seq, uint32_t index)
 {
-    assert(seq);
-
-    dcm_log_debug("Get item #%i of Sequence.", index);
-    uint32_t length = utarray_len(seq->items);
-    if (index >= length) {
-        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Getting item of Sequence failed",
-                      "Index %i exceeds length of sequence %i",
-                      index, length);
+    if (!sequence_check_index(error, seq, index)) {
         return NULL;
     }
 
-    struct SequenceItem *item_handle = utarray_eltptr(seq->items, index);
-    if (item_handle == NULL) {
-        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Getting item of Sequence failed",
-                      "Getting item #%i of Sequence failed", index);
-        return NULL;
-    }
-    if (item_handle->dataset == NULL) {
-        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Getting item of Sequence failed",
-                      "Getting item #%i of Sequence failed", index);
-        return NULL;
-    }
-    dcm_dataset_lock(item_handle->dataset);
+    struct SequenceItem *seq_item = utarray_eltptr(seq->items, index);
+    dcm_dataset_lock(seq_item->dataset);
 
-    return item_handle->dataset;
+    return seq_item->dataset;
 }
 
 
 void dcm_sequence_foreach(const DcmSequence *seq,
                           void (*fn)(const DcmDataSet *item))
 {
-    assert(seq);
     uint32_t i;
-    struct SequenceItem *item_handle;
 
     uint32_t length = utarray_len(seq->items);
     for (i = 0; i < length; i++) {
-        item_handle = utarray_eltptr(seq->items, i);
-        dcm_dataset_lock(item_handle->dataset);
-        fn(item_handle->dataset);
+        struct SequenceItem *seq_item = utarray_eltptr(seq->items, i);
+        dcm_dataset_lock(seq_item->dataset);
+        fn(seq_item->dataset);
     }
 }
 
 
-void dcm_sequence_remove(DcmError **error, DcmSequence *seq, uint32_t index)
+bool dcm_sequence_remove(DcmError **error, DcmSequence *seq, uint32_t index)
 {
-    assert(seq);
-    if (seq->is_locked) {
-        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Removing item from Sequence failed",
-                      "Sequence is locked and cannot be modified.");
-        return;
+    if (!sequence_check_not_locked(error, seq) ||
+        !sequence_check_index(error, seq, index)) {
+        return false;
     }
+
     dcm_log_debug("Remove item #%i from Sequence.", index);
-    uint32_t length = utarray_len(seq->items);
-    if (index >= length) {
-        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Removing item from Sequence failed",
-                      "Index %i exceeds length of sequence %i",
-                      index, length);
-        return;
-    }
+
     utarray_erase(seq->items, index, 1);
+
+    return true;
 }
 
 
@@ -1667,6 +1656,20 @@ DcmFrame *dcm_frame_create(DcmError **error,
     if (frame == NULL) {
         return NULL;
     }
+
+    frame->photometric_interpretation = dcm_strdup(error, 
+                                                   photometric_interpretation);
+    if (frame->photometric_interpretation == NULL) {
+        dcm_frame_destroy(frame);
+        return NULL;
+    }
+
+    frame->transfer_syntax_uid = dcm_strdup(error, transfer_syntax_uid);
+    if (frame->transfer_syntax_uid == NULL) {
+        dcm_frame_destroy(frame);
+        return NULL;
+    }
+
     frame->number = number;
     frame->data = data;
     frame->length = length;
@@ -1678,18 +1681,6 @@ DcmFrame *dcm_frame_create(DcmError **error,
     frame->high_bit = bits_stored - 1;
     frame->pixel_representation = pixel_representation;
     frame->planar_configuration = planar_configuration;
-    frame->photometric_interpretation = 
-        dcm_strdup(error, photometric_interpretation);
-    if (frame->photometric_interpretation == NULL) {
-        dcm_frame_destroy(frame);
-        return NULL;
-    }
-
-    frame->transfer_syntax_uid = dcm_strdup(error, transfer_syntax_uid);
-    if (frame->transfer_syntax_uid == NULL) {
-        dcm_frame_destroy(frame);
-        return NULL;
-    }
 
     return frame;
 }

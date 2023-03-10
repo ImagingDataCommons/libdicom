@@ -1083,9 +1083,11 @@ void dcm_sequence_foreach(const DcmSequence *seq,
  * :param error: Error structure pointer
  * :param seq: Pointer to Sequence
  * :param index: Zero-based index of the Data Set item in the Sequence
+ *
+ * :return: Whether remove operation was successful
  */
 DCM_EXTERN
-void dcm_sequence_remove(DcmError **error, DcmSequence *seq, uint32_t index);
+bool dcm_sequence_remove(DcmError **error, DcmSequence *seq, uint32_t index);
 
 /**
  * Count the number of Data Set items in a Sequence.
