@@ -142,7 +142,7 @@ static const struct _DcmVRTable vr_table[] = {
         sizeof(uint64_t), 0,                4},
 
     /* Extra composite VRs we handle. These are never implicit, so the
-     * metadata values don't matter.
+     * metadata values and names don't matter.
      */
     {DCM_VR_OB_OW, "BW", DCM_CLASS_BINARY,       
         0,                0,                4},
@@ -153,7 +153,7 @@ static const struct _DcmVRTable vr_table[] = {
     {DCM_VR_US_SS_OW, "so", DCM_CLASS_BINARY,       
         0,                0,                4},
 
-    {DCM_VR_uk, "uk", DCM_CLASS_ERROR,        
+    {DCM_VR_error, "uk", DCM_CLASS_ERROR,        
         0,                0,                4},
 };
 
@@ -5062,9 +5062,9 @@ static const struct _DcmAttribute attribute_table[] = {
     {0X7FE00040, DCM_VR_OW, "CoefficientsSDDN"},
     {0XFFFAFFFA, DCM_VR_SQ, "DigitalSignaturesSequence"},
     {0XFFFCFFFC, DCM_VR_OB, "DataSetTrailingPadding"},
-    {0XFFFEE000, DCM_VR_uk, "Item"},
-    {0XFFFEE00D, DCM_VR_uk, "ItemDelimitationItem"},
-    {0XFFFEE0DD, DCM_VR_uk, "SequenceDelimitationItem"},
+    {0XFFFEE000, DCM_VR_error, "Item"},
+    {0XFFFEE00D, DCM_VR_error, "ItemDelimitationItem"},
+    {0XFFFEE0DD, DCM_VR_error, "SequenceDelimitationItem"},
 };
 
 static const int n_attributes = sizeof(attribute_table) /
@@ -5167,7 +5167,7 @@ bool dcm_is_valid_vr(const char *str)
     }
 
     const struct _DcmVRTable *entry = vrtable_from_vr(str);
-    if (!entry || entry->vr == DCM_VR_uk) {
+    if (!entry || entry->vr == DCM_VR_error) {
         return false;
     }
 
@@ -5179,7 +5179,7 @@ DcmVR dcm_dict_vr_from_str(const char *vr)
 {
     const struct _DcmVRTable *entry = vrtable_from_vr(vr);
     if (!entry) {
-        return DCM_VR_uk;
+        return DCM_VR_error;
     }
 
     return entry->vr;
@@ -5188,7 +5188,7 @@ DcmVR dcm_dict_vr_from_str(const char *vr)
 
 const char *dcm_dict_str_from_vr(DcmVR vr)
 {
-    if (vr < 0 || vr > DCM_VR_uk) {
+    if (vr < 0 || vr >= DCM_VR_LAST) {
         return "uk";
     }
 
@@ -5198,7 +5198,7 @@ const char *dcm_dict_str_from_vr(DcmVR vr)
 
 bool dcm_dict_vr_equal(DcmVR a, DcmVR b)
 {
-    if (a == DCM_VR_uk || b == DCM_VR_uk) {
+    if (a == DCM_VR_error || b == DCM_VR_error) {
         // one or both unknown, so they can't be equal
         return false;
     } else if (a == b) {
@@ -5242,7 +5242,7 @@ bool dcm_dict_vr_equal(DcmVR a, DcmVR b)
 
 DcmVRClass dcm_dict_vr_class(DcmVR vr)
 {
-    if (vr < 0 || vr > DCM_VR_uk) {
+    if (vr < 0 || vr >= DCM_VR_LAST) {
         return DCM_CLASS_ERROR;
     }
 
@@ -5252,7 +5252,7 @@ DcmVRClass dcm_dict_vr_class(DcmVR vr)
 
 size_t dcm_dict_vr_size(DcmVR vr)
 {
-    if (vr < 0 || vr > DCM_VR_uk) {
+    if (vr < 0 || vr >= DCM_VR_LAST) {
         return 0;
     }
 
@@ -5262,7 +5262,7 @@ size_t dcm_dict_vr_size(DcmVR vr)
 
 uint32_t dcm_dict_vr_capacity(DcmVR vr)
 {
-    if (vr < 0 || vr > DCM_VR_uk) {
+    if (vr < 0 || vr >= DCM_VR_LAST) {
         return 0;
     }
 
@@ -5272,7 +5272,7 @@ uint32_t dcm_dict_vr_capacity(DcmVR vr)
 
 int dcm_dict_vr_header_length(DcmVR vr)
 {
-    if (vr < 0 || vr > DCM_VR_uk) {
+    if (vr < 0 || vr >= DCM_VR_LAST) {
         return 0;
     }
 
@@ -5317,7 +5317,7 @@ DcmVR dcm_dict_vr_from_tag(uint32_t tag)
 {
     const struct _DcmAttribute *attribute = attribute_from_tag(tag);
     if (!attribute) {
-        return DCM_VR_uk;
+        return DCM_VR_error;
     }
     return attribute->vr;
 }
