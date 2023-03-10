@@ -183,9 +183,12 @@ typedef enum _DcmErrorCode DcmErrorCode;
  * DCM_VR_uk (unknown VR).
  *
  * The order in this enum must match the table in dicom-dict.c. The final
- * entry must always be DCM_VR_uk.
+ * entry must always be DCM_VR_LAST. Any new VRs should be inserted just 
+ * before this.
  */
 typedef enum _DcmVR {
+    // error value, returned for eg. unknown SR strings 
+    DCM_VR_error = -1,
     DCM_VR_AE = 0,
     DCM_VR_AS,
     DCM_VR_AT,
@@ -224,7 +227,7 @@ typedef enum _DcmVR {
     DCM_VR_US_OW,
     DCM_VR_US_SS,
     DCM_VR_US_SS_OW,
-    DCM_VR_uk,
+    DCM_VR_LAST
 } DcmVR;
 
 /** 
