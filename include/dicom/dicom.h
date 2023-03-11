@@ -178,6 +178,58 @@ enum _DcmErrorCode {
  */
 typedef enum _DcmErrorCode DcmErrorCode;
 
+/**
+ * An enum of VRs. VRs which are not known to libdicom will be coded as
+ * DCM_VR_uk (unknown VR).
+ *
+ * The order in this enum must match the table in dicom-dict.c. The final
+ * entry must always be DCM_VR_LAST. Any new VRs should be inserted just 
+ * before this.
+ */
+typedef enum _DcmVR {
+    // error value, returned for eg. unknown SR strings 
+    DCM_VR_error = -1,
+    DCM_VR_AE = 0,
+    DCM_VR_AS,
+    DCM_VR_AT,
+    DCM_VR_CS,
+    DCM_VR_DA,
+    DCM_VR_DS,
+    DCM_VR_DT,
+    DCM_VR_FL,
+    DCM_VR_FD,
+    DCM_VR_IS,
+    DCM_VR_LO,
+    DCM_VR_LT,
+    DCM_VR_OB,
+    DCM_VR_OD,
+    DCM_VR_OF,
+    DCM_VR_OW,
+    DCM_VR_PN,
+    DCM_VR_SH,
+    DCM_VR_SL,
+    DCM_VR_SQ,
+    DCM_VR_SS,
+    DCM_VR_ST,
+    DCM_VR_TM,
+    DCM_VR_UI,
+    DCM_VR_UL,
+    DCM_VR_UN,
+    DCM_VR_US,
+    DCM_VR_UT,
+    DCM_VR_UR,
+    DCM_VR_UC,
+    DCM_VR_OL,
+    DCM_VR_OV,
+    DCM_VR_SV,
+    DCM_VR_UV,
+    DCM_VR_OB_OW,		// some tags allow several alternative VRs
+    DCM_VR_US_OW,
+    DCM_VR_US_SS,
+    DCM_VR_US_SS_OW,
+    DCM_VR_LAST
+} DcmVR;
+
 /** 
  * Convert an error code to a human-readable string.
  *
@@ -365,6 +417,24 @@ void dcm_log_debug(const char *format, ...);
 DCM_EXTERN
 const char *dcm_get_version(void);
 
+/** 
+ * Turn a string VR into an enum value.
+ *
+ * :param vr: The VR as a two character string.
+ *
+ * :return: The enum for that VR.
+ */
+DCM_EXTERN DcmVR dcm_dict_str_to_vr(const char *vr);
+
+/** 
+ * Turn an enum VR into a character string.
+ *
+ * :param vr: The VR as an enum value.
+ *
+ * :return: The string representation of that VR.
+ */
+DCM_EXTERN const char *dcm_dict_vr_to_str(DcmVR vr);
+
 /**
  * Look up the Value Representation of an Attribute in the Dictionary.
  *
@@ -373,7 +443,19 @@ const char *dcm_get_version(void);
  * :return: name of attribute Value Representation
  */
 DCM_EXTERN
-const char *dcm_dict_lookup_vr(uint32_t tag);
+DcmVR dcm_dict_lookup_vr(uint32_t tag);
+
+/**
+ * Two VR codes are equal. This takes account of cases such as "unknown code"
+ * or "ambigious code".
+ *
+ * :param a: VR code
+ * :param a: VR code
+ *
+ * :return: true if the codes are considered equal
+ */
+DCM_EXTERN
+bool dcm_dict_vr_equal(DcmVR a, DcmVR b);
 
 /**
  * Look up the Keyword of an Attribute in the Dictionary.
@@ -443,956 +525,18 @@ bool dcm_is_encapsulated_transfer_syntax(const char *transfer_syntax_uid);
  */
 
 /**
- * Create a Data Element with Value Representation AE (Application Entity).
+ * Create a data element for a tag. After creating a data element, you must
+ * attach an appropriate value, see for example
+ * dcm_element_set_value_string().
  *
  * :param error: Error structure pointer
  * :param tag: Tag
- * :param value: Character string value
+ * :param vr: The VR for this element
  *
  * :return: Pointer to Data Element
  */
 DCM_EXTERN
-DcmElement *dcm_element_create_AE(DcmError **error, 
-                                  uint32_t tag, 
-                                  char *value);
-
-/**
- * Create a Data Element with Value Representation AE (Application Entity)
- * and Value Multiplicity equal to or greater than one.
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param values: Array of character string values
- * :param vm: Value Multiplicity
- *
- * The created object takes over ownership of the memory referenced by `values`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_AE_multi(DcmError **error,
-                                        uint32_t tag, 
-                                        char **values,
-                                        uint32_t vm);
-
-/**
- * Create a Data Element with Value Representation AS (Age String).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Character string value
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_AS(DcmError **error, 
-                                  uint32_t tag, char *value);
-
-/**
- * Create a Data Element with Value Representation AS (Age String)
- * and Value Multiplicity equal to or greater than one.
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param error: Error structure pointer
- * :param values: Array of character string values
- * :param vm: Value Multiplicity
- *
- * The created object takes over ownership of the memory referenced by `values`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_AS_multi(DcmError **error,
-                                        uint32_t tag, 
-                                        char **values,
-                                        uint32_t vm);
-
-/**
- * Create a Data Element with Value Representation AT (Attribute Tag).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Character string value
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_AT(DcmError **error,
-                                  uint32_t tag, 
-                                  char *value);
-
-/**
- * Create a Data Element with Value Representation AT (Attribute Tag)
- * and Value Multiplicity equal to or greater than one.
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param values: Array of character string values
- * :param vm: Value Multiplicity
- *
- * The created object takes over ownership of the memory referenced by `values`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_AT_multi(DcmError **error,
-                                        uint32_t tag, 
-                                        char **values,
-                                        uint32_t vm);
-
-/**
- * Create a Data Element with Value Representation CS (Code String).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Character string value
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_CS(DcmError **error, 
-                                  uint32_t tag, 
-                                  char *value);
-
-/**
- * Create a Data Element with Value Representation CS (Code String)
- * and Value Multiplicity equal to or greater than one.
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param values: Array of character string values
- * :param vm: Value Multiplicity
- *
- * The created object takes over ownership of the memory referenced by `values`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_CS_multi(DcmError **error,
-                                        uint32_t tag, 
-                                        char **values,
-                                        uint32_t vm);
-
-/**
- * Create a Data Element with Value Representation DA (Date).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Character string value
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_DA(DcmError **error, 
-                                  uint32_t tag, 
-                                  char *value);
-
-/**
- * Create a Data Element with Value Representation DA (Date)
- * and Value Multiplicity equal to or greater than one.
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param values: Array of character string values
- * :param vm: Value Multiplicity
- *
- * The created object takes over ownership of the memory referenced by `values`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_DA_multi(DcmError **error,
-                                        uint32_t tag, 
-                                        char **values,
-                                        uint32_t vm);
-
-/**
- * Create a Data Element with Value Representation DS (Decimal String).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Character string value
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_DS(DcmError **error, 
-                                  uint32_t tag, char *value);
-
-/**
- * Create a Data Element with Value Representation DS (Decimal String)
- * and Value Multiplicity equal to or greater than one.
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param values: Array of character string values
- * :param vm: Value Multiplicity
- *
- * The created object takes over ownership of the memory referenced by `values`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_DS_multi(DcmError **error,
-                                        uint32_t tag, 
-                                        char **values,
-                                        uint32_t vm);
-
-/**
- * Create a Data Element with Value Representation DT (Date Time).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Character string value
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_DT(DcmError **error,
-                                  uint32_t tag, 
-                                  char *value);
-
-/**
- * Create a Data Element with Value Representation DT (Date Time)
- * and Value Multiplicity equal to or greater than one.
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param values: Array of character string values
- * :param vm: Value Multiplicity
- *
- * The created object takes over ownership of the memory referenced by `values`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_DT_multi(DcmError **error,
-                                        uint32_t tag, 
-                                        char **values,
-                                        uint32_t vm);
-
-/**
- * Create a Data Element with Value Representation FD (Floating Point Double).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Floating-point value
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_FD(DcmError **error,
-                                  uint32_t tag, 
-                                  double value);
-
-/**
- * Create a Data Element with Value Representation FD (Floating Point Double)
- * and Value Multiplicity equal to or greater than one.
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param values: Array of floating-point values
- * :param vm: Value Multiplicity
- *
- * The created object takes over ownership of the memory referenced by `values`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_FD_multi(DcmError **error,
-                                        uint32_t tag, 
-                                        double *values,
-                                        uint32_t vm);
-
-/**
- * Create a Data Element with Value Representation FL (Floating Point Single).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Floating-point value
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_FL(DcmError **error,
-                                  uint32_t tag, 
-                                  float value);
-
-/**
- * Create a Data Element with Value Representation FL (Floating Point Single)
- * and Value Multiplicity equal to or greater than one.
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param values: Array of floating-point values
- * :param vm: Value Multiplicity
- *
- * The created object takes over ownership of the memory referenced by `values`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_FL_multi(DcmError **error,
-                                        uint32_t tag, 
-                                        float *values,
-                                        uint32_t vm);
-
-/**
- * Create a Data Element with Value Representation IS (Integer String).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Character string value
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_IS(DcmError **error, 
-                                  uint32_t tag, 
-                                  char *value);
-
-/**
- * Create a Data Element with Value Representation IS (Integer String)
- * and Value Multiplicity equal to or greater than one.
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param values: Array of character string values
- * :param vm: Value Multiplicity
- *
- * The created object takes over ownership of the memory referenced by `values`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_IS_multi(DcmError **error,
-                                        uint32_t tag, 
-                                        char **values,
-                                        uint32_t vm);
-
-/**
- * Create a Data Element with Value Representation LO (Long String).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Character string value
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_LO(DcmError **error,
-                                  uint32_t tag, 
-                                  char *value);
-
-/**
- * Create a Data Element with Value Representation LO (Long String)
- * and Value Multiplicity equal to or greater than one.
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param values: Array of character string values
- * :param vm: Value Multiplicity
- *
- * The created object takes over ownership of the memory referenced by `values`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_LO_multi(DcmError **error,
-                                        uint32_t tag, 
-                                        char **values,
-                                        uint32_t vm);
-
-/**
- * Create a Data Element with Value Representation PN (Person Name).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Character string value
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_PN(DcmError **error, 
-                                  uint32_t tag, 
-                                  char *value);
-
-/**
- * Create a Data Element with Value Representation PN (Person Name)
- * and Value Multiplicity equal to or greater than one.
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param values: Array of character string values
- * :param vm: Value Multiplicity
- *
- * The created object takes over ownership of the memory referenced by `values`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_PN_multi(DcmError **error,
-                                        uint32_t tag, 
-                                        char **values,
-                                        uint32_t vm);
-
-/**
- * Create a Data Element with Value Representation SH (Short String).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Character string value
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_SH(DcmError **error,
-                                  uint32_t tag, 
-                                  char *value);
-
-/**
- * Create a Data Element with Value Representation SH (Short String)
- * and Value Multiplicity equal to or greater than one.
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param values: Array of character string values
- * :param vm: Value Multiplicity
- *
- * The created object takes over ownership of the memory referenced by `values`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_SH_multi(DcmError **error,
-                                        uint32_t tag, 
-                                        char **values,
-                                        uint32_t vm);
-
-/**
- * Create a Data Element with Value Representation TM (Time).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Character string value
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_TM(DcmError **error,
-                                  uint32_t tag, 
-                                  char *value);
-
-/**
- * Create a Data Element with Value Representation TM (Time)
- * and Value Multiplicity equal to or greater than one.
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param values: Array of character string values
- * :param vm: Value Multiplicity
- *
- * The created object takes over ownership of the memory referenced by `values`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_TM_multi(DcmError **error,
-                                        uint32_t tag, 
-                                        char **values,
-                                        uint32_t vm);
-
-/**
- * Create a Data Element with Value Representation UI (Unique Identifier).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Character string value
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_UI(DcmError **error,
-                                  uint32_t tag, 
-                                  char *value);
-
-/**
- * Create a Data Element with Value Representation UI (Unique Identifier)
- * and Value Multiplicity equal to or greater than one.
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param values: Array of character string values
- * :param vm: Value Multiplicity
- *
- * The created object takes over ownership of the memory referenced by `values`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_UI_multi(DcmError **error,
-                                        uint32_t tag, 
-                                        char **values,
-                                        uint32_t vm);
-
-/**
- * Create a Data Element with Value Representation SS (Signed Short)
- * and Value Multiplicity equal to or greater than one.
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Integer value
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_SS(DcmError **error,
-                                  uint32_t tag, 
-                                  int16_t value);
-
-/**
- * Create a Data Element with Value Representation SS (Signed Short).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param values: Array of integer values
- * :param vm: Value Multiplicity
- *
- * The created object takes over ownership of the memory referenced by `values`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_SS_multi(DcmError **error,
-                                        uint32_t tag, 
-                                        int16_t *values,
-                                        uint32_t vm);
-
-/**
- * Create a Data Element with Value Representation SL (Signed Long).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Integer value
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_SL(DcmError **error,
-                                  uint32_t tag, 
-                                  int32_t value);
-
-/**
- * Create a Data Element with Value Representation SL (Signed Long)
- * and Value Multiplicity equal to or greater than one.
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param values: Array of integer values
- * :param vm: Value Multiplicity
- *
- * The created object takes over ownership of the memory referenced by `values`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_SL_multi(DcmError **error,
-                                        uint32_t tag, 
-                                        int32_t *values,
-                                        uint32_t vm);
-
-/**
- * Create a Data Element with Value Representation SV (Signed Very Long).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Integer value
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_SV(DcmError **error,
-                                  uint32_t tag, 
-                                  int64_t value);
-
-/**
- * Create a Data Element with Value Representation SV (Signed Very Long)
- * and Value Multiplicity equal to or greater than one.
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param values: Array of integer values
- * :param vm: Value Multiplicity
- *
- * The created object takes over ownership of the memory referenced by `values`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_SV_multi(DcmError **error,
-                                        uint32_t tag, 
-                                        int64_t *values,
-                                        uint32_t vm);
-
-
-/**
- * Create a Data Element with Value Representation UL (Unsigned Long).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Integer value
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_UL(DcmError **error,
-                                  uint32_t tag, 
-                                  uint32_t value);
-
-/**
- * Create a Data Element with Value Representation UL (Unsigned Long)
- * and Value Multiplicity equal to or greater than one.
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param values: Array of integer values
- * :param vm: Value Multiplicity
- *
- * The created object takes over ownership of the memory referenced by `values`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_UL_multi(DcmError **error,
-                                        uint32_t tag, 
-                                        uint32_t *values,
-                                        uint32_t vm);
-
-/**
- * Create a Data Element with Value Representation US (Unsigned Short).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Integer value
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_US(DcmError **error, 
-                                  uint32_t tag, 
-                                  uint16_t value);
-
-/**
- * Create a Data Element with Value Representation US (Unsigned Short)
- * and Value Multiplicity equal to or greater than one.
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param values: Array of integer values
- * :param vm: Value Multiplicity
- *
- * The created object takes over ownership of the memory referenced by `values`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_US_multi(DcmError **error,
-                                        uint32_t tag, 
-                                        uint16_t *values,
-                                        uint32_t vm);
-
-/**
- * Create a Data Element with Value Representation UV (Unsigned Very Long).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Integer value
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_UV(DcmError **error,
-                                  uint32_t tag, 
-                                  uint64_t value);
-
-/**
- * Create a Data Element with Value Representation UV (Unsigned Very Long)
- * and Value Multiplicity equal to or greater than one.
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param values: Array of integer values
- * :param vm: Value Multiplicity
- *
- * The created object takes over ownership of the memory referenced by `values`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_UV_multi(DcmError **error,
-                                        uint32_t tag,
-                                        uint64_t *values,
-                                        uint32_t vm);
-
-/**
- * Create a Data Element with Value Representation ST (Short Text).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Character string value
- *
- * The created object takes over ownership of the memory referenced by `values`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_ST(DcmError **error, 
-                                  uint32_t tag, 
-                                  char *value);
-
-/**
- * Create a Data Element with Value Representation SQ (Sequence).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Sequence value
- *
- * The created object takes over ownership of the memory referenced by `values`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_SQ(DcmError **error,
-                                  uint32_t tag, 
-                                  DcmSequence *value);
-
-/**
- * Create a Data Element with Value Representation LT (Long Text).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Character string value
- *
- * The created object takes over ownership of the memory referenced by `value`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_LT(DcmError **error, 
-                                  uint32_t tag, 
-                                  char *value);
-
-/**
- * Create a Data Element with Value Representation OB (Other Byte).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Byte string value
- * :param length: Number of bytes
- *
- * The created object takes over ownership of the memory referenced by `value`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_OB(DcmError **error, 
-                                  uint32_t tag, 
-                                  char *value, 
-                                  uint32_t length);
-
-/**
- * Create a Data Element with Value Representation OD (Other Double).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Byte string value
- * :param length: Number of bytes
- *
- * The created object takes over ownership of the memory referenced by `value`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_OD(DcmError **error, 
-                                  uint32_t tag, 
-                                  char *value, 
-                                  uint32_t length);
-
-/**
- * Create a Data Element with Value Representation OF (Other Float).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Byte string value
- * :param length: Number of bytes
- *
- * The created object takes over ownership of the memory referenced by `value`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_OF(DcmError **error,
-                                  uint32_t tag, 
-                                  char *value, 
-                                  uint32_t length);
-
-/**
- * Create a Data Element with Value Representation OL (Other Long).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Byte string value
- * :param length: Number of bytes
- *
- * The created object takes over ownership of the memory referenced by `value`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_OL(DcmError **error,
-                                  uint32_t tag, 
-                                  char *value, 
-                                  uint32_t length);
-
-/**
- * Create a Data Element with Value Representation OV (Other Very Long).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Byte string value
- * :param length: Number of bytes
- *
- * The created object takes over ownership of the memory referenced by `value`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_OV(DcmError **error, 
-                                  uint32_t tag, 
-                                  char *value, 
-                                  uint32_t length);
-
-/**
- * Create a Data Element with Value Representation OW (Other Word).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Byte string value
- * :param length: Number of bytes
- *
- * The created object takes over ownership of the memory referenced by `value`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_OW(DcmError **error,
-                                  uint32_t tag, 
-                                  char *value, 
-                                  uint32_t length);
-
-/**
- * Create a Data Element with Value Representation UC (Unlimited Characters).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Byte string value
- * :param length: Number of bytes
- *
- * The created object takes over ownership of the memory referenced by `value`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_UC(DcmError **error,
-                                  uint32_t tag, 
-                                  char *value, 
-                                  uint32_t length);
-
-/**
- * Create a Data Element with Value Representation UN (Unknown).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Byte string value
- * :param length: Number of bytes
- *
- * The created object takes over ownership of the memory referenced by `value`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_UN(DcmError **error,
-                                  uint32_t tag, 
-                                  char *value, 
-                                  uint32_t length);
-
-/**
- * Create a Data Element with Value Representation UR
- * (Universal Resource Identifier).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Character string value
- *
- * The created object takes over ownership of the memory referenced by `value`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_UR(DcmError **error, 
-                                  uint32_t tag, 
-                                  char *value);
-
-/**
- * Create a Data Element with Value Representation UT (Unlimited Text).
- *
- * :param error: Error structure pointer
- * :param tag: Tag
- * :param value: Character string value
- *
- * The created object takes over ownership of the memory referenced by `value`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Pointer to Data Element
- */
-DCM_EXTERN
-DcmElement *dcm_element_create_UT(DcmError **error, 
-                                  uint32_t tag, 
-                                  char *value);
+DcmElement *dcm_element_create(DcmError **error, uint32_t tag, DcmVR vr);
 
 /**
  * Get group number (first part of Tag) of a Data Element.
@@ -1425,15 +569,14 @@ DCM_EXTERN
 uint32_t dcm_element_get_tag(const DcmElement *element);
 
 /**
- * Check Value Representation of a Data Element.
+ * Get the Value Representation of a Data Element.
  *
  * :param element: Pointer to Data Element
- * :param vr: Value Representation
  *
- * :return: Whether Data Element has the specified Value Representation
+ * :return: VR for this element
  */
 DCM_EXTERN
-bool dcm_element_check_vr(const DcmElement *element, const char *vr);
+DcmVR dcm_element_get_vr(const DcmElement *element);
 
 /**
  * Get length of the entire value of a Data Element.
@@ -1477,359 +620,223 @@ DCM_EXTERN
 DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element);
 
 /**
- * Get value of a Data Element with Value Representation AE
- * (Appllication Entity).
+ * Get a string from a string-valued element.
  *
+ * :param error: Error structure pointer
  * :param element: Pointer to Data Element
  * :param index: Zero-based index of value within the Data Element
+ * :param value: String value return
  *
- * :return: Pointer to memory location where value is stored
+ * :return: true on success
  */
 DCM_EXTERN
-const char *dcm_element_get_value_AE(const DcmElement *element,
-                                     uint32_t index);
+bool dcm_element_get_value_string(DcmError **error,
+                                  const DcmElement *element, 
+                                  uint32_t index,
+                                  const char **value);
 
 /**
- * Get value of a Data Element with Value Representation AS (Age String).
+ * Set the value of an element to a string. The element must have an
+ * appropriate tag. 
  *
+ * On success, if `steal` is true, ownership of `value` passes to 
+ * `element`, ie. it will be freed when `element` is destroyed. If `steal` is
+ * false, then a copy is made of `value` and ownership is not transferred.
+ *
+ * :param error: Error structure pointer
+ * :param element: Pointer to Data Element
+ * :param value: String value 
+ * :param steal: if true, ownership of value passes to element
+ *
+ * :return: true on success
+ */
+DCM_EXTERN
+bool dcm_element_set_value_string(DcmError **error, 
+                                  DcmElement *element, 
+                                  char *value,
+                                  bool steal);
+
+/**
+ * Set the value of an element to a multi-valued string. The element must 
+ * have an appropriate tag. 
+ *
+ * On success, if `steal` is true, ownership of `value` passes to 
+ * `element`, ie. it will be freed when `element` is destroyed. If `steal` is
+ * false, then a copy is made of `value` and ownership is not transferred.
+ *
+ * :param error: Error structure pointer
+ * :param element: Pointer to Data Element
+ * :param values: String value 
+ * :param vm: Number of values
+ * :param steal: if true, ownership of values passes to element
+ *
+ * :return: true on success
+ */
+DCM_EXTERN
+bool dcm_element_set_value_string_multi(DcmError **error,
+                                        DcmElement *element,
+                                        char **values,
+                                        uint32_t vm,
+                                        bool steal);
+
+/**
+ * Get an integer from a 16, 32 or 64-bit integer-valued element.
+ *
+ * :param error: Error structure pointer
  * :param element: Pointer to Data Element
  * :param index: Zero-based index of value within the Data Element
+ * :param value: Integer value return
  *
- * :return: Pointer to memory location where value is stored
+ * :return: true on success
  */
 DCM_EXTERN
-const char *dcm_element_get_value_AS(const DcmElement *element,
-                                     uint32_t index);
+bool dcm_element_get_value_integer(DcmError **error,
+                                   const DcmElement *element, 
+                                   uint32_t index,
+                                   int64_t *value);
 
 /**
- * Get value of a Data Element with Value Representation AT (Attribute Tag).
+ * Set the value of an element to an integer. The element must have an
+ * appropriate tag. 
  *
+ * :param error: Error structure pointer
+ * :param element: Pointer to Data Element
+ * :param value: Integer value 
+ *
+ * :return: true on success
+ */
+DCM_EXTERN
+bool dcm_element_set_value_integer(DcmError **error, 
+                                   DcmElement *element, 
+                                   int64_t value);
+
+/**
+ * Set the value of an element to an array of numeric values. The element must 
+ * have an appropriate tag. 
+ *
+ * Although the value passed is `int*`, it should
+ * be a pointer to an array of 16- to 64-bit numeric values of the
+ * appropriate type for the element VR.
+ *
+ * On success, if `steal` is true, ownership of `values` passes to 
+ * `element`, ie. it will be freed when `element` is destroyed. If `steal` is
+ * false, then a copy is made of `values` and ownership is not transferred.
+ *
+ * :param error: Error structure pointer
+ * :param element: Pointer to Data Element
+ * :param values: Array of values
+ * :param vm: Number of values
+ * :param steal: if true, ownership of values passes to element
+ *
+ * :return: true on success
+ */
+DCM_EXTERN
+bool dcm_element_set_value_numeric_multi(DcmError **error, 
+                                         DcmElement *element, 
+                                         int *values,
+                                         uint32_t vm,
+                                         bool steal);
+
+/**
+ * Get a double from a 32- or 64-bit float element.
+ *
+ * :param error: Error structure pointer
  * :param element: Pointer to Data Element
  * :param index: Zero-based index of value within the Data Element
+ * :param value: Integer value return
  *
- * :return: Pointer to memory location where value is stored
+ * :return: true on success
  */
 DCM_EXTERN
-const char *dcm_element_get_value_AT(const DcmElement *element,
-                                     uint32_t index);
+bool dcm_element_get_value_double(DcmError **error,
+                                  const DcmElement *element,   
+                                  uint32_t index,
+                                  double *value);
 
 /**
- * Get value of a Data Element with Value Representation CS (Code String).
+ * Set the value of an element to a floating point number. The element must 
+ * have an appropriate tag. 
  *
+ * :param error: Error structure pointer
  * :param element: Pointer to Data Element
- * :param index: Zero-based index of value within the Data Element
+ * :param value: Floating point value 
  *
- * :return: Pointer to memory location where value is stored
+ * :return: true on success
  */
 DCM_EXTERN
-const char *dcm_element_get_value_CS(const DcmElement *element,
-                                     uint32_t index);
+bool dcm_element_set_value_double(DcmError **error, 
+                                  DcmElement *element, 
+                                  double value);
 
 /**
- * Get value of a Data Element with Value Representation DA (Date).
+ * Get a binary value from an element. Use dcm_element_length() to get the
+ * length of the binary value.
  *
+ * :param error: Error structure pointer
  * :param element: Pointer to Data Element
- * :param index: Zero-based index of value within the Data Element
+ * :param value: Binary value return
  *
- * :return: Pointer to memory location where value is stored
+ * :return: true on success
  */
 DCM_EXTERN
-const char *dcm_element_get_value_DA(const DcmElement *element,
-                                     uint32_t index);
+bool dcm_element_get_value_binary(DcmError **error,
+                                  const DcmElement *element,   
+                                  const char **value);
 
 /**
- * Get value of a Data Element with Value Representation DS (Decimal String).
+ * Set the value of an element to a binary value. The element must 
+ * have an appropriate tag. 
  *
+ * On success, if `steal` is true, ownership of `value` passes to 
+ * `element`, ie. it will be freed when `element` is destroyed. If `steal` is
+ * false, then a copy is made of `value` and ownership is not transferred.
+ *
+ * :param error: Error structure pointer
  * :param element: Pointer to Data Element
- * :param index: Zero-based index of value within the Data Element
+ * :param value: Pointer to binary value 
+ * :param length: Length in bytes of the binary value
+ * :param steal: if true, ownership of the value passes to element
  *
- * :return: Pointer to memory location where value is stored
+ * :return: true on success
  */
 DCM_EXTERN
-const char *dcm_element_get_value_DS(const DcmElement *element,
-                                     uint32_t index);
+bool dcm_element_set_value_binary(DcmError **error, 
+                                  DcmElement *element, 
+                                  char *value,
+                                  uint32_t length,
+                                  bool steal);
 
 /**
- * Get value of a Data Element with Value Representation DT (Date Time).
+ * Get a sequence value from an element.
  *
+ * :param error: Error structure pointer
  * :param element: Pointer to Data Element
- * :param index: Zero-based index of value within the Data Element
+ * :param value: Sequence value return
  *
- * :return: Pointer to memory location where value is stored
+ * :return: true on success
  */
 DCM_EXTERN
-const char *dcm_element_get_value_DT(const DcmElement *element,
-                                     uint32_t index);
-
-/**
- * Get value of a Data Element with Value Representation FD
- * (Floating Point Double).
- *
- * :param element: Pointer to Data Element
- * :param index: Zero-based index of value within the Data Element
- *
- * :return: Value
- */
-DCM_EXTERN
-double dcm_element_get_value_FD(const DcmElement *element,
-                                uint32_t index);
-
-/**
- * Get value of a Data Element with Value Representation FL (Floating Point).
- *
- * :param element: Pointer to Data Element
- * :param index: Zero-based index of value within the Data Element
- *
- * :return: Value
- */
-DCM_EXTERN
-float dcm_element_get_value_FL(const DcmElement *element,
-                               uint32_t index);
-
-/**
- * Get value of a Data Element with Value Representation IS (Integer String).
- *
- * :param element: Pointer to Data Element
- * :param index: Zero-based index of value within the Data Element
- *
- * :return: Pointer to memory location where value is stored
- */
-DCM_EXTERN
-const char *dcm_element_get_value_IS(const DcmElement *element,
-                                     uint32_t index);
-
-/**
- * Get value of a Data Element with Value Representation LO (Long String).
- *
- * :param element: Pointer to Data Element
- *
- * :return: Pointer to memory location where value is stored
- */
-DCM_EXTERN
-const char *dcm_element_get_value_LO(const DcmElement *element);
-
-/**
- * Get value of a Data Element with Value Representation PN (Person Name).
- *
- * :param element: Pointer to Data Element
- *
- * :return: Pointer to memory location where value is stored
- */
-DCM_EXTERN
-const char *dcm_element_get_value_PN(const DcmElement *element);
-
-/**
- * Get value of a Data Element with Value Representation SH (Short String).
- *
- * :param element: Pointer to Data Element
- *
- * :return: Pointer to memory location where value is stored
- */
-DCM_EXTERN
-const char *dcm_element_get_value_SH(const DcmElement *element);
-
-/**
- * Get value of a Data Element with Value Representation TM (Time).
- *
- * :param element: Pointer to Data Element
- *
- * :return: Pointer to memory location where value is stored
- */
-DCM_EXTERN
-const char *dcm_element_get_value_TM(const DcmElement *element);
-
-/**
- * Get value of a Data Element with Value Representation SL (Signed Long).
- *
- * :param element: Pointer to Data Element
- * :param index: Zero-based index of value within the Data Element
- *
- * :return: Value
- */
-DCM_EXTERN
-int32_t dcm_element_get_value_SL(const DcmElement *element, uint32_t index);
-
-/**
- * Get value of a Data Element with Value Representation SS (Signed Short).
- *
- * :param element: Pointer to Data Element
- * :param index: Zero-based index of value within the Data Element
- *
- * :return: Value
- */
-DCM_EXTERN
-int16_t dcm_element_get_value_SS(const DcmElement *element, uint32_t index);
-
-/**
- * Get value of a Data Element with Value Representation SV (Signed Very Long).
- *
- * :param element: Pointer to Data Element
- * :param index: Zero-based index of value within the Data Element
- *
- * :return: Value
- */
-DCM_EXTERN
-int64_t dcm_element_get_value_SV(const DcmElement *element, uint32_t index);
-
-/**
- * Get value of a Data Element with Value Representation ST (Short text).
- *
- * :param element: Pointer to Data Element
- *
- * :return: Pointer to memory location where value is stored
- */
-DCM_EXTERN
-const char *dcm_element_get_value_ST(const DcmElement *element);
-
-/**
- * Get value of a Data Element with Value Representation UI (Unique Identifier).
- *
- * :param element: Pointer to Data Element
- * :param index: Zero-based index of value within the Data Element
- *
- * :return: Pointer to memory location where value is stored
- */
-DCM_EXTERN
-const char *dcm_element_get_value_UI(const DcmElement *element, uint32_t index);
-
-/**
- * Get value of a Data Element with Value Representation UL (Unsigned Long).
- *
- * :param element: Pointer to Data Element
- * :param index: Zero-based index of value within the Data Element
- *
- * :return: Value
- */
-DCM_EXTERN
-uint32_t dcm_element_get_value_UL(const DcmElement *element, uint32_t index);
-
-/**
- * Get value of a Data Element with Value Representation US (Unsigned Short).
- *
- * :param element: Pointer to Data Element
- * :param index: Zero-based index of value within the Data Element
- *
- * :return: Value
- */
-DCM_EXTERN
-uint16_t dcm_element_get_value_US(const DcmElement *element, uint32_t index);
-
-/**
- * Get value of a Data Element with Value Representation UV (Unsigned Very Long).
- *
- * :param element: Pointer to Data Element
- * :param index: Zero-based index of value within the Data Element
- *
- * :return: Value
- */
-DCM_EXTERN
-uint64_t dcm_element_get_value_UV(const DcmElement *element, uint32_t index);
+bool dcm_element_get_value_sequence(DcmError **error,
+                                    const DcmElement *element,   
+                                    DcmSequence **value);
 
 
 /**
- * Get value of a Data Element with Value Representation OB (Other Byte).
+ * Set the value of an element to a sequence. The element must 
+ * have an appropriate tag. 
  *
+ * The element takes ownership of the value pointer on success.
+ *
+ * :param error: Error structure pointer
  * :param element: Pointer to Data Element
+ * :param value: Pointer to sequence value 
  *
- * :return: Pointer to memory location where value is stored
+ * :return: true on success
  */
 DCM_EXTERN
-const char *dcm_element_get_value_OB(const DcmElement *element);
-
-/**
- * Get value of a Data Element with Value Representation OD (Other Double).
- *
- * :param element: Pointer to Data Element
- *
- * :return: Pointer to memory location where value is stored
- */
-DCM_EXTERN
-const char *dcm_element_get_value_OD(const DcmElement *element);
-
-/**
- * Get value of a Data Element with Value Representation OF (Other Float).
- *
- * :param element: Pointer to Data Element
- *
- * :return: Pointer to memory location where value is stored
- */
-DCM_EXTERN
-const char *dcm_element_get_value_OF(const DcmElement *element);
-
-/**
- * Get value of a Data Element with Value Representation OL (Other Long).
- *
- * :param element: Pointer to Data Element
- *
- * :return: Pointer to memory location where value is stored
- */
-DCM_EXTERN
-const char *dcm_element_get_value_OL(const DcmElement *element);
-
-/**
- * Get value of a Data Element with Value Representation OV (Other Very Long).
- *
- * :param element: Pointer to Data Element
- *
- * :return: Pointer to memory location where value is stored
- */
-DCM_EXTERN
-const char *dcm_element_get_value_OV(const DcmElement *element);
-
-/**
- * Get value of a Data Element with Value Representation OW (Other Word).
- *
- * :param element: Pointer to Data Element
- *
- * :return: Pointer to memory location where value is stored
- */
-DCM_EXTERN
-const char *dcm_element_get_value_OW(const DcmElement *element);
-
-/**
- * Get value of a Data Element with Value Representation UC (Unlimited Characters).
- *
- * :param element: Pointer to Data Element
- *
- * :return: Pointer to memory location where value is stored
- */
-DCM_EXTERN
-const char *dcm_element_get_value_UC(const DcmElement *element);
-
-/**
- * Get value of a Data Element with Value Representation UN (Unknown).
- *
- * :param element: Pointer to Data Element
- *
- * :return: Pointer to memory location where value is stored
- */
-DCM_EXTERN
-const char *dcm_element_get_value_UN(const DcmElement *element);
-
-/**
- * Get value of a Data Element with Value Representation UR
- * (Universal Resource Identifier).
- *
- * :param element: Pointer to Data Element
- *
- * :return: Pointer to memory location where value is stored
- */
-DCM_EXTERN
-const char *dcm_element_get_value_UR(const DcmElement *element);
-
-/**
- * Get value of a Data Element with Value Representation UT (Unlimited Text).
- *
- * :param element: Pointer to Data Element
- *
- * :return: Pointer to memory location where value is stored
- */
-DCM_EXTERN
-const char *dcm_element_get_value_UT(const DcmElement *element);
-
-
-DCM_EXTERN
-DcmSequence *dcm_element_get_value_SQ(const DcmElement *element);
+bool dcm_element_set_value_sequence(DcmError **error, 
+                                    DcmElement *element,   
+                                    DcmSequence *value);
 
 /**
  * Print a Data Element.
@@ -2079,9 +1086,11 @@ void dcm_sequence_foreach(const DcmSequence *seq,
  * :param error: Error structure pointer
  * :param seq: Pointer to Sequence
  * :param index: Zero-based index of the Data Set item in the Sequence
+ *
+ * :return: Whether remove operation was successful
  */
 DCM_EXTERN
-void dcm_sequence_remove(DcmError **error, DcmSequence *seq, uint32_t index);
+bool dcm_sequence_remove(DcmError **error, DcmSequence *seq, uint32_t index);
 
 /**
  * Count the number of Data Set items in a Sequence.

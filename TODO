@@ -1,31 +1,23 @@
 # TODO
 
+- need to be able to set a stop-at function on filehandles
+
+
 # bot support
 
 - need more tests and test images
 
 - extended offset table support seems to be broken? see FIXME comment
 
-- bot frame offsets should be int64_t to match dcm_seekset(), 
-  pixel_data_offset, etc.
+	probably will never be used
 
+- a fast scanner to find the BOT table
 
-# less copy-paste
-
-- replace copy-paste code over types with a table
-	dcm_element_clone()
-
-- use a table for dcm_element_create_* as well
-
-
-# more enums
-
-- element->vr should be an enum (not "UL" etc.)
-	- swap all the strcmps for ==
-
-- benchmark against the original 
 
 # data types
+
+- bot frame offsets should be int64_t to match dcm_seekset(), 
+  pixel_data_offset, etc.
 
 - should create_element() take a size_t for length?
 
@@ -40,11 +32,6 @@
 
 - dcm_dataset_print() should not use uint8_t
 
-
-# revise pointer ownership rules
-
-- right now, _create funcs free passed in objects on error which feels very 
-  error-prone
 
   instead, the caller should free on error ... how easy would this be to change?
 
@@ -76,3 +63,8 @@
 - debug failing test with eg.
 
 	CK_FORK=no CK_RUN_CASE=frame gdb ./check_dicom
+
+- leak check
+
+	CK_FORK=no valgrind --leak-check=full ./check_dicom
+
