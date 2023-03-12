@@ -1281,7 +1281,7 @@ DcmElement *dcm_dataset_contains(const DcmDataSet *dataset, uint32_t tag)
 bool dcm_dataset_insert(DcmError **error, 
                         DcmDataSet *dataset, DcmElement *element)
 {
-    if (element_check_not_assigned(error, element) || 
+    if (!element_check_assigned(error, element) || 
         !dataset_check_not_locked(error, dataset)) {
         return false;
     }

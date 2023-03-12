@@ -2,6 +2,8 @@
 
 - need to be able to set a stop-at function on filehandles
 
+- rename DcmDataSet as DcmDataset
+
 
 # bot support
 
