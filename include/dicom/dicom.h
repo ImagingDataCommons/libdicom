@@ -1460,8 +1460,8 @@ DcmFilehandle *dcm_filehandle_create_from_memory(DcmError **error,
  * :return: File Metadata
  */
 DCM_EXTERN
-DcmDataSet *dcm_filehandle_read_file_metadata(DcmError **error, 
-                                              DcmFilehandle *filehandle);
+DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error, 
+                                          DcmFilehandle *filehandle);
 
 /**
  * Read metadata from a File.

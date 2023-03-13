@@ -578,23 +578,22 @@ START_TEST(test_file_sm_image_file_meta)
     free(file_path);
     ck_assert_ptr_nonnull(filehandle);
 
-    DcmDataSet *file_meta = 
-        dcm_filehandle_read_file_metadata(NULL, filehandle);
-    ck_assert_ptr_nonnull(file_meta);
+    DcmDataSet *meta = dcm_filehandle_read_file_meta(NULL, filehandle);
+    ck_assert_ptr_nonnull(meta);
 
     // Transfer Syntax UID
-    element = dcm_dataset_get(NULL, file_meta, 0x00020010);
+    element = dcm_dataset_get(NULL, meta, 0x00020010);
     (void) dcm_element_get_value_string(NULL, element, 0, &value);
     ck_assert_str_eq(value, "1.2.840.10008.1.2.1");
 
     // Media Storage SOP Class UID
-    element = dcm_dataset_get(NULL, file_meta, 0x00020002);
+    element = dcm_dataset_get(NULL, meta, 0x00020002);
     (void) dcm_element_get_value_string(NULL, element, 0, &value);
     ck_assert_str_eq(value, "1.2.840.10008.5.1.4.1.1.77.1.6");
 
-    dcm_dataset_print(file_meta, 0);
+    dcm_dataset_print(meta, 0);
 
-    dcm_dataset_destroy(file_meta);
+    dcm_dataset_destroy(meta);
     dcm_filehandle_destroy(filehandle);
 }
 END_TEST
@@ -674,7 +673,7 @@ START_TEST(test_file_sm_image_frame)
 END_TEST
 
 
-START_TEST(test_file_sm_image_file_metadata_memory)
+START_TEST(test_file_sm_image_file_meta_memory)
 {
     DcmElement *element;
     const char *value;
@@ -687,22 +686,21 @@ START_TEST(test_file_sm_image_file_metadata_memory)
         dcm_filehandle_create_from_memory(NULL, memory, length);
     ck_assert_ptr_nonnull(filehandle);
 
-    DcmDataSet *file_metadata = 
-        dcm_filehandle_read_file_metadata(NULL, filehandle);
+    DcmDataSet *meta = dcm_filehandle_read_file_meta(NULL, filehandle);
 
     // Transfer Syntax UID
-    element = dcm_dataset_get(NULL, file_metadata, 0x00020010);
+    element = dcm_dataset_get(NULL, meta, 0x00020010);
     (void) dcm_element_get_value_string(NULL, element, 0, &value);
     ck_assert_str_eq(value, "1.2.840.10008.1.2.1");
 
     // Media Storage SOP Class UID
-    element = dcm_dataset_get(NULL, file_metadata, 0x00020002);
+    element = dcm_dataset_get(NULL, meta, 0x00020002);
     (void) dcm_element_get_value_string(NULL, element, 0, &value);
     ck_assert_str_eq(value, "1.2.840.10008.5.1.4.1.1.77.1.6");
 
-    dcm_dataset_print(file_metadata, 0);
+    dcm_dataset_print(meta, 0);
 
-    dcm_dataset_destroy(file_metadata);
+    dcm_dataset_destroy(meta);
     dcm_filehandle_destroy(filehandle);
     free(memory);
 }
@@ -778,7 +776,7 @@ static Suite *create_file_suite(void)
     suite_add_tcase(suite, frame_case);
 
     TCase *memory_case = tcase_create("memory");
-    tcase_add_test(memory_case, test_file_sm_image_file_metadata_memory);
+    tcase_add_test(memory_case, test_file_sm_image_file_meta_memory);
     suite_add_tcase(suite, memory_case);
 
     return suite;

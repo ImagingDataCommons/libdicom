@@ -675,8 +675,8 @@ DcmElement *read_element(DcmError **error,
 }
 
 
-DcmDataSet *dcm_filehandle_read_file_metadata(DcmError **error, 
-                                              DcmFilehandle *filehandle)
+DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error, 
+                                          DcmFilehandle *filehandle)
 {
     const bool implicit = false;
 
@@ -807,12 +807,11 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
     bool implicit;
 
     if (filehandle->offset == 0) {
-        DcmDataSet *file_metadata = 
-            dcm_filehandle_read_file_metadata(error, filehandle);
-        if (file_metadata == NULL) {
+        DcmDataSet *meta = dcm_filehandle_read_file_meta(error, filehandle);
+        if (meta== NULL) {
             return NULL;
         }
-        dcm_dataset_destroy(file_metadata);
+        dcm_dataset_destroy(meta);
     }
 
     if (!dcm_seekset(error, filehandle, filehandle->offset)) {
