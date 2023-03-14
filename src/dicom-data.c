@@ -176,22 +176,21 @@ static int compare_tags(const void *a, const void *b)
 
 DcmElement *dcm_element_create(DcmError **error, uint32_t tag, DcmVR vr)
 {
-    DcmElement *element = DCM_NEW(error, DcmElement);
-    if (element == NULL) {
-        return NULL;
-    }
-    element->tag = tag;
-    element->vr = vr;
-
     if (!dcm_is_valid_vr_for_tag(vr, tag)) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                       "Incorrect tag",
                       "Element tag %08X does not allow VR %s",
                       element->tag,
                       dcm_dict_str_from_vr(vr));
-        dcm_element_destroy(element);
         return NULL;
     }
+
+    DcmElement *element = DCM_NEW(error, DcmElement);
+    if (element == NULL) {
+        return NULL;
+    }
+    element->tag = tag;
+    element->vr = vr;
 
     return element;
 }
