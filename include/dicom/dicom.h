@@ -180,15 +180,17 @@ typedef enum _DcmErrorCode DcmErrorCode;
 
 /**
  * An enum of VRs. VRs which are not known to libdicom will be coded as
- * DCM_VR_uk (unknown VR).
+ * DCM_VR_ERROR (unknown VR).
  *
- * The order in this enum must match the table in dicom-dict.c. The final
- * entry must always be DCM_VR_LAST. Any new VRs should be inserted just 
- * before this.
+ * Note to maintainers: this enum must match the table in dicom-dict.c, and
+ * the DcmVRTag enum. As the DICOM standard evolves, numbering must be 
+ * maintained for ABI compatibility.  
  */
 typedef enum _DcmVR {
     // error value, returned for eg. unknown SR strings 
-    DCM_VR_error = -1,
+    DCM_VR_ERROR = -1,
+
+    // allowed VRs for DcmElement
     DCM_VR_AE = 0,
     DCM_VR_AS,
     DCM_VR_AT,
@@ -223,10 +225,8 @@ typedef enum _DcmVR {
     DCM_VR_OV,
     DCM_VR_SV,
     DCM_VR_UV,
-    DCM_VR_OB_OW,		// some tags allow several alternative VRs
-    DCM_VR_US_OW,
-    DCM_VR_US_SS,
-    DCM_VR_US_SS_OW,
+
+    // used to check enums for range errors, add new VRs before this
     DCM_VR_LAST
 } DcmVR;
 
@@ -422,7 +422,7 @@ const char *dcm_get_version(void);
  *
  * :param vr: The VR as a two character string.
  *
- * :return: The enum for that VR.
+ * :return: the enum for that VR
  */
 DCM_EXTERN 
 DcmVR dcm_dict_vr_from_str(const char *vr);
@@ -432,35 +432,13 @@ DcmVR dcm_dict_vr_from_str(const char *vr);
  *
  * :param vr: The VR as an enum value.
  *
- * :return: The string representation of that VR.
+ * :return: the string representation of that VR, or NULL
  */
 DCM_EXTERN 
 const char *dcm_dict_str_from_vr(DcmVR vr);
 
 /**
- * Look up the Value Representation of an Attribute in the Dictionary.
- *
- * :param tag: Attribute Tag
- *
- * :return: name of attribute Value Representation
- */
-DCM_EXTERN
-DcmVR dcm_dict_vr_from_tag(uint32_t tag);
-
-/**
- * Two VR codes are equal. This takes account of cases such as "unknown code"
- * or "ambigious code".
- *
- * :param a: VR code
- * :param a: VR code
- *
- * :return: true if the codes are considered equal
- */
-DCM_EXTERN
-bool dcm_dict_vr_equal(DcmVR a, DcmVR b);
-
-/**
- * Look up the Keyword of an Attribute in the Dictionary. Retuirns NULL if the
+ * Look up the Keyword of an Attribute in the Dictionary. Returns NULL if the
  * tag is not recognised.
  *
  * :param tag: Attribute Tag
@@ -480,6 +458,17 @@ const char *dcm_dict_keyword_from_tag(uint32_t tag);
  */
 DCM_EXTERN
 uint32_t dcm_dict_tag_from_keyword(const char *keyword);
+
+/**
+ * Find the VR for a tag. This will return DCM_VR_ERROR if the tag is unknown,
+ * or does not have a unique VR.
+ *
+ * :param tag: Attribute Tag
+ *
+ * :return: the unique VR for this tag, or DCM_VR_ERROR
+ */
+DCM_EXTERN
+DcmVR dcm_vr_from_tag(uint32_t tag);
 
 /**
  * Determine whether a Tag is public.
@@ -522,6 +511,16 @@ bool dcm_is_valid_tag(uint32_t tag);
  */
 DCM_EXTERN
 bool dcm_is_valid_vr(const char *vr);
+
+/**
+ * Determine whether a Value Representation is valid.
+ *
+ * :param vr: Attribute Value Representation
+ *
+ * :return: Yes/no answer
+ */
+DCM_EXTERN
+bool dcm_is_valid_vr_for_tag(DcmVR vr, uint32_t tag);
 
 /**
  * Determine whether a Transfer Syntax is encapsulated.

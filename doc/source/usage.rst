@@ -27,9 +27,9 @@ using a standard C type (e.g,. VR ``"US"`` has type ``uint16_t`` and VR
 ``"UI"`` has type ``char *``) and additional value constraints may be checked
 at runtime (e.g., the maximal capacity of a character string).  
 
-The VR must be appropriate for the tag. Use :c:func:`dcm_dict_vr_from_tag()`
-to find the set of allowed VRs for a tag. Use :c:func:`dcm_dict_vr_equal()` to
-check if a specific VR is in an allowed set.
+The VR must be appropriate for the tag. Use :c:func:`dcm_vr_from_tag()` to
+find the set of allowed VRs for a tag. Use :c:func:`dcm_is_valid_vr_for_tag()`
+to check if a VR is allowed for a tag.
 
 Depending on the VR, an individual Data
 Element may have a `Value Multiplicity (VM)

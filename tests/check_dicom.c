@@ -194,19 +194,19 @@ END_TEST
 
 START_TEST(test_dict_vr_lookups)
 {
-    ck_assert_int_eq(dcm_dict_vr_from_tag(0x00020010), DCM_VR_UI);
-    ck_assert_int_eq(dcm_dict_vr_from_tag(0x00080018), DCM_VR_UI);
-    ck_assert_int_eq(dcm_dict_vr_from_tag(0x00080030), DCM_VR_TM);
-    ck_assert_int_eq(dcm_dict_vr_from_tag(0x00180050), DCM_VR_DS);
-    ck_assert_int_eq(dcm_dict_vr_from_tag(0x00185100), DCM_VR_CS);
-    ck_assert_int_eq(dcm_dict_vr_from_tag(0x00200035), DCM_VR_DS);
-    ck_assert_int_eq(dcm_dict_vr_from_tag(0x00280008), DCM_VR_IS);
-    ck_assert_int_eq(dcm_dict_vr_from_tag(0x00280010), DCM_VR_US);
-    ck_assert_int_eq(dcm_dict_vr_from_tag(0x00400554), DCM_VR_UI);
-    ck_assert_int_eq(dcm_dict_vr_from_tag(0x00480003), DCM_VR_FL);
-    ck_assert_int_eq(dcm_dict_vr_from_tag(0x00620021), DCM_VR_UI);
-    ck_assert_int_eq(dcm_dict_vr_from_tag(0x00660031), DCM_VR_LO);
-    ck_assert_int_eq(dcm_dict_vr_from_tag(0x00701305), DCM_VR_FD);
+    ck_assert_int_eq(dcm_vr_from_tag(0x00020010), DCM_VR_UI);
+    ck_assert_int_eq(dcm_vr_from_tag(0x00080018), DCM_VR_UI);
+    ck_assert_int_eq(dcm_vr_from_tag(0x00080030), DCM_VR_TM);
+    ck_assert_int_eq(dcm_vr_from_tag(0x00180050), DCM_VR_DS);
+    ck_assert_int_eq(dcm_vr_from_tag(0x00185100), DCM_VR_CS);
+    ck_assert_int_eq(dcm_vr_from_tag(0x00200035), DCM_VR_DS);
+    ck_assert_int_eq(dcm_vr_from_tag(0x00280008), DCM_VR_IS);
+    ck_assert_int_eq(dcm_vr_from_tag(0x00280010), DCM_VR_US);
+    ck_assert_int_eq(dcm_vr_from_tag(0x00400554), DCM_VR_UI);
+    ck_assert_int_eq(dcm_vr_from_tag(0x00480003), DCM_VR_FL);
+    ck_assert_int_eq(dcm_vr_from_tag(0x00620021), DCM_VR_UI);
+    ck_assert_int_eq(dcm_vr_from_tag(0x00660031), DCM_VR_LO);
+    ck_assert_int_eq(dcm_vr_from_tag(0x00701305), DCM_VR_FD);
 }
 END_TEST
 

@@ -351,7 +351,12 @@ static DcmElement *read_element_header(DcmError **error,
 
     DcmVR vr;
     if (implicit) {
-        vr = dcm_dict_vr_from_tag(tag);
+        vr = dcm_vr_from_tag(tag);
+        if (vr == DCM_VR_ERROR) {
+            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                          "Reading of Data Element header failed",
+                          "Tag %08X not allowed in implicit mode", tag);
+        }
         if (!read_uint32(error, filehandle, length, position)) {
             return NULL;
         }
@@ -364,7 +369,7 @@ static DcmElement *read_element_header(DcmError **error,
         vr_str[2] = '\0';
         vr = dcm_dict_vr_from_str(vr_str);
 
-        if (!dcm_dict_vr_equal(vr, dcm_dict_vr_from_tag(tag))) {
+        if (!dcm_is_valid_vr_for_tag(vr, tag)) {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                           "Reading of Data Element header failed",
                           "Unknown or mismatched VR %s", vr_str);

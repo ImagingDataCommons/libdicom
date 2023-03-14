@@ -183,13 +183,12 @@ DcmElement *dcm_element_create(DcmError **error, uint32_t tag, DcmVR vr)
     element->tag = tag;
     element->vr = vr;
 
-    DcmVR expected_vr = dcm_dict_vr_from_tag(tag);
-    if (!dcm_dict_vr_equal(vr, expected_vr)) {
+    if (!dcm_is_valid_vr_for_tag(vr, tag)) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                       "Incorrect tag",
-                      "Element tag %08X has expected VR of %s",
+                      "Element tag %08X does not allow VR %s",
                       element->tag,
-                      dcm_dict_str_from_vr(expected_vr));
+                      dcm_dict_str_from_vr(vr));
         dcm_element_destroy(element);
         return NULL;
     }
@@ -390,7 +389,7 @@ static bool dcm_element_validate(DcmError **error, DcmElement *element)
         return false;
     }
 
-    if (!dcm_dict_vr_equal(element->vr, dcm_dict_vr_from_tag(element->tag))) {
+    if (!dcm_is_valid_vr_for_tag(element->vr, element->tag)) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                       "Data Element validation failed",
                       "Bad VR for tag %08X, should be %s",
