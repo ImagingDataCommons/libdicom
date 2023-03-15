@@ -858,7 +858,7 @@ bool dcm_element_set_value_sequence(DcmError **error,
  * :param indentation: Number of white spaces before text
  */
 DCM_EXTERN
-void dcm_element_print(const DcmElement *element, uint8_t indentation);
+void dcm_element_print(const DcmElement *element, int indentation);
 
 /**
  * Destroy a Data Element.
@@ -1026,7 +1026,7 @@ bool dcm_dataset_is_locked(const DcmDataSet *dataset);
  * :param indentation: Number of white spaces before text
  */
 DCM_EXTERN
-void dcm_dataset_print(const DcmDataSet *dataset, uint8_t indentation);
+void dcm_dataset_print(const DcmDataSet *dataset, int indentation);
 
 /**
  * Destroy a Data Set.

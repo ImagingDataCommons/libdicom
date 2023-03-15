@@ -179,8 +179,8 @@ DcmElement *dcm_element_create(DcmError **error, uint32_t tag, DcmVR vr)
     if (!dcm_is_valid_vr_for_tag(vr, tag)) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                       "Incorrect tag",
-                      "Element tag %08X does not allow VR %s",
-                      element->tag,
+                      "Tag %08X does not allow VR %s",
+                      tag,
                       dcm_dict_str_from_vr(vr));
         return NULL;
     }
@@ -1122,11 +1122,11 @@ static void element_print_string(const DcmElement *element,
 }
 
 
-void dcm_element_print(const DcmElement *element, uint8_t indentation)
+void dcm_element_print(const DcmElement *element, int indentation)
 {
     DcmVRClass klass = dcm_dict_vr_class(element->vr);
-    const uint8_t num_indent = indentation * 2;
-    const uint8_t num_indent_next = (indentation + 1) * 2;
+    const int num_indent = indentation * 2;
+    const int num_indent_next = (indentation + 1) * 2;
 
     uint32_t i;
 
@@ -1383,7 +1383,7 @@ void dcm_dataset_copy_tags(const DcmDataSet *dataset,
 }
 
 
-void dcm_dataset_print(const DcmDataSet *dataset, uint8_t indentation)
+void dcm_dataset_print(const DcmDataSet *dataset, int indentation)
 {
     uint32_t i;
     DcmElement *element;

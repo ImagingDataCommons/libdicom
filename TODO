@@ -2,8 +2,6 @@
 
 - need to be able to set a stop-at function on filehandles
 
-- rename DcmDataSet as DcmDataset
-
 
 # bot support
 
@@ -31,11 +29,6 @@
 - does utarray_len() really return uint32?
 
 	no, it's unsigned int
-
-- dcm_dataset_print() should not use uint8_t
-
-
-  instead, the caller should free on error ... how easy would this be to change?
 
 
 # asserts
