@@ -47,7 +47,7 @@ struct PixelDescription {
 
 
 struct _DcmFilehandle {
-    DcmIO *io;
+    const DcmIO *io;
     void *fp;
     DcmDataSet *meta;
     int64_t offset;
@@ -73,7 +73,9 @@ static bool is_big_endian(void)
 }
 
 
-DcmFilehandle *dcm_filehandle_create(DcmError **error, DcmIO *io, void *client)
+DcmFilehandle *dcm_filehandle_create(DcmError **error,
+                                     const DcmIO *io,
+                                     void *client)
 {
     DcmFilehandle *filehandle = DCM_NEW(error, DcmFilehandle);
     if (filehandle == NULL) {
@@ -119,7 +121,7 @@ void dcm_filehandle_destroy(DcmFilehandle *filehandle)
 static int64_t dcm_read(DcmError **error, DcmFilehandle *filehandle,
     char *buffer, int64_t length, int64_t *position)
 {
-    int64_t bytes_read = filehandle->io->read(error, 
+    int64_t bytes_read = filehandle->io->read(error,
                                               filehandle->fp, buffer, length);
     if (bytes_read < 0) {
         return bytes_read;
@@ -131,11 +133,11 @@ static int64_t dcm_read(DcmError **error, DcmFilehandle *filehandle,
 }
 
 
-static bool dcm_require(DcmError **error, DcmFilehandle *filehandle, 
+static bool dcm_require(DcmError **error, DcmFilehandle *filehandle,
     char *buffer, int64_t length, int64_t *position)
 {
     while (length > 0) {
-        int64_t bytes_read = dcm_read(error, 
+        int64_t bytes_read = dcm_read(error,
                                       filehandle, buffer, length, position);
 
         if (bytes_read < 0) {
@@ -155,17 +157,17 @@ static bool dcm_require(DcmError **error, DcmFilehandle *filehandle,
 }
 
 
-static bool dcm_seekset(DcmError **error, 
+static bool dcm_seekset(DcmError **error,
                         DcmFilehandle *filehandle, int64_t offset)
 {
     return filehandle->io->seek(error, filehandle->fp, offset, SEEK_SET) >= 0;
 }
 
 
-static bool dcm_seekcur(DcmError **error, DcmFilehandle *filehandle, 
+static bool dcm_seekcur(DcmError **error, DcmFilehandle *filehandle,
     int64_t offset, int64_t *position)
 {
-    int64_t new_offset = filehandle->io->seek(error, 
+    int64_t new_offset = filehandle->io->seek(error,
                                               filehandle->fp, offset, SEEK_CUR);
     if (new_offset < 0) {
         return false;
@@ -177,7 +179,7 @@ static bool dcm_seekcur(DcmError **error, DcmFilehandle *filehandle,
 }
 
 
-static bool dcm_offset(DcmError **error, 
+static bool dcm_offset(DcmError **error,
                        DcmFilehandle *filehandle, int64_t *offset)
 {
     *offset = filehandle->io->seek(error, filehandle->fp, 0, SEEK_CUR);
@@ -227,7 +229,7 @@ static void byteswap(char *data, size_t length, size_t size)
 }
 
 
-static bool read_uint16(DcmError **error, DcmFilehandle *filehandle, 
+static bool read_uint16(DcmError **error, DcmFilehandle *filehandle,
     uint16_t *value, int64_t *position)
 {
     union {
@@ -249,7 +251,7 @@ static bool read_uint16(DcmError **error, DcmFilehandle *filehandle,
 }
 
 
-static bool read_uint32(DcmError **error, DcmFilehandle *filehandle, 
+static bool read_uint32(DcmError **error, DcmFilehandle *filehandle,
     uint32_t *value, int64_t *position)
 {
     union {
@@ -271,7 +273,7 @@ static bool read_uint32(DcmError **error, DcmFilehandle *filehandle,
 }
 
 
-static bool read_tag(DcmError **error, DcmFilehandle *filehandle, 
+static bool read_tag(DcmError **error, DcmFilehandle *filehandle,
     uint32_t *value, int64_t *position)
 {
     uint16_t group, elem;
@@ -338,10 +340,10 @@ char **dcm_parse_character_string(DcmError **error,
 }
 
 
-static DcmElement *read_element_header(DcmError **error, 
-                                       DcmFilehandle *filehandle, 
-                                       uint32_t *length, 
-                                       int64_t *position, 
+static DcmElement *read_element_header(DcmError **error,
+                                       DcmFilehandle *filehandle,
+                                       uint32_t *length,
+                                       int64_t *position,
                                        bool implicit)
 {
     uint32_t tag;
@@ -407,9 +409,9 @@ static DcmElement *read_element_header(DcmError **error,
 
 
 // fwd ref this
-static DcmElement *read_element(DcmError **error, 
-                                DcmFilehandle *filehandle, 
-                                int64_t *position, 
+static DcmElement *read_element(DcmError **error,
+                                DcmFilehandle *filehandle,
+                                int64_t *position,
                                 bool implicit);
 
 static bool read_element_sequence(DcmError **error,
@@ -425,7 +427,7 @@ static bool read_element_sequence(DcmError **error,
         dcm_log_debug("Read Item #%d.", index);
         uint32_t item_tag;
         uint32_t item_length;
-        if (!read_iheader(error, filehandle, 
+        if (!read_iheader(error, filehandle,
                           &item_tag, &item_length, &seq_position)) {
             return false;
         }
@@ -445,12 +447,12 @@ static bool read_element_sequence(DcmError **error,
                           item_tag,
                           index);
             return false;
-        } 
-        
+        }
+
         if (length == 0xFFFFFFFF) {
             dcm_log_debug("Item #%d has undefined length.", index);
         } else {
-            dcm_log_debug("Item #%d has defined length %d.", 
+            dcm_log_debug("Item #%d has defined length %d.",
                           index, item_length);
         }
 
@@ -476,7 +478,7 @@ static bool read_element_sequence(DcmError **error,
                     dcm_dataset_destroy(dataset);
                     return false;
                 }
-                        
+
                 break;
             }
 
@@ -486,7 +488,7 @@ static bool read_element_sequence(DcmError **error,
                 return false;
             }
 
-            DcmElement *element = read_element(error, filehandle, 
+            DcmElement *element = read_element(error, filehandle,
                                                &item_position, implicit);
             if (element == NULL) {
                 dcm_dataset_destroy(dataset);
@@ -583,10 +585,10 @@ static bool read_element_body(DcmError **error,
                 byteswap(values, length, size);
             }
 
-            if( !dcm_element_set_value_numeric_multi(error, 
-                                                     element, 
-                                                     (int *) values, 
-                                                     vm, 
+            if( !dcm_element_set_value_numeric_multi(error,
+                                                     element,
+                                                     (int *) values,
+                                                     vm,
                                                      true)) {
                 free(values);
                 return false;
@@ -605,7 +607,7 @@ static bool read_element_body(DcmError **error,
                 return false;
             }
 
-            if( !dcm_element_set_value_binary(error, element, 
+            if( !dcm_element_set_value_binary(error, element,
                                               value, length, true)) {
                 free(value);
                 return false;
@@ -630,8 +632,8 @@ static bool read_element_body(DcmError **error,
             }
 
             int64_t seq_position = 0;
-            if (!read_element_sequence(error, 
-                                       filehandle, seq, length, 
+            if (!read_element_sequence(error,
+                                       filehandle, seq, length,
                                        &seq_position, implicit)) {
                 dcm_sequence_destroy(seq);
                 return false;
@@ -656,21 +658,21 @@ static bool read_element_body(DcmError **error,
 }
 
 
-DcmElement *read_element(DcmError **error, 
-                         DcmFilehandle *filehandle, 
-                         int64_t *position, 
+DcmElement *read_element(DcmError **error,
+                         DcmFilehandle *filehandle,
+                         int64_t *position,
                          bool implicit)
 {
     DcmElement *element;
 
     uint32_t length;
-    element = read_element_header(error, 
+    element = read_element_header(error,
                                   filehandle, &length, position, implicit);
     if (element == NULL) {
         return NULL;
     }
 
-    if (!read_element_body(error, element, filehandle, 
+    if (!read_element_body(error, element, filehandle,
                            length, position, implicit)) {
         dcm_element_destroy(element);
         return NULL;
@@ -680,7 +682,7 @@ DcmElement *read_element(DcmError **error,
 }
 
 
-DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error, 
+DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
                                           DcmFilehandle *filehandle)
 {
     const bool implicit = false;
@@ -698,7 +700,7 @@ DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
 
     // File Preamble
     char preamble[129];
-    if (!dcm_require(error, 
+    if (!dcm_require(error,
                      filehandle, preamble, sizeof(preamble) - 1, &position)) {
         dcm_dataset_destroy(file_meta);
         return NULL;
@@ -707,7 +709,7 @@ DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
 
     // DICOM Prefix
     char prefix[5];
-    if (!dcm_require(error, 
+    if (!dcm_require(error,
                      filehandle, prefix, sizeof(prefix) - 1, &position)) {
         dcm_dataset_destroy(file_meta);
         return NULL;
@@ -751,7 +753,7 @@ DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
 
     while (position < group_length) {
         uint32_t length;
-        element = read_element_header(error, 
+        element = read_element_header(error,
                                       filehandle, &length, &position, implicit);
         if (element == NULL) {
             dcm_dataset_destroy(file_meta);
@@ -764,7 +766,7 @@ DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
             break;
         }
 
-        if (!read_element_body(error, element, filehandle, 
+        if (!read_element_body(error, element, filehandle,
                                length, &position, implicit) ||
             !dcm_dataset_insert(error, file_meta, element)) {
             dcm_element_destroy(element);
@@ -786,7 +788,7 @@ DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
     }
 
     const char *transfer_syntax_uid;
-    if (!dcm_element_get_value_string(error, 
+    if (!dcm_element_get_value_string(error,
                                       element, 0, &transfer_syntax_uid)) {
         filehandle->offset = 0;
         dcm_dataset_destroy(file_meta);
@@ -806,7 +808,7 @@ DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
 }
 
 
-DcmDataSet *dcm_filehandle_read_metadata(DcmError **error, 
+DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
                                          DcmFilehandle *filehandle)
 {
     bool implicit;
@@ -843,10 +845,10 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
         }
 
         uint32_t length;
-        DcmElement *element = read_element_header(error, 
-                                                  filehandle, 
-                                                  &length, 
-                                                  &position, 
+        DcmElement *element = read_element_header(error,
+                                                  filehandle,
+                                                  &length,
+                                                  &position,
                                                   implicit);
         if (element == NULL) {
             dcm_dataset_destroy(dataset);
@@ -859,8 +861,8 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
                          "Encountered Data Set Trailing Tag");
             dcm_element_destroy(element);
             break;
-        } 
-       
+        }
+
         if (tag == TAG_PIXEL_DATA ||
             tag == TAG_FLOAT_PIXEL_DATA ||
             tag == TAG_DOUBLE_PIXEL_DATA) {
@@ -868,7 +870,7 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
                           "Encountered Tag of Pixel Data Element.");
             dcm_element_destroy(element);
 
-            // Set filehandle pointer to the first byte of the 
+            // Set filehandle pointer to the first byte of the
             // pixel data element
             if (implicit) {
                 // Tag: 4 bytes, Value Length: 4 bytes
@@ -885,7 +887,7 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
                 }
             }
 
-            if (!dcm_offset(error, 
+            if (!dcm_offset(error,
                             filehandle, &filehandle->pixel_data_offset)) {
                 dcm_dataset_destroy(dataset);
                 return NULL;
@@ -903,7 +905,7 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
             return NULL;
         }
 
-        if (!read_element_body(error, element, filehandle, 
+        if (!read_element_body(error, element, filehandle,
                                length, &position, implicit) ||
             !dcm_dataset_insert(error, dataset, element)) {
             dcm_element_destroy(element);
@@ -918,7 +920,7 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
 }
 
 
-static bool get_num_frames(DcmError **error, 
+static bool get_num_frames(DcmError **error,
                            const DcmDataSet *metadata,
                            uint32_t *number_of_frames)
 {
@@ -946,8 +948,8 @@ static bool get_num_frames(DcmError **error,
 }
 
 
-DcmBOT *dcm_filehandle_read_bot(DcmError **error, 
-                                DcmFilehandle *filehandle, 
+DcmBOT *dcm_filehandle_read_bot(DcmError **error,
+                                DcmFilehandle *filehandle,
                                 DcmDataSet *metadata)
 {
     uint64_t value;
@@ -1046,7 +1048,7 @@ DcmBOT *dcm_filehandle_read_bot(DcmError **error,
     } else {
         dcm_log_info("Basic Offset Table is empty");
         // Handle Extended Offset Table attribute
-        const DcmElement *eot_element = dcm_dataset_contains(metadata, 
+        const DcmElement *eot_element = dcm_dataset_contains(metadata,
                                                              0x7FE00001);
         if (eot_element == NULL) {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
@@ -1090,7 +1092,7 @@ DcmBOT *dcm_filehandle_read_bot(DcmError **error,
 }
 
 
-static bool set_pixel_description(DcmError **error, 
+static bool set_pixel_description(DcmError **error,
                                   struct PixelDescription *desc,
                                   const DcmDataSet *metadata)
 {
@@ -1159,7 +1161,7 @@ static bool set_pixel_description(DcmError **error,
 
 
 DcmBOT *dcm_filehandle_build_bot(DcmError **error,
-                                 DcmFilehandle *filehandle, 
+                                 DcmFilehandle *filehandle,
                                  DcmDataSet *metadata)
 {
     uint64_t i;
@@ -1187,10 +1189,10 @@ DcmBOT *dcm_filehandle_build_bot(DcmError **error,
     int64_t position = 0;
 
     uint32_t length;
-    DcmElement *element = read_element_header(error, 
-                                              filehandle, 
-                                              &length, 
-                                              &position, 
+    DcmElement *element = read_element_header(error,
+                                              filehandle,
+                                              &length,
+                                              &position,
                                               false);
     uint32_t tag = dcm_element_get_tag(element);
     dcm_element_destroy(element);

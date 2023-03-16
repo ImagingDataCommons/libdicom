@@ -33,7 +33,7 @@ struct _DcmElement {
     uint32_t vm;
     bool assigned;
 
-    // Store values for multiplicity 1 (the most common case) 
+    // Store values for multiplicity 1 (the most common case)
     // inside the element to reduce malloc/frees during build
     union {
         union {
@@ -258,7 +258,7 @@ uint32_t dcm_element_get_length(const DcmElement *element)
 
 // check, set, get string value representations
 
-static bool element_check_index(DcmError **error, 
+static bool element_check_index(DcmError **error,
                                 const DcmElement *element, uint32_t index)
 {
     if (index >= element->vm) {
@@ -323,7 +323,7 @@ static bool element_check_not_assigned(DcmError **error,
 
 
 bool dcm_element_get_value_string(DcmError **error,
-                                  const DcmElement *element, 
+                                  const DcmElement *element,
                                   uint32_t index,
                                   const char **value)
 {
@@ -343,7 +343,7 @@ bool dcm_element_get_value_string(DcmError **error,
 }
 
 
-static bool element_check_capacity(DcmError **error, 
+static bool element_check_capacity(DcmError **error,
                                    DcmElement *element, uint32_t capacity)
 {
     uint32_t i;
@@ -426,7 +426,7 @@ static void element_set_length(DcmElement *element, uint32_t length)
 
     if (element->length == 0) {
         element->length = even_length;
-    } 
+    }
 }
 
 
@@ -507,8 +507,8 @@ bool dcm_element_set_value_string_multi(DcmError **error,
 }
 
 
-bool dcm_element_set_value_string(DcmError **error, 
-                                  DcmElement *element, 
+bool dcm_element_set_value_string(DcmError **error,
+                                  DcmElement *element,
                                   char *value,
                                   bool steal)
 {
@@ -525,7 +525,7 @@ bool dcm_element_set_value_string(DcmError **error,
             return false;
         }
 
-        if (!dcm_element_set_value_string_multi(error, 
+        if (!dcm_element_set_value_string_multi(error,
                                                 element, values, vm, true)) {
             dcm_free_string_array(values, vm);
             return false;
@@ -625,12 +625,12 @@ static bool element_check_integer(DcmError **error,
 
 
 bool dcm_element_get_value_integer(DcmError **error,
-                                   const DcmElement *element, 
+                                   const DcmElement *element,
                                    uint32_t index,
                                    int64_t *value)
 {
-    if (!element_check_assigned(error, element) || 
-        !element_check_numeric(error, element) || 
+    if (!element_check_assigned(error, element) ||
+        !element_check_numeric(error, element) ||
         !element_check_integer(error, element) ||
         !element_check_index(error, element, index)) {
         return false;
@@ -650,12 +650,12 @@ bool dcm_element_get_value_integer(DcmError **error,
 }
 
 
-bool dcm_element_set_value_integer(DcmError **error, 
-                                   DcmElement *element, 
+bool dcm_element_set_value_integer(DcmError **error,
+                                   DcmElement *element,
                                    int64_t value)
 {
-    if (!element_check_not_assigned(error, element) || 
-        !element_check_numeric(error, element) || 
+    if (!element_check_not_assigned(error, element) ||
+        !element_check_numeric(error, element) ||
         !element_check_integer(error, element)) {
         return false;
     }
@@ -673,13 +673,13 @@ bool dcm_element_set_value_integer(DcmError **error,
 }
 
 
-bool dcm_element_set_value_numeric_multi(DcmError **error, 
-                                         DcmElement *element, 
+bool dcm_element_set_value_numeric_multi(DcmError **error,
+                                         DcmElement *element,
                                          int *value,
                                          uint32_t vm,
                                          bool steal)
 {
-    if (!element_check_not_assigned(error, element) || 
+    if (!element_check_not_assigned(error, element) ||
         !element_check_numeric(error, element)) {
         return false;
     }
@@ -762,12 +762,12 @@ static bool element_check_float(DcmError **error,
 
 
 bool dcm_element_get_value_double(DcmError **error,
-                                  const DcmElement *element,   
+                                  const DcmElement *element,
                                   uint32_t index,
                                   double *value)
 {
-    if (!element_check_assigned(error, element) || 
-        !element_check_numeric(error, element) || 
+    if (!element_check_assigned(error, element) ||
+        !element_check_numeric(error, element) ||
         !element_check_float(error, element) ||
         !element_check_index(error, element, index)) {
         return false;
@@ -787,12 +787,12 @@ bool dcm_element_get_value_double(DcmError **error,
 }
 
 
-bool dcm_element_set_value_double(DcmError **error, 
-                                  DcmElement *element, 
+bool dcm_element_set_value_double(DcmError **error,
+                                  DcmElement *element,
                                   double value)
 {
-    if (!element_check_not_assigned(error, element) || 
-        !element_check_numeric(error, element) || 
+    if (!element_check_not_assigned(error, element) ||
+        !element_check_numeric(error, element) ||
         !element_check_float(error, element)) {
         return false;
     }
@@ -829,10 +829,10 @@ static bool element_check_binary(DcmError **error,
 
 
 bool dcm_element_get_value_binary(DcmError **error,
-                                  const DcmElement *element,   
+                                  const DcmElement *element,
                                   const char **value)
 {
-    if (!element_check_assigned(error, element) || 
+    if (!element_check_assigned(error, element) ||
         !element_check_binary(error, element)) {
         return false;
     }
@@ -843,13 +843,13 @@ bool dcm_element_get_value_binary(DcmError **error,
 }
 
 
-bool dcm_element_set_value_binary(DcmError **error, 
-                                  DcmElement *element, 
+bool dcm_element_set_value_binary(DcmError **error,
+                                  DcmElement *element,
                                   char *value,
                                   uint32_t length,
                                   bool steal)
 {
-    if (!element_check_not_assigned(error, element) || 
+    if (!element_check_not_assigned(error, element) ||
         !element_check_binary(error, element)) {
         return false;
     }
@@ -902,10 +902,10 @@ static bool element_check_sequence(DcmError **error,
 
 
 bool dcm_element_get_value_sequence(DcmError **error,
-                                    const DcmElement *element,   
+                                    const DcmElement *element,
                                     DcmSequence **value)
 {
-    if (!element_check_assigned(error, element) || 
+    if (!element_check_assigned(error, element) ||
         !element_check_sequence(error, element)) {
         return false;
     }
@@ -917,11 +917,11 @@ bool dcm_element_get_value_sequence(DcmError **error,
 }
 
 
-bool dcm_element_set_value_sequence(DcmError **error, 
-                                    DcmElement *element,   
+bool dcm_element_set_value_sequence(DcmError **error,
+                                    DcmElement *element,
                                     DcmSequence *value)
 {
-    if (!element_check_not_assigned(error, element) || 
+    if (!element_check_not_assigned(error, element) ||
         !element_check_sequence(error, element)) {
         return false;
     }
@@ -934,7 +934,7 @@ bool dcm_element_set_value_sequence(DcmError **error,
             return false;
         }
         for (DcmElement *element = item->elements;
-            element; 
+            element;
             element = element->hh.next) {
             length += element->length;
         }
@@ -1009,7 +1009,7 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
         case DCM_CLASS_STRING_SINGLE:
             // all the string types
             if (element->vm == 1 && element->value.single.str) {
-                clone->value.single.str = dcm_strdup(error, 
+                clone->value.single.str = dcm_strdup(error,
                                                      element->value.single.str);
                 if (clone->value.single.str == NULL) {
                     dcm_element_destroy(clone);
@@ -1018,7 +1018,7 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
                 clone->value_pointer = clone->value.single.str;
                 clone->vm = 1;
             } else if (element->vm > 1 && element->value.multi.str) {
-                clone->value.multi.str = DCM_NEW_ARRAY(error, 
+                clone->value.multi.str = DCM_NEW_ARRAY(error,
                                                        element->vm, char *);
                 if (clone->value.multi.str == NULL) {
                     dcm_element_destroy(clone);
@@ -1027,7 +1027,7 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
                 clone->value_pointer_array = clone->value.multi.str;
 
                 for (i = 0; i < element->vm; i++) {
-                    clone->value.multi.str[i] = dcm_strdup(error, 
+                    clone->value.multi.str[i] = dcm_strdup(error,
                                                            element->
                                                            value.multi.str[i]);
                     if (clone->value.multi.str[i] == NULL) {
@@ -1060,7 +1060,7 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
                 clone->value = element->value;
                 clone->vm = 1;
             } else {
-                // some kind of numeric value .. we use the float pointer, 
+                // some kind of numeric value .. we use the float pointer,
                 // but this will do all the numeric array types
                 size_t size = dcm_dict_vr_size(element->vr);
                 clone->value.multi.fl = dcm_calloc(error, element->vm, size);
@@ -1276,10 +1276,10 @@ DcmElement *dcm_dataset_contains(const DcmDataSet *dataset, uint32_t tag)
 }
 
 
-bool dcm_dataset_insert(DcmError **error, 
+bool dcm_dataset_insert(DcmError **error,
                         DcmDataSet *dataset, DcmElement *element)
 {
-    if (!element_check_assigned(error, element) || 
+    if (!element_check_assigned(error, element) ||
         !dataset_check_not_locked(error, dataset)) {
         return false;
     }
@@ -1300,7 +1300,7 @@ bool dcm_dataset_insert(DcmError **error,
 }
 
 
-DcmElement *dcm_dataset_get(DcmError **error, 
+DcmElement *dcm_dataset_get(DcmError **error,
                             const DcmDataSet *dataset, uint32_t tag)
 {
     dcm_log_debug("Get Data Element '%08X' from Data Set.", tag);
@@ -1367,14 +1367,14 @@ uint32_t dcm_dataset_count(const DcmDataSet *dataset)
 }
 
 
-void dcm_dataset_copy_tags(const DcmDataSet *dataset, 
+void dcm_dataset_copy_tags(const DcmDataSet *dataset,
                            uint32_t *tags, uint32_t n)
 {
     uint32_t i;
     DcmElement *element;
 
-    for(i = 0, element = dataset->elements; 
-        element && i < n; 
+    for(i = 0, element = dataset->elements;
+        element && i < n;
         element = element->hh.next, i++) {
         tags[i] = element->tag;
     }
@@ -1496,7 +1496,7 @@ bool dcm_sequence_append(DcmError **error, DcmSequence *seq, DcmDataSet *item)
 }
 
 
-static bool sequence_check_index(DcmError **error, 
+static bool sequence_check_index(DcmError **error,
                                  const DcmSequence *seq, uint32_t index)
 {
     uint32_t length = utarray_len(seq->items);
@@ -1526,7 +1526,7 @@ static bool sequence_check_index(DcmError **error,
 }
 
 
-DcmDataSet *dcm_sequence_get(DcmError **error, 
+DcmDataSet *dcm_sequence_get(DcmError **error,
                              const DcmSequence *seq, uint32_t index)
 {
     if (!sequence_check_index(error, seq, index)) {
@@ -1601,7 +1601,7 @@ void dcm_sequence_destroy(DcmSequence *seq)
 
 // Frames
 
-DcmFrame *dcm_frame_create(DcmError **error, 
+DcmFrame *dcm_frame_create(DcmError **error,
                            uint32_t number,
                            const char *data,
                            uint32_t length,
@@ -1655,7 +1655,7 @@ DcmFrame *dcm_frame_create(DcmError **error,
         return NULL;
     }
 
-    frame->photometric_interpretation = dcm_strdup(error, 
+    frame->photometric_interpretation = dcm_strdup(error,
                                                    photometric_interpretation);
     if (frame->photometric_interpretation == NULL) {
         dcm_frame_destroy(frame);
@@ -1784,8 +1784,8 @@ void dcm_frame_destroy(DcmFrame *frame)
 
 // Basic Offset Table
 
-DcmBOT *dcm_bot_create(DcmError **error, 
-                       ssize_t *offsets, uint32_t num_frames, 
+DcmBOT *dcm_bot_create(DcmError **error,
+                       ssize_t *offsets, uint32_t num_frames,
                        ssize_t first_frame_offset)
 {
     if (num_frames == 0) {
@@ -1860,9 +1860,9 @@ void dcm_bot_destroy(DcmBOT *bot)
 }
 
 
-bool dcm_is_encapsulated_transfer_syntax(const char *transfer_syntax_uid) 
+bool dcm_is_encapsulated_transfer_syntax(const char *transfer_syntax_uid)
 {
-    return 
+    return
         strcmp(transfer_syntax_uid, "1.2.840.10008.1.2") != 0 &&
         strcmp(transfer_syntax_uid, "1.2.840.10008.1.2.1") != 0 &&
         strcmp(transfer_syntax_uid, "1.2.840.10008.1.2.1.99") != 0 &&
