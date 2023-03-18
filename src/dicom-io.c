@@ -61,7 +61,7 @@ static int dcm_io_close_filehandle(DcmError **error, void *data)
         if (close_errno) {
             dcm_error_set(error, DCM_ERROR_CODE_IO,
                 "Unable to close filehandle",
-                "Unable to close %s - %s", 
+                "Unable to close %s - %s",
                 io_filehandle->filehandlename, strerror(close_errno));
         }
     }
@@ -96,7 +96,7 @@ static void *dcm_io_open_filehandle(DcmError **error, void *client)
     int oflag = _O_BINARY | _O_RDONLY | _O_RANDOM;
     int shflag = _SH_DENYWR;
     int pmode = 0;
-    open_errno = _sopen_s(&io_filehandle->fd, io_filehandle->filehandlename, 
+    open_errno = _sopen_s(&io_filehandle->fd, io_filehandle->filehandlename,
                           oflag, shflag, pmode);
 #else
     int flags = O_RDONLY;
@@ -146,7 +146,7 @@ static int64_t read_filehandle(DcmError **error, DcmIOFile *io_filehandle,
 }
 
 
-/* Refill the input buffer. 
+/* Refill the input buffer.
  * -1 on error, 0 on EOF, otherwise bytes read.
  */
 static int64_t refill(DcmError **error, DcmIOFile *io_filehandle)
@@ -154,8 +154,8 @@ static int64_t refill(DcmError **error, DcmIOFile *io_filehandle)
     // buffer should be empty coming in
     assert(io_filehandle->bytes_in_buffer - io_filehandle->read_point == 0);
 
-    int64_t bytes_read = read_filehandle(error, io_filehandle, 
-                                   io_filehandle->input_buffer, BUFFER_SIZE); 
+    int64_t bytes_read = read_filehandle(error, io_filehandle,
+                                   io_filehandle->input_buffer, BUFFER_SIZE);
     if (bytes_read < 0) {
         return bytes_read;
     }
@@ -167,7 +167,7 @@ static int64_t refill(DcmError **error, DcmIOFile *io_filehandle)
 }
 
 
-static int64_t dcm_io_read_filehandle(DcmError **error, void *data, 
+static int64_t dcm_io_read_filehandle(DcmError **error, void *data,
     char *buffer, int64_t length)
 {
     DcmIOFile *io_filehandle = (DcmIOFile *) data;
@@ -191,8 +191,8 @@ static int64_t dcm_io_read_filehandle(DcmError **error, void *data,
         int bytes_available = io_filehandle->bytes_in_buffer - io_filehandle->read_point;
         int bytes_to_copy = MIN(bytes_available, length);
 
-        memcpy(buffer, 
-               io_filehandle->input_buffer + io_filehandle->read_point, 
+        memcpy(buffer,
+               io_filehandle->input_buffer + io_filehandle->read_point,
                bytes_to_copy);
         length -= bytes_to_copy;
         buffer += bytes_to_copy;
@@ -205,7 +205,7 @@ static int64_t dcm_io_read_filehandle(DcmError **error, void *data,
 }
 
 
-static int64_t dcm_io_seek_filehandle(DcmError **error, void *data, 
+static int64_t dcm_io_seek_filehandle(DcmError **error, void *data,
     int64_t offset, int whence)
 {
     DcmIOFile *io_filehandle = (DcmIOFile *) data;
@@ -251,7 +251,7 @@ static int64_t dcm_io_seek_filehandle(DcmError **error, void *data,
 }
 
 
-DcmFilehandle *dcm_filehandle_create_from_file(DcmError **error, 
+DcmFilehandle *dcm_filehandle_create_from_file(DcmError **error,
                                                const char *filehandle_path)
 {
     static DcmIO io = {
@@ -298,7 +298,7 @@ static void *dcm_io_open_memory(DcmError **error, void *client)
 }
 
 
-static int64_t dcm_io_read_memory(DcmError **error, void *data, 
+static int64_t dcm_io_read_memory(DcmError **error, void *data,
     char *buffer, int64_t length)
 {
     DcmIOMemory *io_memory = (DcmIOMemory *) data;
@@ -307,8 +307,8 @@ static int64_t dcm_io_read_memory(DcmError **error, void *data,
 
     int bytes_available = io_memory->length - io_memory->read_point;
     int bytes_to_copy = MIN(bytes_available, length);
-    memcpy(buffer, 
-           io_memory->buffer + io_memory->read_point, 
+    memcpy(buffer,
+           io_memory->buffer + io_memory->read_point,
            bytes_to_copy);
     io_memory->read_point += bytes_to_copy;
 
@@ -316,7 +316,7 @@ static int64_t dcm_io_read_memory(DcmError **error, void *data,
 }
 
 
-static int64_t dcm_io_seek_memory(DcmError **error, void *data, 
+static int64_t dcm_io_seek_memory(DcmError **error, void *data,
     int64_t offset, int whence)
 {
     DcmIOMemory *io_memory = (DcmIOMemory *) data;
@@ -350,7 +350,7 @@ static int64_t dcm_io_seek_memory(DcmError **error, void *data,
 }
 
 
-DcmFilehandle *dcm_filehandle_create_from_memory(DcmError **error, 
+DcmFilehandle *dcm_filehandle_create_from_memory(DcmError **error,
                                                  char *buffer, int64_t length)
 {
     static DcmIO io = {

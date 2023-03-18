@@ -52,24 +52,24 @@ struct _DcmVRTable_hash_entry {
  * enum     name    class   sizeof(value) capacity  header_length
  */
 static const struct _DcmVRTable vr_table[] = {
-    {DCM_VR_AE, "AE", DCM_CLASS_STRING_MULTI, 
+    {DCM_VR_AE, "AE", DCM_CLASS_STRING_MULTI,
         0,                DCM_CAPACITY_AE,  2},
-    {DCM_VR_AS, "AS", DCM_CLASS_STRING_MULTI, 
+    {DCM_VR_AS, "AS", DCM_CLASS_STRING_MULTI,
         0,                DCM_CAPACITY_AS,  2},
-    {DCM_VR_AT, "AT", DCM_CLASS_STRING_MULTI, 
+    {DCM_VR_AT, "AT", DCM_CLASS_STRING_MULTI,
         0,                DCM_CAPACITY_AT,  2},
-    {DCM_VR_CS, "CS", DCM_CLASS_STRING_MULTI, 
+    {DCM_VR_CS, "CS", DCM_CLASS_STRING_MULTI,
         0,                DCM_CAPACITY_CS,  2},
-    {DCM_VR_DA, "DA", DCM_CLASS_STRING_MULTI, 
+    {DCM_VR_DA, "DA", DCM_CLASS_STRING_MULTI,
         0,                DCM_CAPACITY_DA,  2},
-    {DCM_VR_DS, "DS", DCM_CLASS_STRING_MULTI, 
+    {DCM_VR_DS, "DS", DCM_CLASS_STRING_MULTI,
         0,                DCM_CAPACITY_DS,  2},
-    {DCM_VR_DT, "DT", DCM_CLASS_STRING_MULTI, 
+    {DCM_VR_DT, "DT", DCM_CLASS_STRING_MULTI,
         0,                DCM_CAPACITY_DT,  2},
 
-    {DCM_VR_FL, "FL", DCM_CLASS_NUMERIC,      
+    {DCM_VR_FL, "FL", DCM_CLASS_NUMERIC,
         sizeof(float),    0,                2},
-    {DCM_VR_FD, "FD", DCM_CLASS_NUMERIC,      
+    {DCM_VR_FD, "FD", DCM_CLASS_NUMERIC,
         sizeof(double),   0,                2},
 
     {DCM_VR_IS, "IS", DCM_CLASS_STRING_SINGLE,
@@ -80,65 +80,65 @@ static const struct _DcmVRTable vr_table[] = {
     {DCM_VR_LT, "LT", DCM_CLASS_STRING_SINGLE,
         0,                DCM_CAPACITY_LT,  2},
 
-    {DCM_VR_OB, "OB", DCM_CLASS_BINARY,       
+    {DCM_VR_OB, "OB", DCM_CLASS_BINARY,
         0,                0,                4},
 
-    {DCM_VR_OD, "OD", DCM_CLASS_BINARY,       
+    {DCM_VR_OD, "OD", DCM_CLASS_BINARY,
         0,                0,                4},
-    {DCM_VR_OF, "OF", DCM_CLASS_BINARY,       
-        0,                0,                4},
-
-    {DCM_VR_OW, "OW", DCM_CLASS_BINARY,       
+    {DCM_VR_OF, "OF", DCM_CLASS_BINARY,
         0,                0,                4},
 
-    {DCM_VR_PN, "PN", DCM_CLASS_STRING_MULTI, 
+    {DCM_VR_OW, "OW", DCM_CLASS_BINARY,
+        0,                0,                4},
+
+    {DCM_VR_PN, "PN", DCM_CLASS_STRING_MULTI,
         0,                DCM_CAPACITY_PN,  2},
-    {DCM_VR_SH, "SH", DCM_CLASS_STRING_MULTI, 
+    {DCM_VR_SH, "SH", DCM_CLASS_STRING_MULTI,
         0,                DCM_CAPACITY_SH,  2},
 
-    {DCM_VR_SL, "SL", DCM_CLASS_NUMERIC,      
+    {DCM_VR_SL, "SL", DCM_CLASS_NUMERIC,
         sizeof(int32_t),  0,                2},
 
-    {DCM_VR_SQ, "SQ", DCM_CLASS_SEQUENCE,     
+    {DCM_VR_SQ, "SQ", DCM_CLASS_SEQUENCE,
         0,                0,                4},
 
-    {DCM_VR_SS, "SS", DCM_CLASS_NUMERIC,      
+    {DCM_VR_SS, "SS", DCM_CLASS_NUMERIC,
         sizeof(int16_t),  0,                2},
 
     {DCM_VR_ST, "ST", DCM_CLASS_STRING_SINGLE,
         0,                DCM_CAPACITY_ST,  2},
 
-    {DCM_VR_TM, "TM", DCM_CLASS_STRING_MULTI, 
+    {DCM_VR_TM, "TM", DCM_CLASS_STRING_MULTI,
         0,                DCM_CAPACITY_TM,  2},
 
-    {DCM_VR_UI, "UI", DCM_CLASS_STRING_MULTI, 
+    {DCM_VR_UI, "UI", DCM_CLASS_STRING_MULTI,
         0,                DCM_CAPACITY_UI,  2},
 
-    {DCM_VR_UL, "UL", DCM_CLASS_NUMERIC,      
+    {DCM_VR_UL, "UL", DCM_CLASS_NUMERIC,
         sizeof(uint32_t), 0,                2},
 
-    {DCM_VR_UN, "UN", DCM_CLASS_BINARY,       
+    {DCM_VR_UN, "UN", DCM_CLASS_BINARY,
         0,                0,                4},
 
-    {DCM_VR_US, "US", DCM_CLASS_NUMERIC,      
+    {DCM_VR_US, "US", DCM_CLASS_NUMERIC,
         sizeof(uint16_t), 0,                2},
 
     {DCM_VR_UT, "UT", DCM_CLASS_STRING_SINGLE,
         0,                DCM_CAPACITY_UT,  4},
-    {DCM_VR_UR, "UR", DCM_CLASS_STRING_SINGLE, 
+    {DCM_VR_UR, "UR", DCM_CLASS_STRING_SINGLE,
         0,                DCM_CAPACITY_UR,  4},
 
-    {DCM_VR_UC, "UC", DCM_CLASS_BINARY, 
+    {DCM_VR_UC, "UC", DCM_CLASS_BINARY,
         0,                0,                4},
 
-    {DCM_VR_OL, "OL", DCM_CLASS_BINARY,       
+    {DCM_VR_OL, "OL", DCM_CLASS_BINARY,
         0,                0,                4},
-    {DCM_VR_OV, "OV", DCM_CLASS_BINARY,       
+    {DCM_VR_OV, "OV", DCM_CLASS_BINARY,
         0,                0,                4},
 
-    {DCM_VR_SV, "SV", DCM_CLASS_NUMERIC,      
+    {DCM_VR_SV, "SV", DCM_CLASS_NUMERIC,
         sizeof(int64_t),  0,                4},
-    {DCM_VR_UV, "UV", DCM_CLASS_NUMERIC,      
+    {DCM_VR_UV, "UV", DCM_CLASS_NUMERIC,
         sizeof(uint64_t), 0,                4},
 };
 
@@ -147,17 +147,17 @@ static const int n_vrs = sizeof(vr_table) / sizeof(struct _DcmVRTable);
 static struct _DcmVRTable_hash_entry *vrtable_from_str_dict = NULL;
 
 /**
- * The VRs and VR alternatives that tags allow. Some tags allow one of several 
+ * The VRs and VR alternatives that tags allow. Some tags allow one of several
  * VRs, so this is a superset of DcmVR, meaning you can always cast a DcmVR
  * to a DcmVRTag and you will get a correct result.
  *
- * Note to maintainers: this enum must match DcmVR. The numeric values need 
+ * Note to maintainers: this enum must match DcmVR. The numeric values need
  * to be maintained for ABI compatibility.
  */
 typedef enum _DcmVRTag {
     DCM_VR_TAG_error = -1,
 
-    // this part must match DcmVR 
+    // this part must match DcmVR
     DCM_VR_TAG_AE = 0,
     DCM_VR_TAG_AS,
     DCM_VR_TAG_AT,
@@ -5125,7 +5125,7 @@ void dcm_init(void)
 
             HASH_FIND_STR(vrtable_from_str_dict, vr_table[i].str, entry);
             if (entry) {
-                dcm_log_critical("Duplicate VR in VR table %s", 
+                dcm_log_critical("Duplicate VR in VR table %s",
                                  vr_table[i].str);
                 return;
             }
@@ -5142,12 +5142,12 @@ void dcm_init(void)
         for (i = 0; i < n_attributes; i++) {
             struct _DcmAttribute_hash_entry *entry;
 
-            HASH_FIND_INT(attribute_from_tag_dict, 
+            HASH_FIND_INT(attribute_from_tag_dict,
                           &attribute_table[i].tag, entry);
             if (entry) {
                 dcm_log_critical("Duplicate tag in attribute table -- "
-                                 "%8X (%s) registered previously as '%s'", 
-                                 attribute_table[i].tag, 
+                                 "%8X (%s) registered previously as '%s'",
+                                 attribute_table[i].tag,
                                  attribute_table[i].keyword,
                                  entry->keyword);
                 return;
@@ -5172,10 +5172,10 @@ void dcm_init(void)
                 continue;
             }
 
-            HASH_FIND_STR(attribute_from_keyword_dict, 
+            HASH_FIND_STR(attribute_from_keyword_dict,
                           attribute_table[i].keyword, entry);
             if (entry) {
-                dcm_log_critical("Duplicate keyword in attribute table '%s'", 
+                dcm_log_critical("Duplicate keyword in attribute table '%s'",
                                  attribute_table[i].keyword);
                 return;
             }
@@ -5213,7 +5213,7 @@ bool dcm_is_valid_vr(const char *str)
 DcmVR dcm_dict_vr_from_str(const char *str)
 {
     const struct _DcmVRTable *entry;
-       
+
     if (str &&
         (entry = vrtable_from_vr(str))) {
         return entry->vr;
@@ -5385,4 +5385,3 @@ uint32_t dcm_dict_tag_from_keyword(const char *keyword)
     }
     return attribute->tag;
 }
-

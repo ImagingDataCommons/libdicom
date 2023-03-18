@@ -151,7 +151,7 @@ typedef struct _DcmBOT DcmBOT;
  *
  * If you don't do this, libdidom will attempt to call it for you in a safe
  * way, but cannot guarantee this on all platforms and with all compilers, and
- * therefore cannot guarantee thread safety.  
+ * therefore cannot guarantee thread safety.
  *
  * This function can be called many times.
  */
@@ -183,11 +183,11 @@ typedef enum _DcmErrorCode DcmErrorCode;
  * DCM_VR_ERROR (unknown VR).
  *
  * Note to maintainers: this enum must match the table in dicom-dict.c, and
- * the DcmVRTag enum. As the DICOM standard evolves, numbering must be 
- * maintained for ABI compatibility.  
+ * the DcmVRTag enum. As the DICOM standard evolves, numbering must be
+ * maintained for ABI compatibility.
  */
 typedef enum _DcmVR {
-    // error value, returned for eg. unknown SR strings 
+    // error value, returned for eg. unknown SR strings
     DCM_VR_ERROR = -1,
 
     // allowed VRs for DcmElement
@@ -230,7 +230,7 @@ typedef enum _DcmVR {
     DCM_VR_LAST
 } DcmVR;
 
-/** 
+/**
  * Convert an error code to a human-readable string.
  *
  * :param code: The error code
@@ -260,7 +260,7 @@ typedef struct _DcmError DcmError;
  *
  * Create a new DcmError object and store the pointer in error.
  *
- * You can't set error twice -- always check the error state and return 
+ * You can't set error twice -- always check the error state and return
  * immediately if set.
  *
  * :param error: Pointer to store the new error object in
@@ -270,7 +270,7 @@ typedef struct _DcmError DcmError;
  * :param ...: Variable arguments
  */
 DCM_EXTERN
-void dcm_error_set(DcmError **error, DcmErrorCode code, 
+void dcm_error_set(DcmError **error, DcmErrorCode code,
     const char *summary, const char *format, ...);
 
 /**
@@ -417,24 +417,24 @@ void dcm_log_debug(const char *format, ...);
 DCM_EXTERN
 const char *dcm_get_version(void);
 
-/** 
+/**
  * Turn a string VR into an enum value.
  *
  * :param vr: The VR as a two character string.
  *
  * :return: the enum for that VR
  */
-DCM_EXTERN 
+DCM_EXTERN
 DcmVR dcm_dict_vr_from_str(const char *vr);
 
-/** 
+/**
  * Turn an enum VR into a character string.
  *
  * :param vr: The VR as an enum value.
  *
  * :return: the string representation of that VR, or NULL
  */
-DCM_EXTERN 
+DCM_EXTERN
 const char *dcm_dict_str_from_vr(DcmVR vr);
 
 /**
@@ -644,42 +644,42 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element);
  */
 DCM_EXTERN
 bool dcm_element_get_value_string(DcmError **error,
-                                  const DcmElement *element, 
+                                  const DcmElement *element,
                                   uint32_t index,
                                   const char **value);
 
 /**
  * Set the value of an element to a string. The element must have an
- * appropriate tag. 
+ * appropriate tag.
  *
- * On success, if `steal` is true, ownership of `value` passes to 
+ * On success, if `steal` is true, ownership of `value` passes to
  * `element`, ie. it will be freed when `element` is destroyed. If `steal` is
  * false, then a copy is made of `value` and ownership is not transferred.
  *
  * :param error: Error structure pointer
  * :param element: Pointer to Data Element
- * :param value: String value 
+ * :param value: String value
  * :param steal: if true, ownership of value passes to element
  *
  * :return: true on success
  */
 DCM_EXTERN
-bool dcm_element_set_value_string(DcmError **error, 
-                                  DcmElement *element, 
+bool dcm_element_set_value_string(DcmError **error,
+                                  DcmElement *element,
                                   char *value,
                                   bool steal);
 
 /**
- * Set the value of an element to a multi-valued string. The element must 
- * have an appropriate tag. 
+ * Set the value of an element to a multi-valued string. The element must
+ * have an appropriate tag.
  *
- * On success, if `steal` is true, ownership of `value` passes to 
+ * On success, if `steal` is true, ownership of `value` passes to
  * `element`, ie. it will be freed when `element` is destroyed. If `steal` is
  * false, then a copy is made of `value` and ownership is not transferred.
  *
  * :param error: Error structure pointer
  * :param element: Pointer to Data Element
- * :param values: String value 
+ * :param values: String value
  * :param vm: Number of values
  * :param steal: if true, ownership of values passes to element
  *
@@ -704,34 +704,34 @@ bool dcm_element_set_value_string_multi(DcmError **error,
  */
 DCM_EXTERN
 bool dcm_element_get_value_integer(DcmError **error,
-                                   const DcmElement *element, 
+                                   const DcmElement *element,
                                    uint32_t index,
                                    int64_t *value);
 
 /**
  * Set the value of an element to an integer. The element must have an
- * appropriate tag. 
+ * appropriate tag.
  *
  * :param error: Error structure pointer
  * :param element: Pointer to Data Element
- * :param value: Integer value 
+ * :param value: Integer value
  *
  * :return: true on success
  */
 DCM_EXTERN
-bool dcm_element_set_value_integer(DcmError **error, 
-                                   DcmElement *element, 
+bool dcm_element_set_value_integer(DcmError **error,
+                                   DcmElement *element,
                                    int64_t value);
 
 /**
- * Set the value of an element to an array of numeric values. The element must 
- * have an appropriate tag. 
+ * Set the value of an element to an array of numeric values. The element must
+ * have an appropriate tag.
  *
  * Although the value passed is `int*`, it should
  * be a pointer to an array of 16- to 64-bit numeric values of the
  * appropriate type for the element VR.
  *
- * On success, if `steal` is true, ownership of `values` passes to 
+ * On success, if `steal` is true, ownership of `values` passes to
  * `element`, ie. it will be freed when `element` is destroyed. If `steal` is
  * false, then a copy is made of `values` and ownership is not transferred.
  *
@@ -744,8 +744,8 @@ bool dcm_element_set_value_integer(DcmError **error,
  * :return: true on success
  */
 DCM_EXTERN
-bool dcm_element_set_value_numeric_multi(DcmError **error, 
-                                         DcmElement *element, 
+bool dcm_element_set_value_numeric_multi(DcmError **error,
+                                         DcmElement *element,
                                          int *values,
                                          uint32_t vm,
                                          bool steal);
@@ -762,23 +762,23 @@ bool dcm_element_set_value_numeric_multi(DcmError **error,
  */
 DCM_EXTERN
 bool dcm_element_get_value_double(DcmError **error,
-                                  const DcmElement *element,   
+                                  const DcmElement *element,
                                   uint32_t index,
                                   double *value);
 
 /**
- * Set the value of an element to a floating point number. The element must 
- * have an appropriate tag. 
+ * Set the value of an element to a floating point number. The element must
+ * have an appropriate tag.
  *
  * :param error: Error structure pointer
  * :param element: Pointer to Data Element
- * :param value: Floating point value 
+ * :param value: Floating point value
  *
  * :return: true on success
  */
 DCM_EXTERN
-bool dcm_element_set_value_double(DcmError **error, 
-                                  DcmElement *element, 
+bool dcm_element_set_value_double(DcmError **error,
+                                  DcmElement *element,
                                   double value);
 
 /**
@@ -793,28 +793,28 @@ bool dcm_element_set_value_double(DcmError **error,
  */
 DCM_EXTERN
 bool dcm_element_get_value_binary(DcmError **error,
-                                  const DcmElement *element,   
+                                  const DcmElement *element,
                                   const char **value);
 
 /**
- * Set the value of an element to a binary value. The element must 
- * have an appropriate tag. 
+ * Set the value of an element to a binary value. The element must
+ * have an appropriate tag.
  *
- * On success, if `steal` is true, ownership of `value` passes to 
+ * On success, if `steal` is true, ownership of `value` passes to
  * `element`, ie. it will be freed when `element` is destroyed. If `steal` is
  * false, then a copy is made of `value` and ownership is not transferred.
  *
  * :param error: Error structure pointer
  * :param element: Pointer to Data Element
- * :param value: Pointer to binary value 
+ * :param value: Pointer to binary value
  * :param length: Length in bytes of the binary value
  * :param steal: if true, ownership of the value passes to element
  *
  * :return: true on success
  */
 DCM_EXTERN
-bool dcm_element_set_value_binary(DcmError **error, 
-                                  DcmElement *element, 
+bool dcm_element_set_value_binary(DcmError **error,
+                                  DcmElement *element,
                                   char *value,
                                   uint32_t length,
                                   bool steal);
@@ -830,25 +830,25 @@ bool dcm_element_set_value_binary(DcmError **error,
  */
 DCM_EXTERN
 bool dcm_element_get_value_sequence(DcmError **error,
-                                    const DcmElement *element,   
+                                    const DcmElement *element,
                                     DcmSequence **value);
 
 
 /**
- * Set the value of an element to a sequence. The element must 
- * have an appropriate tag. 
+ * Set the value of an element to a sequence. The element must
+ * have an appropriate tag.
  *
  * The element takes ownership of the value pointer on success.
  *
  * :param error: Error structure pointer
  * :param element: Pointer to Data Element
- * :param value: Pointer to sequence value 
+ * :param value: Pointer to sequence value
  *
  * :return: true on success
  */
 DCM_EXTERN
-bool dcm_element_set_value_sequence(DcmError **error, 
-                                    DcmElement *element,   
+bool dcm_element_set_value_sequence(DcmError **error,
+                                    DcmElement *element,
                                     DcmSequence *value);
 
 /**
@@ -1067,7 +1067,7 @@ DcmSequence *dcm_sequence_create(DcmError **error);
  * :return: Whether append operation was successful
  */
 DCM_EXTERN
-bool dcm_sequence_append(DcmError **error, 
+bool dcm_sequence_append(DcmError **error,
                          DcmSequence *seq, DcmDataSet *item);
 
 /**
@@ -1080,7 +1080,7 @@ bool dcm_sequence_append(DcmError **error,
  * :return: Pointer to Data Set item
  */
 DCM_EXTERN
-DcmDataSet *dcm_sequence_get(DcmError **error, 
+DcmDataSet *dcm_sequence_get(DcmError **error,
                              const DcmSequence *seq, uint32_t index);
 
 /**
@@ -1350,7 +1350,8 @@ void dcm_frame_destroy(DcmFrame *frame);
  */
 DCM_EXTERN
 DcmBOT *dcm_bot_create(DcmError **error,
-                       ssize_t *offsets, uint32_t num_frames, 
+                       ssize_t *offsets,
+		       uint32_t num_frames,
                        ssize_t first_frame_offset);
 
 /**
@@ -1419,7 +1420,9 @@ typedef struct _DcmIO {
  * :return: filehandle
  */
 DCM_EXTERN
-DcmFilehandle *dcm_filehandle_create(DcmError **error, DcmIO *io, void *client); 
+DcmFilehandle *dcm_filehandle_create(DcmError **error,
+				     const DcmIO *io,
+				     void *client);
 
 /**
  * Open a file on disk as a DcmFilehandle.
@@ -1430,7 +1433,7 @@ DcmFilehandle *dcm_filehandle_create(DcmError **error, DcmIO *io, void *client);
  * :return: filehandle
  */
 DCM_EXTERN
-DcmFilehandle *dcm_filehandle_create_from_file(DcmError **error, 
+DcmFilehandle *dcm_filehandle_create_from_file(DcmError **error,
                                                const char *filepath);
 
 /**
@@ -1443,14 +1446,15 @@ DcmFilehandle *dcm_filehandle_create_from_file(DcmError **error,
  * :return: filehandle
  */
 DCM_EXTERN
-DcmFilehandle *dcm_filehandle_create_from_memory(DcmError **error, 
-                                                 char *buffer, int64_t length);
+DcmFilehandle *dcm_filehandle_create_from_memory(DcmError **error,
+                                                 char *buffer,
+						 int64_t length);
 
 /**
  * Read File Meta Information from a Filehandle.
  *
  * Keeps track of the offset of the Data Set relative to the beginning of the
- * filehandle to speed up subsequent access, and determines the transfer 
+ * filehandle to speed up subsequent access, and determines the transfer
  * syntax in which the contained Data Set is encoded.
  *
  * :param error: Error structure pointer
@@ -1459,14 +1463,14 @@ DcmFilehandle *dcm_filehandle_create_from_memory(DcmError **error,
  * :return: File Metadata
  */
 DCM_EXTERN
-DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error, 
+DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
                                           DcmFilehandle *filehandle);
 
 /**
  * Read metadata from a File.
  *
- * Keeps track of the offset of the Pixel Data Element relative to the 
- * beginning of the filehandle to speed up subsequent access to individual 
+ * Keeps track of the offset of the Pixel Data Element relative to the
+ * beginning of the filehandle to speed up subsequent access to individual
  * Frame items.
  *
  * :param error: Error structure pointer
@@ -1475,7 +1479,7 @@ DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
  * :return: metadata
  */
 DCM_EXTERN
-DcmDataSet *dcm_filehandle_read_metadata(DcmError **error, 
+DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
                                          DcmFilehandle *filehandle);
 
 /**
@@ -1505,7 +1509,7 @@ DcmBOT *dcm_filehandle_read_bot(DcmError **error, DcmFilehandle *filehandle,
  * :return: Basic Offset Table
  */
 DCM_EXTERN
-DcmBOT *dcm_filehandle_build_bot(DcmError **error, DcmFilehandle *filehandle, 
+DcmBOT *dcm_filehandle_build_bot(DcmError **error, DcmFilehandle *filehandle,
                                  DcmDataSet *metadata);
 
 /**
