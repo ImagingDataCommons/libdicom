@@ -94,7 +94,9 @@ static void *dcm_io_open_filehandle(DcmError **error, void *client)
 
 #ifdef _WIN32
     int oflag = _O_BINARY | _O_RDONLY | _O_RANDOM;
-    int shflag = _SH_DENYWR;
+    // some mingw are missing this ... just use the numeric value
+    // #define _SH_DENYWR 0x20
+    int shflag = 0x20;
     int pmode = 0;
     open_errno = _sopen_s(&io_filehandle->fd, io_filehandle->filehandlename,
                           oflag, shflag, pmode);
