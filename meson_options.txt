@@ -3,3 +3,9 @@ option(
   type : 'string',
   description : 'suffix to append to the package version string',
 )
+option(
+  'tests',
+  type : 'boolean',
+  value : true,
+  description : 'build tests',
+)

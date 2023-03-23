@@ -74,13 +74,15 @@ else
   # --wrap-mode=nofallback works
   uthash = dependency('uthash')
 endif
-check = dependency(
-  'check',
-  default_options : [
-    'warning_level=0',
-  ],
-  version : '>=0.9.6',
-)
+if get_option('tests')
+  check = dependency(
+    'check',
+    default_options : [
+      'warning_level=0',
+    ],
+    version : '>=0.9.6',
+  )
+endif
 
 # options
 cfg = configuration_data()
@@ -218,9 +220,11 @@ custom_target(
 )
 
 # tests
-check_dicom = executable(
-  'check_dicom',
-  'tests/check_dicom.c',
-  dependencies : [check, libdicom_dep],
-)
-test('check_dicom', check_dicom)
+if get_option('tests')
+  check_dicom = executable(
+    'check_dicom',
+    'tests/check_dicom.c',
+    dependencies : [check, libdicom_dep],
+  )
+  test('check_dicom', check_dicom)
+endif
