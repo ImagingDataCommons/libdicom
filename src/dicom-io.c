@@ -10,6 +10,7 @@
 #define _CRT_NONSTDC_NO_DEPRECATE
 // and deprecates strdup
 #define strdup(v) _strdup(v)
+#include <share.h>
 #endif
 
 #include <assert.h>
