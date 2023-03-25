@@ -57,6 +57,7 @@ version_data.set('DCM_VERSION_MICRO', version_patch)
 version_data.set('DCM_ABI_VERSION_MAJOR', abi_version_major)
 version_data.set('DCM_ABI_VERSION_MINOR', abi_version_minor)
 version_data.set('DCM_ABI_VERSION_PATCH', abi_version_patch)
+version_data.set10('DCM_STATIC', get_option('default_library') == 'static')
 
 # dependencies
 cc = meson.get_compiler('c')
