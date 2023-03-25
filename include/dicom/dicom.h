@@ -13,7 +13,9 @@ typedef SSIZE_T ssize_t;
 #endif
 
 #ifdef _WIN32
-#ifdef BUILDING_LIBDICOM
+#if DCM_STATIC
+#define DCM_EXTERN extern
+#elif defined(BUILDING_LIBDICOM)
 #define DCM_EXTERN __declspec(dllexport) extern
 #else
 #define DCM_EXTERN __declspec(dllimport) extern

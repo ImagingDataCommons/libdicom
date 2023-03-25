@@ -15,6 +15,10 @@
 #define DCM_ABI_VERSION_MINOR  (@DCM_ABI_VERSION_MINOR@)
 #define DCM_ABI_VERSION_PATCH  (@DCM_ABI_VERSION_PATCH@)
 
+/* Whether libdicom is built statically.
+ */
+#define DCM_STATIC             (@DCM_STATIC@)
+
 #endif /*DCM_VERSION_H*/
 
 
