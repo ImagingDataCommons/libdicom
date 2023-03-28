@@ -171,6 +171,7 @@ import('pkgconfig').generate(
 libdicom_dep = declare_dependency(
   include_directories : library_includes,
   link_with : libdicom,
+  sources : version_header,
 )
 meson.override_dependency('libdicom', libdicom_dep)
 
