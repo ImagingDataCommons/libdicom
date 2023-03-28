@@ -169,9 +169,10 @@ import('pkgconfig').generate(
   url : 'https://github.com/ImagingDataCommons/libdicom',
 )
 libdicom_dep = declare_dependency(
-  include_directories : library_includes,
+  # include "." so that our generated version.h can be found if we are used as
+  # a subproject
+  include_directories : [library_includes, include_directories('.')],
   link_with : libdicom,
-  sources : version_header,
 )
 meson.override_dependency('libdicom', libdicom_dep)
 
