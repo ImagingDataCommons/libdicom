@@ -7,7 +7,7 @@ project(
     'warning_level=2',
   ],
   license : 'MIT',
-  meson_version : '>=0.54',
+  meson_version : '>=0.50',
   version : '0.2.0',
 )
 if not meson.is_subproject()
@@ -174,7 +174,9 @@ libdicom_dep = declare_dependency(
   include_directories : [library_includes, include_directories('.')],
   link_with : libdicom,
 )
-meson.override_dependency('libdicom', libdicom_dep)
+if meson.version().version_compare('>=0.54')
+  meson.override_dependency('libdicom', libdicom_dep)
+endif
 
 # tools
 executable(
