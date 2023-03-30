@@ -73,7 +73,10 @@ if found_uthash
 else
   # fall back to dependency() rather than subproject() so
   # --wrap-mode=nofallback works
-  uthash = dependency('uthash')
+  uthash = dependency(
+    'uthash',
+    fallback : ['uthash', 'uthash_dep'],
+  )
 endif
 if get_option('tests')
   check = dependency(
@@ -81,6 +84,7 @@ if get_option('tests')
     default_options : [
       'warning_level=0',
     ],
+    fallback : ['check', 'check_dep'],
     version : '>=0.9.6',
   )
 endif
