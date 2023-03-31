@@ -374,7 +374,7 @@ static DcmElement *read_element_header(DcmError **error,
         if (!dcm_is_valid_vr_for_tag(vr, tag)) {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                           "Reading of Data Element header failed",
-                          "Unknown or mismatched VR %s", vr_str);
+                          "Tag %08X cannot have VR '%s'", tag, vr_str);
             return NULL;
         }
 

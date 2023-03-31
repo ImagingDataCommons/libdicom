@@ -523,6 +523,7 @@ static const struct _DcmAttribute attribute_table[] = {
     {0X00089458, DCM_VR_TAG_SQ, "FrameDisplaySequence"},
     {0X00089459, DCM_VR_TAG_FL, "RecommendedDisplayFrameRateInFloat"},
     {0X00089460, DCM_VR_TAG_CS, "SkipFrameRangeFlag"},
+    {0X00090010, DCM_VR_TAG_LO, "PrivateCreator"},
     {0X00100010, DCM_VR_TAG_PN, "PatientName"},
     {0X00100020, DCM_VR_TAG_LO, "PatientID"},
     {0X00100021, DCM_VR_TAG_LO, "IssuerOfPatientID"},
@@ -5286,6 +5287,7 @@ static const struct _DcmAttribute *attribute_from_tag(uint32_t tag)
 }
 
 
+// this will also fail for unknown or retired public tags
 bool dcm_is_public_tag(uint32_t tag)
 {
     return attribute_from_tag(tag) != NULL;
@@ -5322,14 +5324,22 @@ DcmVR dcm_vr_from_tag(uint32_t tag)
 
 bool dcm_is_valid_vr_for_tag(DcmVR vr, uint32_t tag)
 {
-    const struct _DcmAttribute *attribute = attribute_from_tag(tag);
+    // always fail for illegal VRs
+    if (vr < 0 || vr >= DCM_VR_LAST) {
+        return false;
+    }
 
+    // private tags are unknown to us and can have any legal VR
+    if (dcm_is_private_tag(tag)) {
+        return true;
+    }
+
+    const struct _DcmAttribute *attribute = attribute_from_tag(tag);
     if (attribute == NULL) {
-        // unknown tag
-        return false;
-    } else if (vr < 0 || vr >= DCM_VR_LAST) {
-        // not a VR
-        return false;
+        // unknown public tag ... we don't include retired tags in our 
+        // dictionary, so we can't check them, but we don't want to fail 
+        // for them either
+        return true;
     } else if (vr == (DcmVR) attribute->vr_tag) {
         // trivially equal
         return true;

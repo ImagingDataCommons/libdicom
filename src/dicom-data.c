@@ -1141,6 +1141,8 @@ void dcm_element_print(const DcmElement *element, int indentation)
                keyword,
                dcm_dict_str_from_vr(element->vr));
     } else {
+        // private tag, or unknown public tag
+	// in any case, we can't display the keyword
         printf("%*.*s (%04X,%04X) | %s",
                num_indent,
                num_indent,
