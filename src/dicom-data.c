@@ -216,13 +216,13 @@ void dcm_element_destroy(DcmElement *element)
 
 uint16_t dcm_element_get_group_number(const DcmElement *element)
 {
-    return (uint16_t)(element->tag >> 16);
+    return element->tag >> 16;
 }
 
 
 uint16_t dcm_element_get_element_number(const DcmElement *element)
 {
-    return (uint16_t)(element->tag);
+    return element->tag & 0xffff;
 }
 
 

@@ -304,6 +304,7 @@ static const struct _DcmAttribute attribute_table[] = {
     {0X00041512, DCM_VR_TAG_UI, "ReferencedTransferSyntaxUIDInFile"},
     {0X0004151A, DCM_VR_TAG_UI, "ReferencedRelatedGeneralSOPClassUIDInFile"},
     {0X00041600, DCM_VR_TAG_UL, "NumberOfReferences"},
+    {0X00080000, DCM_VR_TAG_UL, "GenericGroupLength"},
     {0X00080001, DCM_VR_TAG_UL, "LengthToEnd"},
     {0X00080005, DCM_VR_TAG_CS, "SpecificCharacterSet"},
     {0X00080006, DCM_VR_TAG_SQ, "LanguageCodeSequence"},
@@ -5281,6 +5282,13 @@ static const struct _DcmAttribute *attribute_from_tag(uint32_t tag)
 
     dcm_init();
 
+    // tags with element number 0 are generic group length tags ... map all of
+    // these (except 0000,0000) to tag 0008,0000 (GenericGroupLength)
+    if (tag != 0 &&
+        (tag & 0xffff) == 0) {
+        tag = 0x00080000;
+    }
+
     HASH_FIND_INT(attribute_from_tag_dict, &tag, entry);
 
     return (const struct _DcmAttribute *)entry;
@@ -5313,12 +5321,11 @@ DcmVR dcm_vr_from_tag(uint32_t tag)
 {
     const struct _DcmAttribute *attribute;
 
-    if ((attribute = attribute_from_tag(tag)) &&
-        dcm_dict_str_from_vr((DcmVR) attribute->vr_tag)) {
-        return (DcmVR) attribute->vr_tag;
+    if (!(attribute = attribute_from_tag(tag))) {
+        return DCM_VR_ERROR;
     }
 
-    return DCM_VR_ERROR;
+    return (DcmVR) attribute->vr_tag;
 }
 
 

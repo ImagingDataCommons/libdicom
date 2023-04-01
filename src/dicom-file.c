@@ -353,12 +353,15 @@ static DcmElement *read_element_header(DcmError **error,
 
     DcmVR vr;
     if (implicit) {
+        // this can be an ambiguious VR, eg. pixeldata is allowed in implicit
+	// mode and has to be disambiguated later from other tags
         vr = dcm_vr_from_tag(tag);
         if (vr == DCM_VR_ERROR) {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                           "Reading of Data Element header failed",
                           "Tag %08X not allowed in implicit mode", tag);
         }
+
         if (!read_uint32(error, filehandle, length, position)) {
             return NULL;
         }
