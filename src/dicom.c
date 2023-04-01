@@ -129,7 +129,7 @@ static void dcm_error_free(DcmError *error)
 }
 
 
-static DcmError *dcm_error_newf(DcmErrorCode code, 
+static DcmError *dcm_error_newf(DcmErrorCode code,
     const char *summary, const char *format, va_list ap)
 {
     DcmError *error;
@@ -148,7 +148,7 @@ static DcmError *dcm_error_newf(DcmErrorCode code,
 }
 
 
-void dcm_error_set(DcmError **error, DcmErrorCode code, 
+void dcm_error_set(DcmError **error, DcmErrorCode code,
     const char *summary, const char *format, ...)
 {
     if (error && *error) {
@@ -171,7 +171,7 @@ void dcm_error_set(DcmError **error, DcmErrorCode code,
         DcmError *local_error = dcm_error_newf(code, summary, format, ap);
         va_end(ap);
 
-        dcm_log_debug("%s: %s - %s", 
+        dcm_log_debug("%s: %s - %s",
                       dcm_error_code_str(local_error->code),
                       local_error->summary,
                       local_error->message);
