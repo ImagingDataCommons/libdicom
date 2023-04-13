@@ -291,7 +291,7 @@ void dcm_error_clear(DcmError **error);
  *
  * :param error: DcmError to read the error from
  *
- * :return: Summary stored in a dcm error object
+ * :return: Short description of the error
  */
 DCM_EXTERN
 const char *dcm_error_summary(DcmError *error);
