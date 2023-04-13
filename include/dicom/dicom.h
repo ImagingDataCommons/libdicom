@@ -1462,7 +1462,7 @@ DcmFilehandle *dcm_filehandle_create_from_memory(DcmError **error,
  * :param error: Error structure pointer
  * :param filehandle: Pointer to file handle
  *
- * :return: File Metadata
+ * :return: File Meta Information
  */
 DCM_EXTERN
 DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
