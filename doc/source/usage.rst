@@ -190,7 +190,7 @@ sequence as the value of an element like this:
     }
 
 If this function succeeeds, ownership of the sequence object passes to the
-element, ie. when the element is destroyed, the sequence will also be
+element, i.e., when the element is destroyed, the sequence will also be
 destroyed.
 
 If this function fails, ownership does not transfer.
