@@ -35,7 +35,7 @@ Depending on the VR, an individual Data
 Element may have a `Value Multiplicity (VM)
 <http://dicom.nema.org/medical/dicom/current/output/chtml/part05/sect_6.4.html>`_
 greater than one, i.e., contain more than one value.  Under the hood,
-a Data Element thus generally contains an array of values.
+a Data Element may thus contain an array of values.
 
 A Data Element can be created with :c:func:`dcm_element_create()`, it can have
 a value assigned to it with eg.
