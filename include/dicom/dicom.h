@@ -304,7 +304,7 @@ const char *dcm_error_summary(DcmError *error);
  *
  * :param error: Error object
  *
- * :return: Message stored in a dcm error object
+ * :return: Message stored in a error object
  */
 DCM_EXTERN
 const char *dcm_error_message(DcmError *error);
