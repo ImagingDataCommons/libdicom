@@ -40,7 +40,7 @@ a Data Element may thus contain an array of values.
 A Data Element can be created with :c:func:`dcm_element_create()`, it can have
 a value assigned to it with eg.
 :c:func:`dcm_element_set_value_integer()`, and it can be destroyed with 
-:c:func:`dcm_element_destroy()`. See MEMORY MANAGEMENT below for details on
+:c:func:`dcm_element_destroy()`. See `Memory management <Memory Management_>`_ below for details on
 pointer ownership.
 
 An individual value can be retrieved via the getter functions like
