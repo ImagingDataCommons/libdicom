@@ -284,7 +284,7 @@ DCM_EXTERN
 void dcm_error_clear(DcmError **error);
 
 /**
- * Get the summary from a DcmError object.
+* Get a summary of the error.
  *
  * Do not free this result. The pointer will be valid as long as error is
  * valid.
