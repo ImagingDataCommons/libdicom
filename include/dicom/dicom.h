@@ -312,7 +312,7 @@ const char *dcm_error_message(DcmError *error);
 /**
  * Get the error code.
  *
- * :param error: DcmError to read the error from
+ * :param error: Error object
  *
  * :return: Error code
  */
