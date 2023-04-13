@@ -195,7 +195,7 @@ destroyed.
 
 If this function fails, ownership does not transfer.
 
-libdicom objects can also contain references to datastructures allocated by
+libdicom objects can also contain references to data structures allocated by
 other programs, for example, arrays of numeric values. 
 
 .. code-block:: c
