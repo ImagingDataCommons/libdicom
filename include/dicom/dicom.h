@@ -310,7 +310,7 @@ DCM_EXTERN
 const char *dcm_error_message(DcmError *error);
 
 /**
- * Get the code from a DcmError object.
+ * Get the error code.
  *
  * :param error: DcmError to read the error from
  *
