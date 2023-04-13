@@ -297,7 +297,7 @@ DCM_EXTERN
 const char *dcm_error_summary(DcmError *error);
 
 /**
- * Get the message from a DcmError object.
+ * Get the error message.
  *
  * Do not free this result. The pointer will be valid as long as error is
  * valid.
