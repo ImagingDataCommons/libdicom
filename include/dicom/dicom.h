@@ -844,7 +844,7 @@ bool dcm_element_get_value_sequence(DcmError **error,
  *
  * :param error: Error structure pointer
  * :param element: Pointer to Data Element
- * :param value: Pointer to sequence value
+ * :param value: Pointer to Sequence
  *
  * :return: true on success
  */
