@@ -1456,8 +1456,8 @@ DcmFilehandle *dcm_filehandle_create_from_memory(DcmError **error,
  * Read File Meta Information from a File.
  *
  * Keeps track of the offset of the Data Set relative to the beginning of the
- * filehandle to speed up subsequent access, and determines the transfer
- * syntax in which the contained Data Set is encoded.
+ * filehandle to speed up subsequent access, and determines the Transfer
+ * Syntax in which the contained Data Set is encoded.
  *
  * :param error: Error structure pointer
  * :param filehandle: Pointer to file handle
