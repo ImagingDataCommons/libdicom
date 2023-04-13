@@ -302,7 +302,7 @@ const char *dcm_error_summary(DcmError *error);
  * Do not free this result. The pointer will be valid as long as error is
  * valid.
  *
- * :param error: DcmError to read the error from
+ * :param error: Error object
  *
  * :return: Message stored in a dcm error object
  */
