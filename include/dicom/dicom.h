@@ -1453,7 +1453,7 @@ DcmFilehandle *dcm_filehandle_create_from_memory(DcmError **error,
 						 int64_t length);
 
 /**
- * Read File Meta Information from a Filehandle.
+ * Read File Meta Information from a File.
  *
  * Keeps track of the offset of the Data Set relative to the beginning of the
  * filehandle to speed up subsequent access, and determines the transfer
