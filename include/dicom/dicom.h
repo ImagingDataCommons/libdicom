@@ -1460,7 +1460,7 @@ DcmFilehandle *dcm_filehandle_create_from_memory(DcmError **error,
  * syntax in which the contained Data Set is encoded.
  *
  * :param error: Error structure pointer
- * :param filehandle: File
+ * :param filehandle: Pointer to file handle
  *
  * :return: File Metadata
  */
