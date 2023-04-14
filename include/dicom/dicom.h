@@ -644,7 +644,7 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element);
  * :param error: Pointer to error object
  * :param element: Pointer to Data Element
  * :param index: Zero-based index of value within the Data Element
- * :param value: String value return
+ * :param value: Pointer to memory location where value is written to
  *
  * :return: true on success
  */
