@@ -679,8 +679,12 @@ bool dcm_element_set_value_string(DcmError **error,
                                   bool steal);
 
 /**
- * Set the value of an element to a multi-valued string. The element must
- * have an appropriate tag.
+* Set the value of a Data Element to an array of character strings.
+ *
+ * The Data Element must have a Tag that allows for a
+ * character string Value Representation and for a
+ * Value Multiplicity greater than one.
+ * If that is not the case, the function will fail.
  *
  * On success, if `steal` is true, ownership of `value` passes to
  * `element`, ie. it will be freed when `element` is destroyed. If `steal` is
