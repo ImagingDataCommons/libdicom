@@ -641,7 +641,7 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element);
 /**
  * Get a string from a string-valued element.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param element: Pointer to Data Element
  * :param index: Zero-based index of value within the Data Element
  * :param value: String value return
