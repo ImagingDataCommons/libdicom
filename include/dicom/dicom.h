@@ -452,8 +452,9 @@ DCM_EXTERN
 const char *dcm_dict_keyword_from_tag(uint32_t tag);
 
 /**
- * Look up the tag of an Attribute in the Dictionary. Returns 0xffffffff if
- * the keyword is not recognised.
+ * Look up the tag of an Attribute in the Dictionary.
+ *
+ * Returns ``0xffffffff`` if the keyword is not recognised.
  *
  * :param tag: Attribute keyword
  *
