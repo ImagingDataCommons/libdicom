@@ -332,7 +332,7 @@ const char *dcm_error_code_name(DcmErrorCode code);
 /**
  * Log an error message using information stored on the error object.
  *
- * :param error: DcmError to read the error from
+ * :param error: Error object
  */
 DCM_EXTERN
 void dcm_error_log(DcmError *error);
