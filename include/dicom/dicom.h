@@ -740,8 +740,11 @@ bool dcm_element_set_value_integer(DcmError **error,
                                    int64_t value);
 
 /**
- * Set the value of an element to an array of numeric values. The element must
- * have an appropriate tag.
+ * Set the value of a Data Element to a number.
+ * 
+ * The Data Element must have a Tag that allows for a
+ * numeric Value Representation.
+ * If that is not the case, the function will fail.
  *
  * Although the value passed is `int*`, it should
  * be a pointer to an array of 16- to 64-bit numeric values of the
