@@ -440,8 +440,9 @@ DCM_EXTERN
 const char *dcm_dict_str_from_vr(DcmVR vr);
 
 /**
- * Look up the Keyword of an Attribute in the Dictionary. Returns NULL if the
- * tag is not recognised.
+ * Look up the Keyword of an Attribute in the Dictionary.
+ * 
+ * Returns NULL if the tag is not recognised.
  *
  * :param tag: Attribute Tag
  *
