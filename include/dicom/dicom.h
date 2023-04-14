@@ -770,7 +770,7 @@ bool dcm_element_set_value_numeric_multi(DcmError **error,
                                          bool steal);
 
 /**
- * Get a double from a 32- or 64-bit float element.
+ * Get a floating-point value of a Data Element.
  *
  * :param error: Error structure pointer
  * :param element: Pointer to Data Element
