@@ -711,7 +711,7 @@ bool dcm_element_set_value_string_multi(DcmError **error,
  * :param error: Error structure pointer
  * :param element: Pointer to Data Element
  * :param index: Zero-based index of value within the Data Element
- * :param value: Integer value return
+ * :param value: Pointer to memory location where value is written to
  *
  * :return: true on success
  */
