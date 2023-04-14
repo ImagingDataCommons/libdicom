@@ -592,7 +592,7 @@ uint32_t dcm_element_get_tag(const DcmElement *element);
  *
  * :param element: Pointer to Data Element
  *
- * :return: VR for this element
+ * :return: Value Representation
  */
 DCM_EXTERN
 DcmVR dcm_element_get_vr(const DcmElement *element);
