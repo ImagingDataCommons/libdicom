@@ -692,7 +692,7 @@ bool dcm_element_set_value_string(DcmError **error,
  *
  * :param error: Error structure pointer
  * :param element: Pointer to Data Element
- * :param values: String value
+ * :param values: Pointer to memory location where values are written to
  * :param vm: Number of values
  * :param steal: if true, ownership of values passes to element
  *
