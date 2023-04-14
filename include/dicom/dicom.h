@@ -783,7 +783,7 @@ DCM_EXTERN
 bool dcm_element_get_value_double(DcmError **error,
                                   const DcmElement *element,
                                   uint32_t index,
-                                  double *value);
+                                  float64_t *value);
 
 /**
  * Set the value of an element to a floating point number. The element must
