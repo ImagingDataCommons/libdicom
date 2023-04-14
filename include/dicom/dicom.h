@@ -322,7 +322,7 @@ DcmErrorCode dcm_error_code(DcmError *error);
 /**
  * Get a symbolic name for an error.
  *
- * :param code: DcmError to read the error from
+ * :param code: Error object
  *
  * :return: Error code
  */
