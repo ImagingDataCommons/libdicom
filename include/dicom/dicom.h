@@ -775,7 +775,7 @@ bool dcm_element_set_value_numeric_multi(DcmError **error,
  * :param error: Error structure pointer
  * :param element: Pointer to Data Element
  * :param index: Zero-based index of value within the Data Element
- * :param value: Integer value return
+ * :param value: Pointer to memory location where value is written to
  *
  * :return: true on success
  */
@@ -786,8 +786,11 @@ bool dcm_element_get_value_double(DcmError **error,
                                   float64_t *value);
 
 /**
- * Set the value of an element to a floating point number. The element must
- * have an appropriate tag.
+ * Set the value of a Data Element to a floating-point.
+ * 
+ * The Data Element must have a Tag that allows for a
+ * floating-point Value Representation.
+ * If that is not the case, the function will fail.
  *
  * :param error: Error structure pointer
  * :param element: Pointer to Data Element
@@ -798,15 +801,16 @@ bool dcm_element_get_value_double(DcmError **error,
 DCM_EXTERN
 bool dcm_element_set_value_double(DcmError **error,
                                   DcmElement *element,
-                                  double value);
+                                  float64_t value);
 
 /**
- * Get a binary value from an element. Use dcm_element_length() to get the
- * length of the binary value.
+ * Get a binary value from a Data Element.
+ *
+ * Use :c:func:`dcm_element_length` to get the length of the binary value.
  *
  * :param error: Error structure pointer
  * :param element: Pointer to Data Element
- * :param value: Binary value return
+ * :param value: Pointer to memory location where value is written to
  *
  * :return: true on success
  */
@@ -816,8 +820,11 @@ bool dcm_element_get_value_binary(DcmError **error,
                                   const char **value);
 
 /**
- * Set the value of an element to a binary value. The element must
- * have an appropriate tag.
+ * Set the value of a Data Element to binary data.
+ * 
+ * The Data Element must have a Tag that allows for a
+ * binary Value Representation.
+ * If that is not the case, the function will fail.
  *
  * On success, if `steal` is true, ownership of `value` passes to
  * `element`, ie. it will be freed when `element` is destroyed. If `steal` is
@@ -839,11 +846,11 @@ bool dcm_element_set_value_binary(DcmError **error,
                                   bool steal);
 
 /**
- * Get a sequence value from an element.
+ * Get a sequence value from a Data Element.
  *
  * :param error: Error structure pointer
  * :param element: Pointer to Data Element
- * :param value: Sequence value return
+ * :param value: Pointer to memory location where value is written to
  *
  * :return: true on success
  */
@@ -854,8 +861,11 @@ bool dcm_element_get_value_sequence(DcmError **error,
 
 
 /**
- * Set the value of an element to a sequence. The element must
- * have an appropriate tag.
+ * Set the value of a Data Element to a Sequence.
+ * 
+ * The Data Element must have a Tag that allows for
+ * Value Representation ``"SQ"``.
+ * If that is not the case, the function will fail.
  *
  * The element takes ownership of the value pointer on success.
  *
