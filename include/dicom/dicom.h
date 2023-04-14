@@ -722,8 +722,11 @@ bool dcm_element_get_value_integer(DcmError **error,
                                    int64_t *value);
 
 /**
- * Set the value of an element to an integer. The element must have an
- * appropriate tag.
+ * Set the value of a Data Element to an integer.
+ * 
+ * The Data Element must have a Tag that allows for a
+ * integer Value Representation.
+ * If that is not the case, the function will fail.
  *
  * :param error: Error structure pointer
  * :param element: Pointer to Data Element
