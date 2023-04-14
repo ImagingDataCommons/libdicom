@@ -542,9 +542,11 @@ bool dcm_is_encapsulated_transfer_syntax(const char *transfer_syntax_uid);
  */
 
 /**
- * Create a data element for a tag. After creating a data element, you must
- * attach an appropriate value, see for example
- * dcm_element_set_value_string().
+ * Create a data element for a tag.
+ *
+ * After creating a data element, you must
+ * attach an appropriate value using one of the setting functions.
+ * See for example :c:func:`dcm_element_set_value_string`.
  *
  * :param error: Error structure pointer
  * :param tag: Tag
