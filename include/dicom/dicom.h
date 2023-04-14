@@ -655,8 +655,11 @@ bool dcm_element_get_value_string(DcmError **error,
                                   const char **value);
 
 /**
- * Set the value of an element to a string. The element must have an
- * appropriate tag.
+ * Set the value of a Data Element to a character string.
+ *
+ * The Data Element must have a Tag that allows for a
+ * character string Value Representation.
+ * If that is not the case, the function will fail.
  *
  * On success, if `steal` is true, ownership of `value` passes to
  * `element`, ie. it will be freed when `element` is destroyed. If `steal` is
