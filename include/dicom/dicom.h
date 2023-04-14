@@ -320,7 +320,7 @@ DCM_EXTERN
 DcmErrorCode dcm_error_code(DcmError *error);
 
 /**
- * Get a symbolic name for a DcmErrorCode.
+ * Get a symbolic name for an error.
  *
  * :param code: DcmError to read the error from
  *
