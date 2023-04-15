@@ -151,7 +151,7 @@ typedef struct _DcmBOT DcmBOT;
  * Call this from the main thread during program startup for libdicom to be
  * threadsafe.
  *
- * If you don't do this, libdidom will attempt to call it for you in a safe
+ * If you don't do this, libdicom will attempt to call it for you in a safe
  * way, but cannot guarantee this on all platforms and with all compilers, and
  * therefore cannot guarantee thread safety.
  *
@@ -181,8 +181,10 @@ enum _DcmErrorCode {
 typedef enum _DcmErrorCode DcmErrorCode;
 
 /**
- * An enum of VRs. VRs which are not known to libdicom will be coded as
- * DCM_VR_ERROR (unknown VR).
+ * An enum of Value Representations. 
+ *
+ * Value Representations which are not known to libdicom will be coded as
+ * DCM_VR_ERROR (unknown Value Representation).
  *
  * Note to maintainers: this enum must match the table in dicom-dict.c, and
  * the DcmVRTag enum. As the DICOM standard evolves, numbering must be
@@ -268,8 +270,8 @@ typedef struct _DcmError DcmError;
  * :param error: Pointer to store the new error object in
  * :param code: Numeric error code
  * :param summary: Summary of error
- * :param format: Format string
- * :param ...: Variable arguments
+ * :param format: printf-style format string
+ * :param ...: Format string arguments
  */
 DCM_EXTERN
 void dcm_error_set(DcmError **error, DcmErrorCode code,
@@ -369,8 +371,8 @@ DcmLogLevel dcm_log_level;
 /**
  * Write critical log message to stderr stream.
  *
- * :param format: Format string.
- * :param ...: Variable arguments
+ * :param format: printf-style format string
+ * :param ...: Format string arguments
  */
 DCM_EXTERN
 void dcm_log_critical(const char *format, ...);
@@ -378,8 +380,8 @@ void dcm_log_critical(const char *format, ...);
 /**
  * Write error log message to stderr stream.
  *
- * :param format: Format string.
- * :param ...: Variable arguments
+ * :param format: printf-style format string
+ * :param ...: Format string arguments
  */
 DCM_EXTERN
 void dcm_log_error(const char *format, ...);
@@ -387,8 +389,8 @@ void dcm_log_error(const char *format, ...);
 /**
  * Write warning log message to stderr stream.
  *
- * :param format: Format string.
- * :param ...: Variable arguments
+ * :param format: printf-style format string
+ * :param ...: Format string arguments
  */
 DCM_EXTERN
 void dcm_log_warning(const char *format, ...);
@@ -396,8 +398,8 @@ void dcm_log_warning(const char *format, ...);
 /**
  * Write info log message to stderr stream.
  *
- * :param format: Format string
- * :param ...: Variable arguments
+ * :param format: printf-style format string
+ * :param ...: Format string arguments
  */
 DCM_EXTERN
 void dcm_log_info(const char *format, ...);
@@ -405,8 +407,8 @@ void dcm_log_info(const char *format, ...);
 /**
  * Write debug log message to stderr stream.
  *
- * :param format: Format string
- * :param ...: Variable arguments
+ * :param format: printf-style format string
+ * :param ...: Format string arguments
  */
 DCM_EXTERN
 void dcm_log_debug(const char *format, ...);
@@ -420,21 +422,21 @@ DCM_EXTERN
 const char *dcm_get_version(void);
 
 /**
- * Turn a string VR into an enum value.
+ * Turn a string Value Representation into an enum value.
  *
- * :param vr: The VR as a two character string.
+ * :param vr: The Value Representation as a two character string.
  *
- * :return: the enum for that VR
+ * :return: the enum for that Value Representation
  */
 DCM_EXTERN
 DcmVR dcm_dict_vr_from_str(const char *vr);
 
 /**
- * Turn an enum VR into a character string.
+ * Turn an enum Value Representation into a character string.
  *
- * :param vr: The VR as an enum value.
+ * :param vr: The Value Representation as an enum value.
  *
- * :return: the string representation of that VR, or NULL
+ * :return: the string representation of that Value Representation, or NULL
  */
 DCM_EXTERN
 const char *dcm_dict_str_from_vr(DcmVR vr);
@@ -464,12 +466,14 @@ DCM_EXTERN
 uint32_t dcm_dict_tag_from_keyword(const char *keyword);
 
 /**
- * Find the VR for a tag. This will return DCM_VR_ERROR if the tag is unknown,
- * or does not have a unique VR.
+ * Find the Value Representation for a tag. 
+ *
+ * This will return DCM_VR_ERROR if the tag is unknown, or does not have a 
+ * unique Value Representation.
  *
  * :param tag: Attribute Tag
  *
- * :return: the unique VR for this tag, or DCM_VR_ERROR
+ * :return: the unique Value Representation for this tag, or DCM_VR_ERROR
  */
 DCM_EXTERN
 DcmVR dcm_vr_from_tag(uint32_t tag);
@@ -542,15 +546,15 @@ bool dcm_is_encapsulated_transfer_syntax(const char *transfer_syntax_uid);
  */
 
 /**
- * Create a data element for a tag.
+ * Create a Data Element for a tag.
  *
- * After creating a data element, you must
+ * After creating a Data Element, you must
  * attach an appropriate value using one of the setting functions.
  * See for example :c:func:`dcm_element_set_value_string`.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param tag: Tag
- * :param vr: The VR for this element
+ * :param vr: The Value Representation for this Data Element
  *
  * :return: Pointer to Data Element
  */
@@ -568,11 +572,11 @@ DCM_EXTERN
 uint16_t dcm_element_get_group_number(const DcmElement *element);
 
 /**
- * Get element number (second part of Tag) of a Data Element.
+ * Get Element Number (second part of Tag) of a Data Element.
  *
  * :param element: Pointer to Data Element
  *
- * :return: Tag element number
+ * :return: Tag Element Number
  */
 DCM_EXTERN
 uint16_t dcm_element_get_element_number(const DcmElement *element);
@@ -630,7 +634,7 @@ bool dcm_element_is_multivalued(const DcmElement *element);
 /**
  * Clone (i.e., create a deep copy of) a Data Element.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param element: Pointer to Data Element
  *
  * :return: Pointer to clone of Data Element
@@ -639,12 +643,12 @@ DCM_EXTERN
 DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element);
 
 /**
- * Get a string from a string-valued element.
+ * Get a string from a string-valued Data Element.
  *
  * :param error: Pointer to error object
  * :param element: Pointer to Data Element
  * :param index: Zero-based index of value within the Data Element
- * :param value: Pointer to memory location where value is written to
+ * :param value: Pointer to return location for value 
  *
  * :return: true on success
  */
@@ -662,10 +666,10 @@ bool dcm_element_get_value_string(DcmError **error,
  * If that is not the case, the function will fail.
  *
  * On success, if `steal` is true, ownership of `value` passes to
- * `element`, ie. it will be freed when `element` is destroyed. If `steal` is
+ * `element`, i.e. it will be freed when `element` is destroyed. If `steal` is
  * false, then a copy is made of `value` and ownership is not transferred.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param element: Pointer to Data Element
  * :param value: String value
  * :param steal: if true, ownership of value passes to element
@@ -687,10 +691,10 @@ bool dcm_element_set_value_string(DcmError **error,
  * If that is not the case, the function will fail.
  *
  * On success, if `steal` is true, ownership of `value` passes to
- * `element`, ie. it will be freed when `element` is destroyed. If `steal` is
+ * `element`, i.e. it will be freed when `element` is destroyed. If `steal` is
  * false, then a copy is made of `value` and ownership is not transferred.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param element: Pointer to Data Element
  * :param values: Pointer to memory location where values are written to
  * :param vm: Number of values
@@ -706,12 +710,14 @@ bool dcm_element_set_value_string_multi(DcmError **error,
                                         bool steal);
 
 /**
- * Get an integer from a 16, 32 or 64-bit integer-valued element.
+ * Get an integer from a 16, 32 or 64-bit integer-valued Data Element.
  *
- * :param error: Error structure pointer
+ * The integer held in the Element will be cast to int64_t for return.
+ *
+ * :param error: Pointer to error object
  * :param element: Pointer to Data Element
  * :param index: Zero-based index of value within the Data Element
- * :param value: Pointer to memory location where value is written to
+ * :param value: Pointer to return location for value 
  *
  * :return: true on success
  */
@@ -728,7 +734,7 @@ bool dcm_element_get_value_integer(DcmError **error,
  * integer Value Representation.
  * If that is not the case, the function will fail.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param element: Pointer to Data Element
  * :param value: Integer value
  *
@@ -748,13 +754,13 @@ bool dcm_element_set_value_integer(DcmError **error,
  *
  * Although the value passed is `int*`, it should
  * be a pointer to an array of 16- to 64-bit numeric values of the
- * appropriate type for the element VR.
+ * appropriate type for the Data Element Value Representation.
  *
  * On success, if `steal` is true, ownership of `values` passes to
- * `element`, ie. it will be freed when `element` is destroyed. If `steal` is
+ * `element`, i.e. it will be freed when `element` is destroyed. If `steal` is
  * false, then a copy is made of `values` and ownership is not transferred.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param element: Pointer to Data Element
  * :param values: Array of values
  * :param vm: Number of values
@@ -772,10 +778,10 @@ bool dcm_element_set_value_numeric_multi(DcmError **error,
 /**
  * Get a floating-point value of a Data Element.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param element: Pointer to Data Element
  * :param index: Zero-based index of value within the Data Element
- * :param value: Pointer to memory location where value is written to
+ * :param value: Pointer to return location for value 
  *
  * :return: true on success
  */
@@ -783,7 +789,7 @@ DCM_EXTERN
 bool dcm_element_get_value_double(DcmError **error,
                                   const DcmElement *element,
                                   uint32_t index,
-                                  float64_t *value);
+                                  double *value);
 
 /**
  * Set the value of a Data Element to a floating-point.
@@ -792,7 +798,7 @@ bool dcm_element_get_value_double(DcmError **error,
  * floating-point Value Representation.
  * If that is not the case, the function will fail.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param element: Pointer to Data Element
  * :param value: Floating point value
  *
@@ -801,16 +807,16 @@ bool dcm_element_get_value_double(DcmError **error,
 DCM_EXTERN
 bool dcm_element_set_value_double(DcmError **error,
                                   DcmElement *element,
-                                  float64_t value);
+                                  double value);
 
 /**
  * Get a binary value from a Data Element.
  *
  * Use :c:func:`dcm_element_length` to get the length of the binary value.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param element: Pointer to Data Element
- * :param value: Pointer to memory location where value is written to
+ * :param value: Pointer to return location for value 
  *
  * :return: true on success
  */
@@ -827,10 +833,10 @@ bool dcm_element_get_value_binary(DcmError **error,
  * If that is not the case, the function will fail.
  *
  * On success, if `steal` is true, ownership of `value` passes to
- * `element`, ie. it will be freed when `element` is destroyed. If `steal` is
+ * `element`, i.e. it will be freed when `element` is destroyed. If `steal` is
  * false, then a copy is made of `value` and ownership is not transferred.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param element: Pointer to Data Element
  * :param value: Pointer to binary value
  * :param length: Length in bytes of the binary value
@@ -848,9 +854,9 @@ bool dcm_element_set_value_binary(DcmError **error,
 /**
  * Get a sequence value from a Data Element.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param element: Pointer to Data Element
- * :param value: Pointer to memory location where value is written to
+ * :param value: Pointer to return location for value 
  *
  * :return: true on success
  */
@@ -867,9 +873,9 @@ bool dcm_element_get_value_sequence(DcmError **error,
  * Value Representation ``"SQ"``.
  * If that is not the case, the function will fail.
  *
- * The element takes ownership of the value pointer on success.
+ * The Data Element takes ownership of the value pointer on success.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param element: Pointer to Data Element
  * :param value: Pointer to Sequence
  *
@@ -905,7 +911,7 @@ void dcm_element_destroy(DcmElement *element);
 /**
  * Create an empty Data Set.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  */
 DCM_EXTERN
 DcmDataSet *dcm_dataset_create(DcmError **error);
@@ -913,7 +919,7 @@ DcmDataSet *dcm_dataset_create(DcmError **error);
 /**
  * Clone (i.e., create a deep copy of) a Data Set.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param dataset: Pointer to Data Set
  *
  * :return: Pointer to clone of Data Set
@@ -924,7 +930,7 @@ DcmDataSet *dcm_dataset_clone(DcmError **error, const DcmDataSet *dataset);
 /**
  * Insert a Data Element into a Data Set.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param dataset: Pointer to Data Set
  * :param element: Pointer to Data Element
  *
@@ -940,7 +946,7 @@ bool dcm_dataset_insert(DcmError **error,
 /**
  * Remove a Data Element from a Data Set.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param dataset: Pointer to Data Set
  * :param tag: Attribute Tag of a Data Element
  *
@@ -952,7 +958,7 @@ bool dcm_dataset_remove(DcmError **error, DcmDataSet *dataset, uint32_t tag);
 /**
  * Get a Data Element from a Data Set.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param dataset: Pointer to Data Set
  * :param tag: Attribute Tag of a Data Element
  *
@@ -965,7 +971,7 @@ DcmElement *dcm_dataset_get(DcmError **error,
 /**
  * Get a clone (deep copy) of a Data Element from a Data Set.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param dataset: Pointer to Data Set
  * :param tag: Attribute Tag of a Data Element
  *
@@ -1050,7 +1056,7 @@ bool dcm_dataset_is_locked(const DcmDataSet *dataset);
 /**
  * Print a Data Set.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param dataset: Pointer to Data Set
  * :param indentation: Number of white spaces before text
  */
@@ -1077,7 +1083,7 @@ void dcm_dataset_destroy(DcmDataSet *dataset);
  * Note that created object represents the value of a Data Element rather
  * than a Data Element itself.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :return: Pointer to Sequence
  */
 DCM_EXTERN
@@ -1086,7 +1092,7 @@ DcmSequence *dcm_sequence_create(DcmError **error);
 /**
  * Append a Data Set item to a Sequence.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param seq: Pointer to Sequence
  * :param item: Data Set item
  *
@@ -1102,7 +1108,7 @@ bool dcm_sequence_append(DcmError **error,
 /**
  * Get a Data Set item from a Sequence.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param seq: Pointer to Sequence
  * :param index: Zero-based index of the Data Set item in the Sequence
  *
@@ -1125,7 +1131,7 @@ void dcm_sequence_foreach(const DcmSequence *seq,
 /**
  * Remove a Data Set item from a Sequence.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param seq: Pointer to Sequence
  * :param index: Zero-based index of the Data Set item in the Sequence
  *
@@ -1181,7 +1187,7 @@ void dcm_sequence_destroy(DcmSequence *seq);
 /**
  * Create a Frame.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param index: Index of the Frame within the Pixel Data Element
  * :param data: Pixel data of the Frame
  * :param length: Size of the Frame (number of bytes)
@@ -1365,7 +1371,7 @@ void dcm_frame_destroy(DcmFrame *frame);
 /**
  * Create a Basic Offset Table.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param offsets: Offset of each Frame in the Pixel Data Element
  *                 (measured from the first byte of the first Frame).
  * :param num_frames: Number of Frames in the Pixel Data Element
@@ -1442,7 +1448,7 @@ typedef struct _DcmIO {
 /**
  * Create a filehandle that reads using a set of DcmIO functions.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param io: Set of read functions for this DcmFilehandle
  * :param client: Client data for read functions
  *
@@ -1456,7 +1462,7 @@ DcmFilehandle *dcm_filehandle_create(DcmError **error,
 /**
  * Open a file on disk as a DcmFilehandle.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param filepath: Path to the file on disk
  *
  * :return: filehandle
@@ -1468,7 +1474,7 @@ DcmFilehandle *dcm_filehandle_create_from_file(DcmError **error,
 /**
  * Open an area of memory as a DcmFilehandle.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param buffer: Pointer to memory area
  * :param length: Length of memory area in bytes
  *
@@ -1486,7 +1492,7 @@ DcmFilehandle *dcm_filehandle_create_from_memory(DcmError **error,
  * filehandle to speed up subsequent access, and determines the Transfer
  * Syntax in which the contained Data Set is encoded.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param filehandle: Pointer to file handle
  *
  * :return: File Meta Information
@@ -1502,7 +1508,7 @@ DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
  * beginning of the filehandle to speed up subsequent access to individual
  * Frame items.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param filehandle: File
  *
  * :return: metadata
@@ -1514,11 +1520,11 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
 /**
  * Read Basic Offset Table from a File.
  *
- * In case the Pixel Data element does not contain a Basic Offset Table item,
+ * In case the Pixel Data Element does not contain a Basic Offset Table item,
  * but contains an Extended Offset Table element, the value of the Extended
  * Offset Table element will be read instead.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param filehandle: File
  * :param metadata: Metadata
  *
@@ -1531,7 +1537,7 @@ DcmBOT *dcm_filehandle_read_bot(DcmError **error, DcmFilehandle *filehandle,
 /**
  * Build Basic Offset Table for a File.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param filehandle: File
  * :param metadata: Metadata
  *
@@ -1544,7 +1550,7 @@ DcmBOT *dcm_filehandle_build_bot(DcmError **error, DcmFilehandle *filehandle,
 /**
  * Read an individual Frame from a File.
  *
- * :param error: Error structure pointer
+ * :param error: Pointer to error object
  * :param filehandle: File
  * :param metadata: Metadata
  * :param bot: Basic Offset Table
