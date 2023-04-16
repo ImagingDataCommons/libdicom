@@ -13,7 +13,7 @@ Every data element has a tag indicating its purpose. Tags are 32-bit
 unsigned ints with the top 16 bits indicating the group and the bottom 16 the
 element. They are usually written in hexadecimal, perhaps 0x00400554, meaning
 element 0x554 of group 0x40, or as keywords, in this case `SpecimenUID`. You
-can get tags from their keyword with :c:func:`dcm_dict_tag_from_keyword()`,
+can get the tag from its corresponding keyword with :c:func:`dcm_dict_tag_from_keyword()`,
 or find the keyword from a tag with :c:func:`dcm_dict_keyword_from_tag()`.
 
 Every Data Element has a `Value Representation (VR)
@@ -35,12 +35,12 @@ Depending on the VR, an individual Data
 Element may have a `Value Multiplicity (VM)
 <http://dicom.nema.org/medical/dicom/current/output/chtml/part05/sect_6.4.html>`_
 greater than one, i.e., contain more than one value.  Under the hood,
-a Data Element thus generally contains an array of values.
+a Data Element may thus contain an array of values.
 
 A Data Element can be created with :c:func:`dcm_element_create()`, it can have
 a value assigned to it with eg.
 :c:func:`dcm_element_set_value_integer()`, and it can be destroyed with 
-:c:func:`dcm_element_destroy()`. See MEMORY MANAGEMENT below for details on
+:c:func:`dcm_element_destroy()`. See `Memory management <Memory Management_>`_ below for details on
 pointer ownership.
 
 An individual value can be retrieved via the getter functions like
@@ -190,12 +190,12 @@ sequence as the value of an element like this:
     }
 
 If this function succeeeds, ownership of the sequence object passes to the
-element, ie. when the element is destroyed, the sequence will also be
+element, i.e., when the element is destroyed, the sequence will also be
 destroyed.
 
 If this function fails, ownership does not transfer.
 
-libdicom objects can also contain references to datastructures allocated by
+libdicom objects can also contain references to data structures allocated by
 other programs, for example, arrays of numeric values. 
 
 .. code-block:: c
