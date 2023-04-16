@@ -294,6 +294,27 @@ START_TEST(test_element_CS_multivalue)
 END_TEST
 
 
+START_TEST(test_element_CS_multivalue_empty)
+{
+    uint32_t tag = 0x00080008;
+    uint32_t vm = 0;
+
+    char **values = malloc(vm * sizeof(char *));
+
+    DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_CS);
+    (void) dcm_element_set_value_string_multi(NULL, element, values, vm, true);
+
+    ck_assert_int_eq(dcm_element_get_tag(element), tag);
+    ck_assert_int_eq(dcm_element_get_vr(element), DCM_VR_CS);
+    ck_assert_int_eq(dcm_element_get_length(element),
+                     compute_length_of_string_value_multi(values, vm));
+    ck_assert_int_eq(dcm_element_is_multivalued(element), false);
+
+    dcm_element_destroy(element);
+}
+END_TEST
+
+
 START_TEST(test_element_DS)
 {
     uint32_t tag = 0x0040072A;
@@ -466,6 +487,56 @@ START_TEST(test_element_US)
     int64_t integer;
     (void) dcm_element_get_value_integer(NULL, element, 0, &integer);
     ck_assert_int_eq(integer, value);
+
+    dcm_element_print(element, 0);
+
+    dcm_element_destroy(element);
+}
+END_TEST
+
+
+START_TEST(test_element_US_multivalue)
+{
+    uint32_t tag = 0x00280010;
+    uint16_t value[] = {512, 513, 514, 515};
+    uint32_t vm = sizeof(value) / sizeof(value[0]);
+
+    DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_US);
+    (void) dcm_element_set_value_numeric_multi(NULL, 
+        element, (int*) value, vm, false);
+
+    ck_assert_int_eq(dcm_element_get_tag(element), tag);
+    ck_assert_int_eq(dcm_element_get_vr(element), DCM_VR_US);
+    ck_assert_int_eq(dcm_element_get_length(element), sizeof(value));
+    ck_assert_int_eq(dcm_element_is_multivalued(element), true);
+
+    for (uint32_t i = 0; i < vm; i++) {
+        int64_t integer;
+        (void) dcm_element_get_value_integer(NULL, element, i, &integer);
+        ck_assert_int_eq(value[i], integer);
+    }
+
+    dcm_element_print(element, 0);
+
+    dcm_element_destroy(element);
+}
+END_TEST
+
+
+START_TEST(test_element_US_multivalue_empty)
+{
+    uint32_t tag = 0x00280010;
+    uint16_t value[] = {};
+    uint32_t vm = sizeof(value) / sizeof(value[0]);
+
+    DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_US);
+    (void) dcm_element_set_value_numeric_multi(NULL, 
+        element, (int*) &value, vm, false);
+
+    ck_assert_int_eq(dcm_element_get_tag(element), tag);
+    ck_assert_int_eq(dcm_element_get_vr(element), DCM_VR_US);
+    ck_assert_int_eq(dcm_element_get_length(element), sizeof(value));
+    ck_assert_int_eq(dcm_element_is_multivalued(element), false);
 
     dcm_element_print(element, 0);
 
@@ -738,6 +809,7 @@ static Suite *create_data_suite(void)
     tcase_add_test(element_case, test_element_AE);
     tcase_add_test(element_case, test_element_AS);
     tcase_add_test(element_case, test_element_CS_multivalue);
+    tcase_add_test(element_case, test_element_CS_multivalue_empty);
     tcase_add_test(element_case, test_element_DS);
     tcase_add_test(element_case, test_element_IS);
     tcase_add_test(element_case, test_element_ST);
@@ -745,6 +817,8 @@ static Suite *create_data_suite(void)
     tcase_add_test(element_case, test_element_SQ_empty);
     tcase_add_test(element_case, test_element_UI);
     tcase_add_test(element_case, test_element_US);
+    tcase_add_test(element_case, test_element_US_multivalue);
+    tcase_add_test(element_case, test_element_US_multivalue_empty);
     suite_add_tcase(suite, element_case);
 
     TCase *dataset_case = tcase_create("dataset");
