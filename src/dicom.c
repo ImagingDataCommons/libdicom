@@ -201,19 +201,19 @@ void dcm_error_clear(DcmError **error)
 }
 
 
-DcmErrorCode dcm_error_code(DcmError *error)
+DcmErrorCode dcm_error_get_code(DcmError *error)
 {
     return error->code;
 }
 
 
-const char *dcm_error_message(DcmError *error)
+const char *dcm_error_get_message(DcmError *error)
 {
     return (const char *) error->message;
 }
 
 
-const char *dcm_error_summary(DcmError *error)
+const char *dcm_error_get_summary(DcmError *error)
 {
     return (const char *) error->summary;
 }

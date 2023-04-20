@@ -296,7 +296,7 @@ void dcm_error_clear(DcmError **error);
  * :return: Short description of the error
  */
 DCM_EXTERN
-const char *dcm_error_summary(DcmError *error);
+const char *dcm_error_get_summary(DcmError *error);
 
 /**
  * Get the error message.
@@ -309,7 +309,7 @@ const char *dcm_error_summary(DcmError *error);
  * :return: Message stored in a error object
  */
 DCM_EXTERN
-const char *dcm_error_message(DcmError *error);
+const char *dcm_error_get_message(DcmError *error);
 
 /**
  * Get the error code.
@@ -319,17 +319,7 @@ const char *dcm_error_message(DcmError *error);
  * :return: Error code
  */
 DCM_EXTERN
-DcmErrorCode dcm_error_code(DcmError *error);
-
-/**
- * Get a symbolic name for an error.
- *
- * :param code: Error object
- *
- * :return: Error code
- */
-DCM_EXTERN
-const char *dcm_error_code_name(DcmErrorCode code);
+DcmErrorCode dcm_error_get_code(DcmError *error);
 
 /**
  * Log an error message using information stored on the error object.
