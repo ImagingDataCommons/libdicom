@@ -122,9 +122,9 @@ START_TEST(test_error)
     ck_assert_ptr_null(filehandle);
     ck_assert_ptr_nonnull(error);
 
-    ck_assert_int_eq(dcm_error_code(error), DCM_ERROR_CODE_IO);
-    ck_assert_ptr_nonnull(dcm_error_summary(error));
-    ck_assert_ptr_nonnull(dcm_error_message(error));
+    ck_assert_int_eq(dcm_error_get_code(error), DCM_ERROR_CODE_IO);
+    ck_assert_ptr_nonnull(dcm_error_get_summary(error));
+    ck_assert_ptr_nonnull(dcm_error_get_message(error));
 
     dcm_error_clear(&error);
     ck_assert_ptr_null(error);
