@@ -2,6 +2,7 @@
 
 - need to be able to set a stop-at function on filehandles
 
+- split parser from AST builder
 
 # bot support
 

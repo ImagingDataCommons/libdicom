@@ -745,15 +745,6 @@ DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
 
     dcm_element_destroy(element);
 
-    // File Meta Information Version
-    element = read_element(error, filehandle, &position, implicit);
-    if (element == NULL) {
-        dcm_dataset_destroy(file_meta);
-        return NULL;
-    }
-
-    dcm_element_destroy(element);
-
     while (position < group_length) {
         uint32_t length;
         element = read_element_header(error,
@@ -770,8 +761,20 @@ DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
         }
 
         if (!read_element_body(error, element, filehandle,
-                               length, &position, implicit) ||
-            !dcm_dataset_insert(error, file_meta, element)) {
+                               length, &position, implicit)) { 
+            dcm_element_destroy(element);
+            dcm_dataset_destroy(file_meta);
+            return NULL;
+	}
+
+        // many DICOMs have a FileMetaInformationVersion element, but 
+        // not all ... ignore the version number if present
+	if (dcm_element_get_tag(element) == 0x00020001) {
+            dcm_element_destroy(element);
+	    continue;
+	}
+
+	if (!dcm_dataset_insert(error, file_meta, element)) {
             dcm_element_destroy(element);
             dcm_dataset_destroy(file_meta);
             return NULL;
