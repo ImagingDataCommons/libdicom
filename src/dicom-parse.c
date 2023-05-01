@@ -412,10 +412,10 @@ static DcmElement *read_element_header(DcmError **error,
 
 
 // fwd ref this
-static DcmElement *parse_element(DcmError **error,
-                                 DcmFilehandle *filehandle,
-                                 int64_t *position,
-                                 bool implicit);
+static DcmElement *read_element(DcmError **error,
+                                DcmFilehandle *filehandle,
+                                int64_t *position,
+                                bool implicit);
 
 static bool read_element_sequence(DcmError **error,
                                   DcmFilehandle *filehandle,
@@ -430,8 +430,8 @@ static bool read_element_sequence(DcmError **error,
         dcm_log_debug("Read Item #%d.", index);
         uint32_t item_tag;
         uint32_t item_length;
-        if (!read_tag(state->error, state->filehandle, &item_tag, position) ||
-            !read_uint32(state->error, state->filehandle, &item_length, position)) {
+        if (!read_iheader(error, filehandle,
+                          &item_tag, &item_length, &seq_position)) {
             return false;
         }
 
@@ -1375,3 +1375,394 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
                             desc.photometric_interpretation,
                             filehandle->transfer_syntax_uid);
 }
+
+
+
+
+/* The size of the buffer we use for reading smaller element values. This is 
+ * large enough for most VRs.
+ */
+#define INPUT_BUFFER_SIZE (10240)
+
+
+typedef struct _DcmParseState {
+    DcmError **error;
+    DcmFilehandle *filehandle;
+    DcmParse *parse;
+    void *client;
+
+    DcmDataSet *meta;
+    int64_t offset;
+    int64_t pixel_data_offset;
+    uint64_t *extended_offset_table;
+    bool byteswap;
+} DcmParseState;
+
+
+static bool parse_element_header(DcmParseState *state, 
+                                 bool implicit,
+                                 uint32_t *tag,
+                                 DcmVR *vr,
+                                 uint32_t *length,
+                                 int64_t *position)
+{
+    if (!read_tag(error, state->filehandle, tag, position)) {
+        return false;
+    }
+
+    if (implicit) {
+        // this can be an ambiguious VR, eg. pixeldata is allowed in implicit
+	    // mode and has to be disambiguated later from other tags
+        *vr = dcm_vr_from_tag(*tag);
+        if (*vr == DCM_VR_ERROR) {
+            dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
+                          "Reading of Data Element header failed",
+                          "Tag %08X not allowed in implicit mode", *tag);
+            return false;
+        }
+
+        if (!read_uint32(error, filehandle, length, position)) {
+            return false;
+        }
+    } else {
+        // Value Representation
+        char vr_str[3];
+        if (!dcm_require(error, filehandle, vr_str, 2, position)) {
+            return false;
+        }
+        vr_str[2] = '\0';
+        *vr = dcm_dict_vr_from_str(vr_str);
+
+        if (!dcm_is_valid_vr_for_tag(*vr, *tag)) {
+            dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
+                          "Reading of Data Element header failed",
+                          "Tag %08X cannot have VR '%s'", *tag, vr_str);
+            return false;
+        }
+
+        if (dcm_dict_vr_header_length(vr) == 2) {
+            // These VRs have a short length of only two bytes
+            uint16_t short_length;
+            if (!read_uint16(error, filehandle, &short_length, position)) {
+                return false;
+            }
+            *length = (uint32_t) short_length;
+        } else {
+            // Other VRs have two reserved bytes before length of four bytes
+            uint16_t reserved;
+            if (!read_uint16(error, filehandle, &reserved, position) ||
+                !read_uint32(error, filehandle, length, position)) {
+               return false;
+            }
+
+            if (reserved != 0x0000) {
+                dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
+                              "Reading of Data Element header failed",
+                              "Unexpected value for reserved bytes "
+                              "of Data Element %08X with VR '%s'.",
+                              tag, vr);
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+
+static bool parse_element_sequence(DcmParseState *state, 
+                                   uint32_t seq_length,
+                                   int64_t *position,
+                                   bool implicit)
+{
+    int index = 0;
+    int64_t seq_position = 0;
+    while (seq_position < seq_length) {
+        dcm_log_debug("Read Item #%d.", index);
+        uint32_t item_tag;
+        uint32_t item_length;
+        if (!read_tag(state->error, state->filehandle, &item_tag, position) ||
+            !read_uint32(state->error, state->filehandle, &item_length, position)) {
+            return false;
+        }
+
+        if (item_tag == TAG_SQ_DELIM) {
+            dcm_log_debug("Stop reading Data Element. "
+                          "Encountered Sequence Delimination Tag.");
+            break;
+        }
+
+        if (item_tag != TAG_ITEM) {
+            dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
+                          "Reading of Data Element failed",
+                          "Expected tag '%08X' instead of '%08X' "
+                          "for Item #%d",
+                          TAG_ITEM,
+                          item_tag,
+                          index);
+            return false;
+        }
+
+        if (item_length == 0xFFFFFFFF) {
+            dcm_log_debug("Item #%d has undefined length.", index);
+        } else {
+            dcm_log_debug("Item #%d has defined length %d.",
+                          index, item_length);
+        }
+
+        if (state.parse.dataset_start(state->error, state->client)) {
+            return false;
+        }
+
+        int64_t item_position = 0;
+        while (item_position < item_length) {
+            // peek the next tag
+            if (!read_tag(state->error, state->filehandle, &item_tag, &item_position)) {
+                return false;
+            }
+
+            if (item_tag == TAG_ITEM_DELIM) {
+                // step over the tag length
+                dcm_log_debug("Stop reading Item #%d. "
+                              "Encountered Item Delimination Tag.",
+                              index);
+                if (!dcm_seekcur(state->error, state->filehandle, 4, &item_position)) {
+                    return false;
+                }
+
+                break;
+            }
+
+            // back to start of element
+            if (!dcm_seekcur(state->error, state->filehandle, -4, &item_position)) {
+                return false;
+            }
+
+            DcmElement *element = parse_element(state, &item_position, implicit);
+            if (element == NULL) {
+                dcm_dataset_destroy(dataset);
+                return false;
+            }
+
+            if (!dcm_dataset_insert(error, dataset, element)) {
+                dcm_dataset_destroy(dataset);
+                dcm_element_destroy(element);
+                return false;
+            }
+        }
+
+        seq_position += item_position;
+
+        if (!dcm_sequence_append(error, sequence, dataset)) {
+            dcm_dataset_destroy(dataset);
+        }
+
+        index += 1;
+    }
+
+    *position += seq_position;
+
+    return true;
+}
+
+
+static bool parse_element_body(DcmParseState *state, 
+                               bool implicit,
+                               uint32_t tag,
+                               DcmVR vr,
+                               uint32_t length,
+                               int64_t position,
+                               bool implicit)
+{
+    DcmVRClass klass = dcm_dict_vr_class(vr);
+    size_t size = dcm_dict_vr_size(vr);
+    uint32_t vm = length / size;
+    char *value;
+
+    char *value_free = NULL;
+    char input_buffer[INPUT_BUFFER_SIZE];
+
+    dcm_log_debug("Read Data Element body '%08X'", tag);
+
+    switch (klass) {
+        case DCM_CLASS_STRING_SINGLE:
+        case DCM_CLASS_STRING_MULTI:
+            if (klass == DCM_CLASS_NUMERIC) {
+                if (length % size != 0) {
+                    dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                                  "Reading of Data Element failed",
+                                  "Bad length for tag '%08X'",
+                                  tag);
+                    return false;
+                }
+            }
+
+            if (length + 1 >= INPUT_BUFFER_SIZE) {
+                value = value_free = DCM_MALLOC(state->error, length + 1);
+                if (value == NULL) {
+                    return false;
+                }
+            } else {
+                value = input_buffer;
+            }
+
+            if (!dcm_require(state->error, 
+                             state->filehandle, 
+                             value, 
+                             length, 
+                             position)) {
+                if (value_free != NULL) {
+                    free(value_free);
+                }
+                return false;
+            }
+            value[length] = '\0';
+
+            if (length > 0) {
+                if (vr != DCM_VR_UI) {
+                    if (isspace(value[length - 1])) {
+                        value[length - 1] = '\0';
+                    }
+                }
+            }
+
+            if (klass == DCM_CLASS_NUMERIC) {
+                if (filehandle->byteswap) {
+                    byteswap(value, length, size);
+                }
+            }
+
+            if (state.parse.element_create(error, 
+                                           state.client,
+                                           tag,
+                                           vr
+                                           value,
+                                           length)) {
+                if (value_free != NULL) {
+                    free(value_free);
+                }
+                return false;
+            }
+
+            if (value_free != NULL) {
+                free(value_free);
+            }
+
+            break;
+
+        case DCM_CLASS_SEQUENCE:
+            if (length == 0xFFFFFFFF) {
+                dcm_log_debug("Sequence of Data Element '%08X' "
+                              "has undefined length.",
+                              tag);
+            } else {
+                dcm_log_debug("Sequence of Data Element '%08X' "
+                              "has defined length %d.",
+                              tag, length);
+            }
+
+            if (state.parse.sequence_begin(error, 
+                                           state.client,
+                                           tag,
+                                           vr
+                                           length)) {
+                return false;
+            }
+
+            int64_t seq_position = 0;
+            if (!parse_element_sequence(state, 
+                                        length,
+                                        &seq_position, 
+                                        implicit)) {
+                return false;
+            }
+            *position += seq_position;
+
+            if (state.parse.sequence_end(error, state.client)) {
+                return false;
+            }
+
+            break;
+
+        default:
+            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                          "Reading of Data Element failed",
+                          "Data Element '%08X' has unexpected "
+                          "Value Representation", tag);
+            return false;
+    }
+
+    return true;
+}
+
+
+static bool parse_element(DcmParseState *state,
+                          int64_t *position,
+                          bool implicit)
+{
+    uint32_t tag;
+    DcmVR vr;
+    uint32_t length;
+    if (!parse_element_header(state, &tag, &vr, &length, &position) ||
+        !parse_element_body(state, tag, vr, length, &position, implicit)) {
+        return false;
+    }
+
+    return true;
+}
+
+/* parse a set of elements ending in EOF or the stop function.
+ */
+bool
+dcm_parse_dataset(DcmError **error, 
+	              DcmFilehandle *filehandle, 
+                  bool implicit,
+	              DcmParse *parse, 
+	              void *client)
+{
+    DcmParseState state = { error, filehandle, parse, client };
+
+    if (state.parse.parse_begin(state.client, tag, vr, length, implicit) ||
+        state.parse.dataset_begin(state.client, tag, vr, length, implicit)) {
+        return false;
+    }
+
+    int64_t position = 0;
+    for (;;) {
+        if (dcm_is_eof(state.filehandle)) {
+            dcm_log_info("Stop reading Data Set. Reached end of filehandle.");
+            break;
+        }
+
+        uint32_t tag;
+        DcmVR vr;
+        uint32_t length;
+        if (!parse_element_header(&state, &tag, &vr, &length, &position)) {
+            return false;
+        }
+
+        if (tag == TAG_TRAILING_PADDING) {
+            dcm_log_info("Stop reading Data Set",
+                         "Encountered Data Set Trailing Tag");
+            break;
+        }
+
+        if (state.parse.stop(state.client, tag, vr, length, implicit)) {
+            break;
+        }
+
+        if (!parse_element_body(&state, tag, vr, length, &position, implicit)) {
+            return false;
+        }
+    }
+
+    if (state.parse.dataset_end(state.client, tag, vr, length, implicit) ||
+        state.parse.parse_end(state.client, tag, vr, length, implicit)) {
+        return false;
+    }
+
+    return true;
+}
+
+
+
