@@ -46,83 +46,27 @@ struct PixelDescription {
 };
 
 
-struct _DcmFilehandle {
-    const DcmIO *io;
-    void *fp;
+typedef struct _DcmParseState {
+    DcmError **error;
+    DcmIOhandle *handle;
+    DcmParse *parse;
+    bool byteswap;
+    void *client;
+
     DcmDataSet *meta;
     int64_t offset;
-    char *transfer_syntax_uid;
     int64_t pixel_data_offset;
     uint64_t *extended_offset_table;
-    bool byteswap;
-};
+} DcmParseState;
 
 
-/* TRUE for big-endian machines, like PPC. We need to byteswap DICOM
- * numeric types in this case. Run time tests for this are much
- * simpler to manage when cross-compiling.
- */
-static bool is_big_endian(void)
-{
-    union {
-        uint32_t i;
-        char c[4];
-    } bint = {0x01020304};
-
-    return bint.c[0] == 1;
-}
-
-
-DcmFilehandle *dcm_filehandle_create(DcmError **error,
-                                     const DcmIO *io,
-                                     void *client)
-{
-    DcmFilehandle *filehandle = DCM_NEW(error, DcmFilehandle);
-    if (filehandle == NULL) {
-        return NULL;
-    }
-
-    filehandle->io = io;
-    filehandle->fp = NULL;
-    filehandle->meta = NULL;
-    filehandle->offset = 0;
-    filehandle->transfer_syntax_uid = NULL;
-    filehandle->pixel_data_offset = 0;
-    filehandle->extended_offset_table = NULL;
-    filehandle->byteswap = is_big_endian();
-
-    filehandle->fp = filehandle->io->open(error, client);
-    if (filehandle->fp == NULL) {
-        dcm_filehandle_destroy(filehandle);
-        return NULL;
-    }
-
-    return filehandle;
-}
-
-
-void dcm_filehandle_destroy(DcmFilehandle *filehandle)
-{
-    if (filehandle) {
-        if (filehandle->transfer_syntax_uid) {
-            free(filehandle->transfer_syntax_uid);
-        }
-
-        if (filehandle->fp) {
-            (void)filehandle->io->close(NULL, filehandle->fp);
-            filehandle->fp = NULL;
-        }
-
-        free(filehandle);
-    }
-}
-
-
-static int64_t dcm_read(DcmError **error, DcmFilehandle *filehandle,
+static int64_t dcm_read(DcmParseState *state,
     char *buffer, int64_t length, int64_t *position)
 {
-    int64_t bytes_read = filehandle->io->read(error,
-                                              filehandle->fp, buffer, length);
+    int64_t bytes_read = state->handle->io->read(state->error,
+                                                 state->handle, 
+                                                 buffer, 
+                                                 length);
     if (bytes_read < 0) {
         return bytes_read;
     }
@@ -133,12 +77,11 @@ static int64_t dcm_read(DcmError **error, DcmFilehandle *filehandle,
 }
 
 
-static bool dcm_require(DcmError **error, DcmFilehandle *filehandle,
+static bool dcm_require(DcmParseState *state,
     char *buffer, int64_t length, int64_t *position)
 {
     while (length > 0) {
-        int64_t bytes_read = dcm_read(error,
-                                      filehandle, buffer, length, position);
+        int64_t bytes_read = dcm_read(state, buffer, length, position);
 
         if (bytes_read < 0) {
             return false;
@@ -157,18 +100,22 @@ static bool dcm_require(DcmError **error, DcmFilehandle *filehandle,
 }
 
 
-static bool dcm_seekset(DcmError **error,
-                        DcmFilehandle *filehandle, int64_t offset)
+static bool dcm_seekset(DcmParseState *state, int64_t offset)
 {
-    return filehandle->io->seek(error, filehandle->fp, offset, SEEK_SET) >= 0;
+    int64_t new_offset = state->handle->io->seek(state->error, 
+                                                 state->handle, 
+                                                 offset, 
+                                                 SEEK_SET);
+    return new_offset >= 0;
 }
 
 
-static bool dcm_seekcur(DcmError **error, DcmFilehandle *filehandle,
-    int64_t offset, int64_t *position)
+static bool dcm_seekcur(DcmParseState *state, int64_t offset, int64_t *position)
 {
-    int64_t new_offset = filehandle->io->seek(error,
-                                              filehandle->fp, offset, SEEK_CUR);
+    int64_t new_offset = state->handle->io->seek(state->error,
+                                                 state->handle, 
+                                                 offset, 
+                                                 SEEK_CUR);
     if (new_offset < 0) {
         return false;
     }
@@ -179,28 +126,35 @@ static bool dcm_seekcur(DcmError **error, DcmFilehandle *filehandle,
 }
 
 
-static bool dcm_offset(DcmError **error,
-                       DcmFilehandle *filehandle, int64_t *offset)
+static bool dcm_offset(DcmParseState *state, int64_t *offset)
 {
-    *offset = filehandle->io->seek(error, filehandle->fp, 0, SEEK_CUR);
-    if (*offset < 0) {
+    int64_t new_offset = state->handle->io->seek(state->error, 
+                                                 state->handle, 
+                                                 0, 
+                                                 SEEK_CUR);
+    if (new_offset < 0) {
         return false;
     }
+
+    *offset = new_offset;
 
     return true;
 }
 
 
-static bool dcm_is_eof(DcmFilehandle *filehandle)
+static bool dcm_is_eof(DcmParseState *state)
 {
-    int64_t position = 0;
     bool eof = true;
 
     char buffer[1];
-    int64_t bytes_read = filehandle->io->read(NULL, filehandle->fp, buffer, 1);
+    int64_t bytes_read = state->handle->io->read(NULL, 
+                                                 state->handle, 
+                                                 buffer, 
+                                                 1);
     if (bytes_read > 0) {
         eof = false;
-        (void) dcm_seekcur(NULL, filehandle, -1, &position);
+        int64_t position = 0;
+        (void) dcm_seekcur(state, -1, &position);
     }
 
     return eof;
@@ -229,7 +183,7 @@ static void byteswap(char *data, size_t length, size_t size)
 }
 
 
-static bool read_uint16(DcmError **error, DcmFilehandle *filehandle,
+static bool read_uint16(DcmParseState *state,
     uint16_t *value, int64_t *position)
 {
     union {
@@ -237,11 +191,11 @@ static bool read_uint16(DcmError **error, DcmFilehandle *filehandle,
         char c[2];
     } buffer;
 
-    if (!dcm_require(error, filehandle, buffer.c, 2, position)) {
+    if (!dcm_require(state, buffer.c, 2, position)) {
         return false;
     }
 
-    if (filehandle->byteswap) {
+    if (state->byteswap) {
         byteswap(buffer.c, 2, 2);
     }
 
@@ -251,7 +205,7 @@ static bool read_uint16(DcmError **error, DcmFilehandle *filehandle,
 }
 
 
-static bool read_uint32(DcmError **error, DcmFilehandle *filehandle,
+static bool read_uint32(DcmParseState *state, 
     uint32_t *value, int64_t *position)
 {
     union {
@@ -259,11 +213,11 @@ static bool read_uint32(DcmError **error, DcmFilehandle *filehandle,
         char c[4];
     } buffer;
 
-    if (!dcm_require(error, filehandle, buffer.c, 4, position)) {
+    if (!dcm_require(state, buffer.c, 4, position)) {
         return false;
     }
 
-    if (filehandle->byteswap) {
+    if (state->byteswap) {
         byteswap(buffer.c, 4, 4);
     }
 
@@ -273,415 +227,18 @@ static bool read_uint32(DcmError **error, DcmFilehandle *filehandle,
 }
 
 
-static bool read_tag(DcmError **error, DcmFilehandle *filehandle,
-    uint32_t *value, int64_t *position)
+static bool read_tag(DcmParseState *state, uint32_t *value, int64_t *position)
 {
     uint16_t group, elem;
 
-    if (!read_uint16(error, filehandle, &group, position) ||
-        !read_uint16(error, filehandle, &elem, position)) {
+    if (!read_uint16(state, &group, position) ||
+        !read_uint16(state, &elem, position)) {
         return false;
     }
 
     *value = ((uint32_t)group << 16) | elem;
 
     return true;
-}
-
-
-static bool read_iheader(DcmError **error, DcmFilehandle *filehandle,
-        uint32_t *item_tag, uint32_t *item_length, int64_t *position)
-{
-    if (!read_tag(error, filehandle, item_tag, position) ||
-        !read_uint32(error, filehandle, item_length, position)) {
-        return false;
-    }
-
-    return true;
-}
-
-
-char **dcm_parse_character_string(DcmError **error,
-                                  char *string, uint32_t *vm)
-{
-    int n_segments = 1;
-    for (int i = 0; string[i]; i++) {
-        if (string[i] == '\\') {
-            n_segments += 1;
-        }
-    }
-
-    char **parts = DCM_NEW_ARRAY(error, n_segments, char *);
-    if (parts == NULL) {
-        return NULL;
-    }
-
-    char *p = string;
-    for (int segment = 0; segment < n_segments; segment++) {
-        int i;
-        for (i = 0; p[i] && p[i] != '\\'; i++)
-            ;
-
-        parts[segment] = DCM_MALLOC(error, i + 1);
-        if (parts[segment] == NULL) {
-            dcm_free_string_array(parts, n_segments);
-            return NULL;
-        }
-
-        strncpy(parts[segment], p, i);
-        parts[segment][i] = '\0';
-
-        p += i + 1;
-    }
-
-    *vm = n_segments;
-
-    return parts;
-}
-
-
-static DcmElement *read_element_header(DcmError **error,
-                                       DcmFilehandle *filehandle,
-                                       uint32_t *length,
-                                       int64_t *position,
-                                       bool implicit)
-{
-    uint32_t tag;
-    if (!read_tag(error, filehandle, &tag, position)) {
-        return NULL;
-    }
-
-    DcmVR vr;
-    if (implicit) {
-        // this can be an ambiguious VR, eg. pixeldata is allowed in implicit
-	// mode and has to be disambiguated later from other tags
-        vr = dcm_vr_from_tag(tag);
-        if (vr == DCM_VR_ERROR) {
-            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                          "Reading of Data Element header failed",
-                          "Tag %08X not allowed in implicit mode", tag);
-        }
-
-        if (!read_uint32(error, filehandle, length, position)) {
-            return NULL;
-        }
-    } else {
-        // Value Representation
-        char vr_str[3];
-        if (!dcm_require(error, filehandle, vr_str, 2, position)) {
-            return NULL;
-        }
-        vr_str[2] = '\0';
-        vr = dcm_dict_vr_from_str(vr_str);
-
-        if (!dcm_is_valid_vr_for_tag(vr, tag)) {
-            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                          "Reading of Data Element header failed",
-                          "Tag %08X cannot have VR '%s'", tag, vr_str);
-            return NULL;
-        }
-
-        if (dcm_dict_vr_header_length(vr) == 2) {
-            // These VRs have a short length of only two bytes
-            uint16_t short_length;
-            if (!read_uint16(error, filehandle, &short_length, position)) {
-                return NULL;
-            }
-            *length = (uint32_t) short_length;
-        } else {
-            // Other VRs have two reserved bytes before length of four bytes
-            uint16_t reserved;
-            if (!read_uint16(error, filehandle, &reserved, position) ||
-                !read_uint32(error, filehandle, length, position)) {
-               return NULL;
-            }
-
-            if (reserved != 0x0000) {
-                dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                              "Reading of Data Element header failed",
-                              "Unexpected value for reserved bytes "
-                              "of Data Element %08X with VR '%s'.",
-                              tag, vr);
-                return NULL;
-            }
-        }
-    }
-
-    return dcm_element_create(error, tag, vr);
-}
-
-
-// fwd ref this
-static DcmElement *read_element(DcmError **error,
-                                DcmFilehandle *filehandle,
-                                int64_t *position,
-                                bool implicit);
-
-static bool read_element_sequence(DcmError **error,
-                                  DcmFilehandle *filehandle,
-                                  DcmSequence *sequence,
-                                  uint32_t length,
-                                  int64_t *position,
-                                  bool implicit)
-{
-    int index = 0;
-    int64_t seq_position = 0;
-    while (seq_position < length) {
-        dcm_log_debug("Read Item #%d.", index);
-        uint32_t item_tag;
-        uint32_t item_length;
-        if (!read_iheader(error, filehandle,
-                          &item_tag, &item_length, &seq_position)) {
-            return false;
-        }
-
-        if (item_tag == TAG_SQ_DELIM) {
-            dcm_log_debug("Stop reading Data Element. "
-                          "Encountered Sequence Delimination Tag.");
-            break;
-        }
-
-        if (item_tag != TAG_ITEM) {
-            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                          "Reading of Data Element failed",
-                          "Expected tag '%08X' instead of '%08X' "
-                          "for Item #%d",
-                          TAG_ITEM,
-                          item_tag,
-                          index);
-            return false;
-        }
-
-        if (length == 0xFFFFFFFF) {
-            dcm_log_debug("Item #%d has undefined length.", index);
-        } else {
-            dcm_log_debug("Item #%d has defined length %d.",
-                          index, item_length);
-        }
-
-        DcmDataSet *dataset = dcm_dataset_create(error);
-        if (dataset == NULL) {
-            return false;
-        }
-
-        int64_t item_position = 0;
-        while (item_position < item_length) {
-            // peek the next tag
-            if (!read_tag(error, filehandle, &item_tag, &item_position)) {
-                dcm_dataset_destroy(dataset);
-                return false;
-            }
-
-            if (item_tag == TAG_ITEM_DELIM) {
-                // step over the tag length
-                dcm_log_debug("Stop reading Item #%d. "
-                              "Encountered Item Delimination Tag.",
-                              index);
-                if (!dcm_seekcur(error, filehandle, 4, &item_position)) {
-                    dcm_dataset_destroy(dataset);
-                    return false;
-                }
-
-                break;
-            }
-
-            // back to start of element
-            if (!dcm_seekcur(error, filehandle, -4, &item_position)) {
-                dcm_dataset_destroy(dataset);
-                return false;
-            }
-
-            DcmElement *element = read_element(error, filehandle,
-                                               &item_position, implicit);
-            if (element == NULL) {
-                dcm_dataset_destroy(dataset);
-                return false;
-            }
-
-            if (!dcm_dataset_insert(error, dataset, element)) {
-                dcm_dataset_destroy(dataset);
-                dcm_element_destroy(element);
-                return false;
-            }
-        }
-
-        seq_position += item_position;
-
-        if (!dcm_sequence_append(error, sequence, dataset)) {
-            dcm_dataset_destroy(dataset);
-        }
-
-        index += 1;
-    }
-
-    *position += seq_position;
-
-    return true;
-}
-
-
-static bool read_element_body(DcmError **error,
-                              DcmElement *element,
-                              DcmFilehandle *filehandle,
-                              uint32_t length,
-                              int64_t *position,
-                              bool implicit)
-{
-    uint32_t tag = dcm_element_get_tag(element);
-    DcmVR vr = dcm_element_get_vr(element);
-    DcmVRClass klass = dcm_dict_vr_class(vr);
-    size_t size = dcm_dict_vr_size(vr);
-    char *value;
-
-    dcm_log_debug("Read Data Element body '%08X'", tag);
-
-    switch (klass) {
-        case DCM_CLASS_STRING_SINGLE:
-        case DCM_CLASS_STRING_MULTI:
-            value = DCM_MALLOC(error, length + 1);
-            if (value == NULL) {
-                return false;
-            }
-
-            if (!dcm_require(error, filehandle, value, length, position)) {
-                free(value);
-                return false;
-            }
-            value[length] = '\0';
-
-            if (length > 0) {
-                if (vr != DCM_VR_UI) {
-                    if (isspace(value[length - 1])) {
-                        value[length - 1] = '\0';
-                    }
-                }
-            }
-
-            if (!dcm_element_set_value_string(error, element, value, true)) {
-                free(value);
-                return false;
-            }
-
-            break;
-
-        case DCM_CLASS_NUMERIC:
-            if (length % size != 0) {
-                dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                              "Reading of Data Element failed",
-                              "Bad length for tag '%08X'",
-                              tag);
-                return false;
-            }
-            uint32_t vm = length / size;
-
-            char *values = DCM_MALLOC(error, length);
-            if (values == NULL) {
-                return false;
-            }
-
-            if (!dcm_require(error, filehandle, values, length, position)) {
-                free(values);
-                return false;
-            }
-
-            if (filehandle->byteswap) {
-                byteswap(values, length, size);
-            }
-
-            if( !dcm_element_set_value_numeric_multi(error,
-                                                     element,
-                                                     (int *) values,
-                                                     vm,
-                                                     true)) {
-                free(values);
-                return false;
-            }
-
-            break;
-
-        case DCM_CLASS_BINARY:
-            value = DCM_MALLOC(error, length);
-            if (value == NULL) {
-                return false;
-            }
-
-            if (!dcm_require(error, filehandle, value, length, position)) {
-                free(value);
-                return false;
-            }
-
-            if( !dcm_element_set_value_binary(error, element,
-                                              value, length, true)) {
-                free(value);
-                return false;
-            }
-
-            break;
-
-        case DCM_CLASS_SEQUENCE:
-            if (length == 0xFFFFFFFF) {
-                dcm_log_debug("Sequence of Data Element '%08X' "
-                              "has undefined length.",
-                              tag);
-            } else {
-                dcm_log_debug("Sequence of Data Element '%08X' "
-                              "has defined length %d.",
-                              tag, length);
-            }
-
-            DcmSequence *seq = dcm_sequence_create(error);
-            if (seq == NULL) {
-                return NULL;
-            }
-
-            int64_t seq_position = 0;
-            if (!read_element_sequence(error,
-                                       filehandle, seq, length,
-                                       &seq_position, implicit)) {
-                dcm_sequence_destroy(seq);
-                return false;
-            }
-            *position += seq_position;
-
-            if (!dcm_element_set_value_sequence(error, element, seq)) {
-                return false;
-            }
-
-            break;
-
-        default:
-            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                          "Reading of Data Element failed",
-                          "Data Element '%08X' has unexpected "
-                          "Value Representation", tag);
-            return false;
-    }
-
-    return true;
-}
-
-
-DcmElement *read_element(DcmError **error,
-                         DcmFilehandle *filehandle,
-                         int64_t *position,
-                         bool implicit)
-{
-    DcmElement *element;
-
-    uint32_t length;
-    element = read_element_header(error,
-                                  filehandle, &length, position, implicit);
-    if (element == NULL) {
-        return NULL;
-    }
-
-    if (!read_element_body(error, element, filehandle,
-                           length, position, implicit)) {
-        dcm_element_destroy(element);
-        return NULL;
-    }
-
-    return element;
 }
 
 
@@ -1382,21 +939,8 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
 /* The size of the buffer we use for reading smaller element values. This is 
  * large enough for most VRs.
  */
-#define INPUT_BUFFER_SIZE (10240)
+#define INPUT_BUFFER_SIZE (256)
 
-
-typedef struct _DcmParseState {
-    DcmError **error;
-    DcmFilehandle *filehandle;
-    DcmParse *parse;
-    void *client;
-
-    DcmDataSet *meta;
-    int64_t offset;
-    int64_t pixel_data_offset;
-    uint64_t *extended_offset_table;
-    bool byteswap;
-} DcmParseState;
 
 
 static bool parse_element_header(DcmParseState *state, 
@@ -1406,7 +950,7 @@ static bool parse_element_header(DcmParseState *state,
                                  uint32_t *length,
                                  int64_t *position)
 {
-    if (!read_tag(error, state->filehandle, tag, position)) {
+    if (!read_tag(error, state->handle, tag, position)) {
         return false;
     }
 
@@ -1471,18 +1015,32 @@ static bool parse_element_header(DcmParseState *state,
 
 
 static bool parse_element_sequence(DcmParseState *state, 
+                                   bool implicit,
+                                   uint32_t tag,
+                                   DcmVR vr,
                                    uint32_t seq_length,
-                                   int64_t *position,
-                                   bool implicit)
+                                   int64_t *position)
 {
+    if (state->parse->sequence_begin(error, state->client,
+                                     tag,
+                                     vr,
+                                     seq_length)) {
+        return false;
+    }
+
     int index = 0;
-    int64_t seq_position = 0;
-    while (seq_position < seq_length) {
+    while (*position < seq_length) {
         dcm_log_debug("Read Item #%d.", index);
         uint32_t item_tag;
         uint32_t item_length;
-        if (!read_tag(state->error, state->filehandle, &item_tag, position) ||
-            !read_uint32(state->error, state->filehandle, &item_length, position)) {
+        if (!read_tag(state->error, 
+                     state->filehandle, 
+                     &item_tag, 
+                     position) ||
+            !read_uint32(state->error, 
+                         state->filehandle, 
+                         &item_length, 
+                         position)) {
             return false;
         }
 
@@ -1510,23 +1068,29 @@ static bool parse_element_sequence(DcmParseState *state,
                           index, item_length);
         }
 
-        if (state.parse.dataset_start(state->error, state->client)) {
+        if (state->parse->dataset_start(state->error, state->client)) {
             return false;
         }
 
         int64_t item_position = 0;
         while (item_position < item_length) {
             // peek the next tag
-            if (!read_tag(state->error, state->filehandle, &item_tag, &item_position)) {
+            if (!read_tag(state->error, 
+                          state->filehandle, 
+                          &item_tag, 
+                          &item_position)) {
                 return false;
             }
 
             if (item_tag == TAG_ITEM_DELIM) {
-                // step over the tag length
                 dcm_log_debug("Stop reading Item #%d. "
                               "Encountered Item Delimination Tag.",
                               index);
-                if (!dcm_seekcur(state->error, state->filehandle, 4, &item_position)) {
+                // step over the tag length
+                if (!dcm_seekcur(state->error, 
+                                 state->filehandle, 
+                                 4, 
+                                 &item_position)) {
                     return false;
                 }
 
@@ -1534,33 +1098,32 @@ static bool parse_element_sequence(DcmParseState *state,
             }
 
             // back to start of element
-            if (!dcm_seekcur(state->error, state->filehandle, -4, &item_position)) {
+            if (!dcm_seekcur(state->error, 
+                             state->filehandle, 
+                             -4, 
+                             &item_position)) {
                 return false;
             }
 
-            DcmElement *element = parse_element(state, &item_position, implicit);
-            if (element == NULL) {
-                dcm_dataset_destroy(dataset);
-                return false;
-            }
-
-            if (!dcm_dataset_insert(error, dataset, element)) {
-                dcm_dataset_destroy(dataset);
-                dcm_element_destroy(element);
+            if (!parse_element(state, implicit, &item_position)) {
                 return false;
             }
         }
 
         seq_position += item_position;
 
-        if (!dcm_sequence_append(error, sequence, dataset)) {
-            dcm_dataset_destroy(dataset);
+        if (state->parse->dataset_end(state->error, state->client)) {
+            return false;
         }
 
         index += 1;
     }
 
     *position += seq_position;
+
+    if (state->parse->sequence_end(state->error, state->client)) {
+        return false;
+    }
 
     return true;
 }
@@ -1571,8 +1134,7 @@ static bool parse_element_body(DcmParseState *state,
                                uint32_t tag,
                                DcmVR vr,
                                uint32_t length,
-                               int64_t position,
-                               bool implicit)
+                               int64_t position)
 {
     DcmVRClass klass = dcm_dict_vr_class(vr);
     size_t size = dcm_dict_vr_size(vr);
@@ -1587,7 +1149,11 @@ static bool parse_element_body(DcmParseState *state,
     switch (klass) {
         case DCM_CLASS_STRING_SINGLE:
         case DCM_CLASS_STRING_MULTI:
+        case DCM_CLASS_NUMERIC:
+        case DCM_CLASS_BINARY:
             if (klass == DCM_CLASS_NUMERIC) {
+                // all numeric classes have a size
+                g_assert (size != 0);
                 if (length % size != 0) {
                     dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                                   "Reading of Data Element failed",
@@ -1597,6 +1163,7 @@ static bool parse_element_body(DcmParseState *state,
                 }
             }
 
+            // read to a static char buffer, if possible
             if (length + 1 >= INPUT_BUFFER_SIZE) {
                 value = value_free = DCM_MALLOC(state->error, length + 1);
                 if (value == NULL) {
@@ -1632,12 +1199,12 @@ static bool parse_element_body(DcmParseState *state,
                 }
             }
 
-            if (state.parse.element_create(error, 
-                                           state.client,
-                                           tag,
-                                           vr
-                                           value,
-                                           length)) {
+            if (state->parse->element_create(error, 
+                                             state->client,
+                                             tag,
+                                             vr,
+                                             value,
+                                             length)) {
                 if (value_free != NULL) {
                     free(value_free);
                 }
@@ -1661,26 +1228,16 @@ static bool parse_element_body(DcmParseState *state,
                               tag, length);
             }
 
-            if (state.parse.sequence_begin(error, 
-                                           state.client,
-                                           tag,
-                                           vr
-                                           length)) {
-                return false;
-            }
-
             int64_t seq_position = 0;
             if (!parse_element_sequence(state, 
+                                        implicit,
+                                        tag,
+                                        vr,
                                         length,
-                                        &seq_position, 
-                                        implicit)) {
+                                        &seq_position)) {
                 return false;
             }
             *position += seq_position;
-
-            if (state.parse.sequence_end(error, state.client)) {
-                return false;
-            }
 
             break;
 
@@ -1697,39 +1254,34 @@ static bool parse_element_body(DcmParseState *state,
 
 
 static bool parse_element(DcmParseState *state,
-                          int64_t *position,
-                          bool implicit)
+                          bool implicit,
+                          int64_t *position)
 {
     uint32_t tag;
     DcmVR vr;
     uint32_t length;
-    if (!parse_element_header(state, &tag, &vr, &length, &position) ||
-        !parse_element_body(state, tag, vr, length, &position, implicit)) {
+    if (!parse_element_header(state, implicit, &tag, &vr, &length, position) ||
+        !parse_element_body(state, implicit, tag, vr, length, position)) {
         return false;
     }
 
     return true;
 }
 
-/* parse a set of elements ending in EOF or the stop function.
+/* Top-level datasets don't have an enclosing length, and can broken by a
+ * stop function.
  */
-bool
-dcm_parse_dataset(DcmError **error, 
-	              DcmFilehandle *filehandle, 
-                  bool implicit,
-	              DcmParse *parse, 
-	              void *client)
+static bool
+parse_toplevel_dataset(DcmParseState *state,
+              bool implicit,
+              int64_t *position)
 {
-    DcmParseState state = { error, filehandle, parse, client };
-
-    if (state.parse.parse_begin(state.client, tag, vr, length, implicit) ||
-        state.parse.dataset_begin(state.client, tag, vr, length, implicit)) {
+    if (!state->parse->dataset_begin(state->error, state->client)) {
         return false;
     }
 
-    int64_t position = 0;
     for (;;) {
-        if (dcm_is_eof(state.filehandle)) {
+        if (dcm_is_eof(state->filehandle)) {
             dcm_log_info("Stop reading Data Set. Reached end of filehandle.");
             break;
         }
@@ -1737,7 +1289,8 @@ dcm_parse_dataset(DcmError **error,
         uint32_t tag;
         DcmVR vr;
         uint32_t length;
-        if (!parse_element_header(&state, &tag, &vr, &length, &position)) {
+        if (!parse_element_header(state, implicit, 
+            &tag, &vr, &length, position)) {
             return false;
         }
 
@@ -1747,17 +1300,16 @@ dcm_parse_dataset(DcmError **error,
             break;
         }
 
-        if (state.parse.stop(state.client, tag, vr, length, implicit)) {
+        if (state->parse->stop(state->client, implicit, tag, vr, length)) {
             break;
         }
 
-        if (!parse_element_body(&state, tag, vr, length, &position, implicit)) {
+        if (!parse_element_body(state, implicit, tag, vr, length, position)) {
             return false;
         }
     }
 
-    if (state.parse.dataset_end(state.client, tag, vr, length, implicit) ||
-        state.parse.parse_end(state.client, tag, vr, length, implicit)) {
+    if (!state->parse->dataset_end(state->error, state->client)) {
         return false;
     }
 
@@ -1765,4 +1317,24 @@ dcm_parse_dataset(DcmError **error,
 }
 
 
+/* Parse a dataset from a filehandle.
+ */
+bool
+dcm_parse_dataset(DcmError **error, 
+	              DcmIOHandle *handle,
+                  bool implicit,
+	              DcmParse *parse, 
+                  bool byteswap,
+	              void *client)
+{
+    DcmParseState state = { error, handle, parse, byteswap, client };
 
+    int64_t position = 0;
+    if (!state.parse->parse_begin(state.error, state.client) ||
+        !parse_toplevel_dataset(&state, implicit, &position) ||
+        !state.parse->parse_end(state.error, state.client)) {
+        return false;
+    }
+
+    return true;
+}

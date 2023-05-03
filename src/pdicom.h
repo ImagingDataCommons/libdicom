@@ -104,10 +104,10 @@ typedef struct _DcmParse {
                            uint32_t length);
 
     bool (*stop)(void *client, 
+	         bool implicit,
 		 uint32_t tag, 
 		 DcmVR vr, 
-		 uint32_t length,
-		 bool implicit);
+		 uint32_t length);
 } DcmParse;
 
 
