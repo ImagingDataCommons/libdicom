@@ -20,7 +20,7 @@
     if (!(CONDITION)) { \
         dcm_error_set((ERROR), DCM_ERROR_CODE_INVALID, \
             "Test fail", \
-	    "%s:%s (%d)" \
+            "%s:%s (%d)" \
             __FILE__, __FUNCTION__, __LINE__); \
         return RETURN_VALUE; \
     }
@@ -29,7 +29,7 @@
     if (!(CONDITION)) { \
         dcm_error_set((ERROR), DCM_ERROR_CODE_INVALID, \
             "Test fail", \
-	    "%s:%s (%d)" \
+            "%s:%s (%d)" \
             __FILE__, __FUNCTION__, __LINE__); \
         return; \
     }
@@ -76,21 +76,17 @@ char **dcm_parse_character_string(DcmError **error,
 #define DCM_SWITCH_NUMERIC(VR, OPERATION) \
     switch (VR) { \
         case DCM_VR_FL: OPERATION(float); break; \
-	case DCM_VR_FD: OPERATION(double); break; \
-	case DCM_VR_SL: OPERATION(int32_t); break; \
-	case DCM_VR_SS: OPERATION(int16_t); break; \
-	case DCM_VR_UL: OPERATION(uint32_t); break; \
-	case DCM_VR_US: OPERATION(uint16_t); break; \
-	case DCM_VR_SV: OPERATION(int64_t); break; \
-	case DCM_VR_UV: OPERATION(uint64_t); break; \
-	default: break; \
+        case DCM_VR_FD: OPERATION(double); break; \
+        case DCM_VR_SL: OPERATION(int32_t); break; \
+        case DCM_VR_SS: OPERATION(int16_t); break; \
+        case DCM_VR_UL: OPERATION(uint32_t); break; \
+        case DCM_VR_US: OPERATION(uint16_t); break; \
+        case DCM_VR_SV: OPERATION(int64_t); break; \
+        case DCM_VR_UV: OPERATION(uint64_t); break; \
+        default: break; \
     }
 
-
 typedef struct _DcmParse {
-    bool (*parse_begin)(DcmError *, void *client);
-    bool (*parse_end)(DcmError *, void *client);
-
     bool (*dataset_begin)(DcmError *, void *client);
     bool (*dataset_end)(DcmError *, void *client);
 
@@ -99,17 +95,22 @@ typedef struct _DcmParse {
 
     bool (*element_create)(DcmError *, void *client, 
                            uint32_t tag,
-			   DcmVR vr,
-			   char *value,
+                           DcmVR vr,
+                           char *value,
                            uint32_t length);
 
     bool (*stop)(void *client, 
-	         bool implicit,
-		 uint32_t tag, 
-		 DcmVR vr, 
-		 uint32_t length);
+                 bool implicit,
+                 uint32_t tag, 
+                 DcmVR vr, 
+                 uint32_t length);
 } DcmParse;
 
-
-
+DCM_EXTERN 
+bool dcm_parse_dataset(DcmError **error, 
+                       DcmIOHandle *handle,
+                       bool implicit,
+                       DcmParse *parse, 
+                       bool byteswap,
+                       void *client);
 
