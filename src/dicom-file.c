@@ -47,8 +47,7 @@ struct PixelDescription {
 
 
 struct _DcmFilehandle {
-    const DcmIO *io;
-    void *fp;
+    DcmIO *io;
     DcmDataSet *meta;
     int64_t offset;
     char *transfer_syntax_uid;
@@ -73,9 +72,7 @@ static bool is_big_endian(void)
 }
 
 
-DcmFilehandle *dcm_filehandle_create(DcmError **error,
-                                     const DcmIO *io,
-                                     void *client)
+DcmFilehandle *dcm_filehandle_create(DcmError **error, DcmIO *io)
 {
     DcmFilehandle *filehandle = DCM_NEW(error, DcmFilehandle);
     if (filehandle == NULL) {
@@ -83,7 +80,6 @@ DcmFilehandle *dcm_filehandle_create(DcmError **error,
     }
 
     filehandle->io = io;
-    filehandle->fp = NULL;
     filehandle->meta = NULL;
     filehandle->offset = 0;
     filehandle->transfer_syntax_uid = NULL;
@@ -91,13 +87,31 @@ DcmFilehandle *dcm_filehandle_create(DcmError **error,
     filehandle->extended_offset_table = NULL;
     filehandle->byteswap = is_big_endian();
 
-    filehandle->fp = filehandle->io->open(error, client);
-    if (filehandle->fp == NULL) {
-        dcm_filehandle_destroy(filehandle);
+    return filehandle;
+}
+
+
+DcmFilehandle *dcm_filehandle_create_from_file(DcmError **error, 
+                                               const char *filepath)
+{
+    DcmIO *io = dcm_io_create_from_file(error, filepath);
+    if (io == NULL) {
         return NULL;
     }
 
-    return filehandle;
+    return dcm_filehandle_create(error, io);
+}
+
+
+DcmFilehandle *dcm_filehandle_create_from_memory(DcmError **error,
+                                                 char *buffer, int64_t length)
+{
+    DcmIO *io = dcm_io_create_from_memory(error, buffer, length);
+    if (io == NULL) {
+        return NULL;
+    }
+
+    return dcm_filehandle_create(error, io);
 }
 
 
@@ -108,11 +122,7 @@ void dcm_filehandle_destroy(DcmFilehandle *filehandle)
             free(filehandle->transfer_syntax_uid);
         }
 
-        if (filehandle->fp) {
-            (void)filehandle->io->close(NULL, filehandle->fp);
-            filehandle->fp = NULL;
-        }
-
+        (void) dcm_io_close(NULL, filehandle->io);
         free(filehandle);
     }
 }
@@ -121,8 +131,7 @@ void dcm_filehandle_destroy(DcmFilehandle *filehandle)
 static int64_t dcm_read(DcmError **error, DcmFilehandle *filehandle,
     char *buffer, int64_t length, int64_t *position)
 {
-    int64_t bytes_read = filehandle->io->read(error,
-                                              filehandle->fp, buffer, length);
+    int64_t bytes_read = dcm_io_read(error, filehandle->io, buffer, length);
     if (bytes_read < 0) {
         return bytes_read;
     }
@@ -160,15 +169,14 @@ static bool dcm_require(DcmError **error, DcmFilehandle *filehandle,
 static bool dcm_seekset(DcmError **error,
                         DcmFilehandle *filehandle, int64_t offset)
 {
-    return filehandle->io->seek(error, filehandle->fp, offset, SEEK_SET) >= 0;
+    return dcm_io_seek(error, filehandle->io, offset, SEEK_SET) >= 0;
 }
 
 
 static bool dcm_seekcur(DcmError **error, DcmFilehandle *filehandle,
     int64_t offset, int64_t *position)
 {
-    int64_t new_offset = filehandle->io->seek(error,
-                                              filehandle->fp, offset, SEEK_CUR);
+    int64_t new_offset = dcm_io_seek(error, filehandle->io, offset, SEEK_CUR);
     if (new_offset < 0) {
         return false;
     }
@@ -182,10 +190,12 @@ static bool dcm_seekcur(DcmError **error, DcmFilehandle *filehandle,
 static bool dcm_offset(DcmError **error,
                        DcmFilehandle *filehandle, int64_t *offset)
 {
-    *offset = filehandle->io->seek(error, filehandle->fp, 0, SEEK_CUR);
-    if (*offset < 0) {
+    int64_t new_offset = dcm_io_seek(error, filehandle->io, 0, SEEK_CUR);
+    if (new_offset < 0) {
         return false;
     }
+
+    *offset = new_offset;
 
     return true;
 }
@@ -197,7 +207,7 @@ static bool dcm_is_eof(DcmFilehandle *filehandle)
     bool eof = true;
 
     char buffer[1];
-    int64_t bytes_read = filehandle->io->read(NULL, filehandle->fp, buffer, 1);
+    int64_t bytes_read = dcm_io_read(NULL, filehandle->io, buffer, 1);
     if (bytes_read > 0) {
         eof = false;
         (void) dcm_seekcur(NULL, filehandle, -1, &position);
@@ -412,10 +422,10 @@ static DcmElement *read_element_header(DcmError **error,
 
 
 // fwd ref this
-static DcmElement *parse_element(DcmError **error,
-                                 DcmFilehandle *filehandle,
-                                 int64_t *position,
-                                 bool implicit);
+static DcmElement *read_element(DcmError **error,
+                                DcmFilehandle *filehandle,
+                                int64_t *position,
+                                bool implicit);
 
 static bool read_element_sequence(DcmError **error,
                                   DcmFilehandle *filehandle,
@@ -430,8 +440,8 @@ static bool read_element_sequence(DcmError **error,
         dcm_log_debug("Read Item #%d.", index);
         uint32_t item_tag;
         uint32_t item_length;
-        if (!read_tag(state->error, state->filehandle, &item_tag, position) ||
-            !read_uint32(state->error, state->filehandle, &item_length, position)) {
+        if (!read_iheader(error, filehandle,
+                          &item_tag, &item_length, &seq_position)) {
             return false;
         }
 

@@ -1421,78 +1421,178 @@ void dcm_bot_destroy(DcmBOT *bot);
  * Part 10 File
  */
 
-typedeff struct _DcmIO DcmIO;
+typedef struct _DcmIOMethods DcmIOMethods;
 
 /**
  * Something we can read from.
  */
-typedef struct _DcmIOHandle {
-        DcmIO *io;
-        // more private fields follow
-} DcmIOHandle;
-
-/**
- * A set of IO functions, see dcm_io_handle_create().
- */
 typedef struct _DcmIO {
-    /** Open an IO handle */
-    DcmIOHandle *(*open)(DcmError **error, void *client);
-
-    /** Close an IO handle */
-    int (*close)(DcmError **error, DcmIOHandle *handle);
-
-    /** Read from an IO handle, semantics as POSIX read() */
-    int64_t (*read)(DcmError **error, 
-                    DcmIOHandle *handle, 
-                    char *buffer, 
-                    int64_t length);
-
-    /** Seek an IO handle, semantics as POSIX seek() */
-    int64_t (*seek)(DcmError **error, 
-                    DcmIOHandle *handle, 
-                    int64_t offset, 
-                    int whence);
+        const DcmIOMethods *methods;
+        // more private fields follow
 } DcmIO;
 
 /**
- * Create a handle that reads using a set of DcmIO functions.
- *
- * :param error: Pointer to error object
- * :param io: Set of read functions for this DcmFilehandle
- * :param client: Client data for read functions
- *
- * :return: handle
+ * A set of IO methods, see dcm_io_create().
  */
-DCM_EXTERN
-DcmIOhandle *dcm_io_handle_create(DcmError **error,
-                                  const DcmIO *io,
-                                  void *client);
+typedef struct _DcmIOMethods {
+    /** Open an IO object */
+    DcmIO *(*open)(DcmError **error, void *client);
+
+    /** Close an IO object */
+    bool (*close)(DcmError **error, DcmIO *io);
+
+    /** Read from an IO object, semantics as POSIX read() */
+    int64_t (*read)(DcmError **error, 
+                    DcmIO *io, 
+                    char *buffer, 
+                    int64_t length);
+
+    /** Seek an IO object, semantics as POSIX seek() */
+    int64_t (*seek)(DcmError **error, 
+                    DcmIO *io, 
+                    int64_t offset, 
+                    int whence);
+} DcmIOMethods;
 
 /**
- * Open a file on disk as a DcmIOhandle.
+ * Create an IO object using a set of IO methods.
  *
- * :param error: Pointer to error object
+ * :param error: Error structure pointer
+ * :param io: Set of read methods
+ * :param client: Client data for read methods
+ *
+ * :return: IO object
+ */
+DCM_EXTERN
+DcmIO *dcm_io_create(DcmError **error,
+                     const DcmIOMethods *methods,
+                     void *client);
+
+/**
+ * Open a file on disk for IO.
+ *
+ * :param error: Error structure pointer
  * :param filename: Path to the file on disk
  *
- * :return: handle
+ * :return: IO object
  */
 DCM_EXTERN
-DcmIOHandle *dcm_io_handle_create_from_file(DcmError **error,
-                                            const char *filename);
+DcmIO *dcm_io_create_from_file(DcmError **error,
+                               const char *filename);
 
 /**
- * Open an area of memory as a DcmIOhandle.
+ * Open an area of memory for IO.
  *
- * :param error: Pointer to error object
+ * :param error: Error structure pointer
  * :param buffer: Pointer to memory area
  * :param length: Length of memory area in bytes
  *
- * :return: handle
+ * :return: IO object
  */
 DCM_EXTERN
-DcmIOHandle *dcm_io_handle_create_from_memory(DcmError **error,
-                                              char *buffer,
-                                              int64_t length);
+DcmIO *dcm_io_create_from_memory(DcmError **error,
+                                 char *buffer,
+                                 int64_t length);
+
+/**
+ * Close an IO object.
+ *
+ * :param error: Error structure pointer
+ * :param io: Pointer to IO object
+ *
+ * :return: true on success
+ */
+DCM_EXTERN
+bool dcm_io_close(DcmError **error, DcmIO *io);
+
+/**
+ * Read from an IO object.
+ *
+ * Read up to length bytes from the IO object. Returns the number of bytes
+ * read, or -1 for an error. A return of 0 indicates end of file.
+ *
+ * :param error: Pointer to error object
+ * :param io: Pointer to IO object
+ * :param buffer: Memory area to read to
+ * :param length: Size of memory area
+ *
+ * :return: Number of bytes read
+ */
+DCM_EXTERN
+int64_t dcm_io_read(DcmError **error,
+                    DcmIO *io,
+                    char *buffer,
+                    int64_t length);
+
+/**
+ * Seek an IO object.
+ *
+ * Set whence to SEEK_CUR to seek relative to the current file position,
+ * SEEK_END to seek relative to the end of the file, or SEEK_SET to seek
+ * relative to the start. 
+ *
+ * Returns the new absolute read position, or -1 for IO error.
+ *
+ * :param error: Error structure pointer
+ * :param io: Pointer to IO object
+ * :param offset: Seek offset
+ * :param whence: Seek mode
+ *
+ * :return: New read position
+ */
+DCM_EXTERN
+int64_t dcm_io_seek(DcmError **error, 
+                    DcmIO *io, 
+                    int64_t offset, 
+                    int whence);
+
+/**
+ * Create a representatiopn of a DICOM File using an IO object.
+ *
+ * The File object tracks information like the transfer syntax and the byte
+ * ordering.
+ *
+ * :param error: Error structure pointer
+ * :param io: IO object to read from
+ *
+ * :return: filehandle
+ */
+DCM_EXTERN
+DcmFilehandle *dcm_filehandle_create(DcmError **error, DcmIO *io);
+
+/**
+ * Open a file on disk as a DcmFilehandle.
+ *
+ * :param error: Error structure pointer
+ * :param filepath: Path to the file on disk
+ *
+ * :return: filehandle
+ */
+DCM_EXTERN
+DcmFilehandle *dcm_filehandle_create_from_file(DcmError **error,
+                                               const char *filepath);
+
+
+/**
+ * Open an area of memory as a DcmFilehandle.
+ *
+ * :param error: Error structure pointer
+ * :param buffer: Pointer to memory area
+ * :param length: Length of memory area in bytes
+ *
+ * :return: filehandle
+ */
+DCM_EXTERN
+DcmFilehandle *dcm_filehandle_create_from_memory(DcmError **error,
+                                                 char *buffer, int64_t length);
+
+/**
+ * Destroy a Filehandle.
+ *
+ * :param filehandle: File
+ */
+DCM_EXTERN
+void dcm_filehandle_destroy(DcmFilehandle *filehandle);
 
 /**
  * Read File Meta Information from a File.
@@ -1573,13 +1673,5 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
                                     DcmDataSet *metadata,
                                     DcmBOT *bot,
                                     uint32_t index);
-
-/**
- * Destroy a File.
- *
- * :param filehandle: File
- */
-DCM_EXTERN
-void dcm_filehandle_destroy(DcmFilehandle *filehandle);
 
 #endif

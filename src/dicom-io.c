@@ -38,7 +38,7 @@
 #define BUFFER_SIZE (4096)
 
 typedef struct _DcmIOFile {
-    DcmIO *io;
+    DcmIOMethods *methods;
 
     // private fields
     int fd;
@@ -49,10 +49,9 @@ typedef struct _DcmIOFile {
 } DcmIOFile;
 
 
-static int dcm_io_close_file(DcmError **error, DcmIOHandle *handle)
+static bool dcm_io_close_file(DcmError **error, DcmIO *io)
 {
-    DcmIOFile *file = (DcmIOFile *) handle;
-
+    DcmIOFile *file = (DcmIOFile *) io;
     int close_errno = 0;
 
     if (file->fd != -1) {
@@ -73,11 +72,11 @@ static int dcm_io_close_file(DcmError **error, DcmIOHandle *handle)
     free(file->filename);
     free(file);
 
-    return close_errno;
+    return close_errno == 0;
 }
 
 
-static DcmIOHandle *dcm_io_open_file(DcmError **error, void *client)
+static DcmIO *dcm_io_open_file(DcmError **error, void *client)
 {
     DcmIOFile *file = DCM_NEW(error, DcmIOFile);
     if (file == NULL) {
@@ -90,7 +89,7 @@ static DcmIOHandle *dcm_io_open_file(DcmError **error, void *client)
     const char *filename = (const char *) client;
     file->filename = dcm_strdup(error, filename);
     if (file->filename == NULL) {
-        dcm_io_close_file(error, file);
+        dcm_io_close_file(error, (DcmIO *)file);
         return NULL;
     }
 
@@ -121,11 +120,11 @@ static DcmIOHandle *dcm_io_open_file(DcmError **error, void *client)
         dcm_error_set(error, DCM_ERROR_CODE_IO,
             "Unable to open filehandle",
             "Unable to open %s - %s", file->filename, strerror(open_errno));
-        dcm_io_close_file(error, file);
+        dcm_io_close_file(error, (DcmIO *)file);
         return NULL;
     }
 
-    return (DcmIOHandle *)file;
+    return (DcmIO *)file;
 }
 
 
@@ -173,10 +172,10 @@ static int64_t refill(DcmError **error, DcmIOFile *file)
 }
 
 
-static int64_t dcm_io_read_file(DcmError **error, DcmIOHandle *handle,
+static int64_t dcm_io_read_file(DcmError **error, DcmIO *io,
     char *buffer, int64_t length)
 {
-    DcmIOFile *file = (DcmIOFile *) handle;
+    DcmIOFile *file = (DcmIOFile *) io;
     int64_t bytes_read = 0;
 
     while (length > 0) {
@@ -211,10 +210,10 @@ static int64_t dcm_io_read_file(DcmError **error, DcmIOHandle *handle,
 }
 
 
-static int64_t dcm_io_seek_file(DcmError **error, DcmIOHandle *handle,
+static int64_t dcm_io_seek_file(DcmError **error, DcmIO *io,
     int64_t offset, int whence)
 {
-    DcmIOFile *file = (DcmIOFile *) handle;
+    DcmIOFile *file = (DcmIOFile *) io;
 
     /* We've read ahead by some number of buffered bytes, so first undo that,
      * then do the seek from the true position.
@@ -257,36 +256,35 @@ static int64_t dcm_io_seek_file(DcmError **error, DcmIOHandle *handle,
 }
 
 
-DcmIOHandle *dcm_io_handle_create(DcmError **error,
-                                  const DcmIO *io,
-                                  void *client)
+DcmIO *dcm_io_create(DcmError **error,
+                     const DcmIOMethods *methods,
+                     void *client)
 {
-    DcmIOHandle *handle = io->open(error, client);
-    if (handle == NULL) {
+    DcmIO *io = methods->open(error, client);
+    if (io == NULL) {
         return NULL;
     }
-    handle->io = io;
+    io->methods = methods;
 
-    return handle;
+    return io;
 }
 
 
-DcmFilehandle *dcm_io_handle_create_from_file(DcmError **error,
-                                              const char *filename)
+DcmIO *dcm_io_create_from_file(DcmError **error, const char *filename)
 {
-    static DcmIO io = {
+    static DcmIOMethods methods = {
         dcm_io_open_file,
         dcm_io_close_file,
         dcm_io_read_file,
         dcm_io_seek_file,
     };
 
-    return dcm_io_handle_create(error, &io, (void *) filename);
+    return dcm_io_create(error, &methods, (void *) filename);
 }
 
 
 typedef struct _DcmIOMemory {
-    DcmIO *io;
+    DcmIOMethods *methods;
 
     // private fields
     char *buffer;
@@ -295,18 +293,18 @@ typedef struct _DcmIOMemory {
 } DcmIOMemory;
 
 
-static int dcm_io_close_memory(DcmError **error, DcmIOHandle *handle)
+static bool dcm_io_close_memory(DcmError **error, DcmIO *io)
 {
-    DcmIOMemory *memory = (DcmIOMemory *) handle;
+    DcmIOMemory *memory = (DcmIOMemory *) io;
 
     USED(error);
     free(memory);
 
-    return 0;
+    return true;
 }
 
 
-static DcmIOHandle *dcm_io_open_memory(DcmError **error, void *client)
+static DcmIO *dcm_io_open_memory(DcmError **error, void *client)
 {
     DcmIOMemory *params = (DcmIOMemory *)client;
 
@@ -317,14 +315,14 @@ static DcmIOHandle *dcm_io_open_memory(DcmError **error, void *client)
     memory->buffer = params->buffer;
     memory->length = params->length;
 
-    return (DcmIOHandle *) memory;
+    return (DcmIO *) memory;
 }
 
 
-static int64_t dcm_io_read_memory(DcmError **error, DcmIOHandle *handle,
+static int64_t dcm_io_read_memory(DcmError **error, DcmIO *io,
     char *buffer, int64_t length)
 {
-    DcmIOMemory *memory = (DcmIOMemory *) handle;
+    DcmIOMemory *memory = (DcmIOMemory *) io;
 
     USED(error);
 
@@ -339,10 +337,10 @@ static int64_t dcm_io_read_memory(DcmError **error, DcmIOHandle *handle,
 }
 
 
-static int64_t dcm_io_seek_memory(DcmError **error, DcmIOHandle *handle
+static int64_t dcm_io_seek_memory(DcmError **error, DcmIO *io,
     int64_t offset, int whence)
 {
-    DcmIOMemory *memory = (DcmIOMemory *) handle;
+    DcmIOMemory *memory = (DcmIOMemory *) io;
 
     int64_t new_offset;
 
@@ -373,10 +371,10 @@ static int64_t dcm_io_seek_memory(DcmError **error, DcmIOHandle *handle
 }
 
 
-DcmIOhandle *dcm_io_handle_create_from_memory(DcmError **error,
-                                              char *buffer, int64_t length)
+DcmIO *dcm_io_create_from_memory(DcmError **error,
+                                 char *buffer, int64_t length)
 {
-    static DcmIO io = {
+    static DcmIOMethods methods = {
         dcm_io_open_memory,
         dcm_io_close_memory,
         dcm_io_read_memory,
@@ -384,10 +382,36 @@ DcmIOhandle *dcm_io_handle_create_from_memory(DcmError **error,
     };
 
     DcmIOMemory memory = {
+        &methods,
         buffer,
         length,
         0
     };
 
-    return dcm_io_handle_create(error, &io, &memory);
+    return dcm_io_create(error, &methods, &memory);
 }
+
+
+bool dcm_io_close(DcmError **error, DcmIO *io)
+{
+    return io->methods->close(error, io);
+}
+
+
+int64_t dcm_io_read(DcmError **error,
+                    DcmIO *io,
+                    char *buffer,
+                    int64_t length)
+{
+    return io->methods->read(error, io, buffer, length);
+}
+
+
+int64_t dcm_io_seek(DcmError **error, 
+                    DcmIO *io, 
+                    int64_t offset, 
+                    int whence)
+{
+    return io->methods->seek(error, io, offset, whence);
+}
+

@@ -4,7 +4,7 @@
 
 - split parser from AST builder
 
-- add get_vr_max_size() and use a static buffer to read value when possible
+- move implicit into parser state?
 
 # bot support
 

@@ -108,9 +108,9 @@ typedef struct _DcmParse {
 
 DCM_EXTERN 
 bool dcm_parse_dataset(DcmError **error, 
-                       DcmIOHandle *handle,
+                       DcmIO *io,
                        bool implicit,
-                       DcmParse *parse, 
+                       const DcmParse *parse, 
                        bool byteswap,
                        void *client);
 
