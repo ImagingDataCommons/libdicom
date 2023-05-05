@@ -87,13 +87,13 @@ char **dcm_parse_character_string(DcmError **error,
     }
 
 typedef struct _DcmParse {
-    bool (*dataset_begin)(DcmError *, void *client);
-    bool (*dataset_end)(DcmError *, void *client);
+    bool (*dataset_begin)(DcmError **, void *client);
+    bool (*dataset_end)(DcmError **, void *client);
 
-    bool (*sequence_begin)(DcmError *, void *client);
-    bool (*sequence_end)(DcmError *, void *client);
+    bool (*sequence_begin)(DcmError **, void *client);
+    bool (*sequence_end)(DcmError **, void *client);
 
-    bool (*element_create)(DcmError *, void *client, 
+    bool (*element_create)(DcmError **, void *client, 
                            uint32_t tag,
                            DcmVR vr,
                            char *value,
@@ -114,3 +114,10 @@ bool dcm_parse_dataset(DcmError **error,
                        bool byteswap,
                        void *client);
 
+DCM_EXTERN 
+bool dcm_parse_group(DcmError **error, 
+                     DcmIO *io,
+                     bool implicit,
+                     const DcmParse *parse, 
+                     bool byteswap,
+                     void *client);

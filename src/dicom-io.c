@@ -89,7 +89,7 @@ static DcmIO *dcm_io_open_file(DcmError **error, void *client)
     const char *filename = (const char *) client;
     file->filename = dcm_strdup(error, filename);
     if (file->filename == NULL) {
-        dcm_io_close_file(error, (DcmIO *)file);
+        (void) dcm_io_close_file(error, (DcmIO *)file);
         return NULL;
     }
 
@@ -120,7 +120,7 @@ static DcmIO *dcm_io_open_file(DcmError **error, void *client)
         dcm_error_set(error, DCM_ERROR_CODE_IO,
             "Unable to open filehandle",
             "Unable to open %s - %s", file->filename, strerror(open_errno));
-        dcm_io_close_file(error, (DcmIO *)file);
+        (void) dcm_io_close_file(error, (DcmIO *)file);
         return NULL;
     }
 

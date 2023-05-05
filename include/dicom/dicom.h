@@ -841,6 +841,23 @@ bool dcm_element_set_value_binary(DcmError **error,
                                   uint32_t length,
                                   bool steal);
 
+/* Set a value for an Element from a generic byte buffer. The byte buffer must 
+ * have been correctly formatted for the VR of this Element.
+ *
+ * :param error: Pointer to error object
+ * :param element: Pointer to Data Element
+ * :param value: Pointer to value
+ * :param length: Length in bytes of the value
+ * :param steal: if true, ownership of the value passes to element
+ *
+ * :return: true on success
+ */
+bool dcm_element_set_value(DcmError **error,                                   
+                           DcmElement *element,
+                           char *value,
+                           uint32_t length,
+                           bool steal);
+
 /**
  * Get a sequence value from a Data Element.
  *

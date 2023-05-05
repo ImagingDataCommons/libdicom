@@ -153,6 +153,7 @@ library_sources = [
   'src/dicom-data.c',
   'src/dicom-dict.c',
   'src/dicom-file.c',
+  'src/dicom-parse.c',
 ]
 libdicom = library(
   'dicom',

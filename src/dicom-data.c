@@ -883,6 +883,64 @@ bool dcm_element_set_value_binary(DcmError **error,
 }
 
 
+/* Set a value from a generic byte buffer. The byte buffer must have been
+ * correctly formatted.
+ */
+bool dcm_element_set_value(DcmError **error,                                   
+                           DcmElement *element,
+                           char *value,
+                           uint32_t length,
+                           bool steal)
+{
+    switch (dcm_dict_vr_class(element->vr)) 
+    {
+        case DCM_CLASS_STRING_SINGLE:
+        case DCM_CLASS_STRING_MULTI:
+            if (!dcm_element_set_value_string(error, element, value, steal)) {
+                return false;
+            }
+            break;
+
+        case DCM_CLASS_NUMERIC:
+            size_t size = dcm_dict_vr_size(element->vr);
+            if (length % size != 0) {
+                dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                              "Reading of Data Element failed",
+                              "Bad byte length for numeric type");
+                return false;
+            }
+            if (!dcm_element_set_value_numeric_multi(error,
+                                                     element,
+                                                     (int *) value,
+                                                     length / size,
+                                                     steal)) {
+                return false;
+            }
+            break;
+
+        case DCM_CLASS_BINARY:
+            if (!dcm_element_set_value_binary(error, 
+                                              element,
+                                              value, 
+                                              length, 
+                                              steal)) {
+                return false;
+            }
+
+            break;
+
+        case DCM_CLASS_SEQUENCE:
+        default:
+            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                          "Reading of Data Element failed",
+                          "Data Element '%08X' has unexpected "
+                          "Value Representation", element->tag);
+            return false;
+    }
+
+    return true;
+}
+
 // Sequence Data Element
 
 static bool element_check_sequence(DcmError **error,
@@ -1142,7 +1200,7 @@ void dcm_element_print(const DcmElement *element, int indentation)
                dcm_dict_str_from_vr(element->vr));
     } else {
         // private tag, or unknown public tag
-	// in any case, we can't display the keyword
+        // in any case, we can't display the keyword
         printf("%*.*s (%04X,%04X) | %s",
                num_indent,
                num_indent,

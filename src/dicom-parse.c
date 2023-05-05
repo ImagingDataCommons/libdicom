@@ -42,7 +42,7 @@
 typedef struct _DcmParseState {
     DcmError **error;
     DcmIO *io;
-    DcmParse *parse;
+    const DcmParse *parse;
     bool byteswap;
     void *client;
 
@@ -76,7 +76,7 @@ static bool dcm_require(DcmParseState *state,
         if (bytes_read < 0) {
             return false;
         } else if (bytes_read == 0) {
-            dcm_error_set(error, DCM_ERROR_CODE_IO,
+            dcm_error_set(state->error, DCM_ERROR_CODE_IO,
                 "End of filehandle",
                 "Needed %zd bytes beyond end of filehandle", length);
             return false;
@@ -220,6 +220,13 @@ static bool read_tag(DcmParseState *state, uint32_t *tag, int64_t *position)
 }
 
 
+/* This is used recursively.
+ */
+static bool parse_element(DcmParseState *state,
+                          bool implicit,
+                          int64_t *position);
+
+
 static bool parse_element_header(DcmParseState *state, 
                                  bool implicit,
                                  uint32_t *tag,
@@ -261,7 +268,7 @@ static bool parse_element_header(DcmParseState *state,
             return false;
         }
 
-        if (dcm_dict_vr_header_length(vr) == 2) {
+        if (dcm_dict_vr_header_length(*vr) == 2) {
             // These VRs have a short length of only two bytes
             uint16_t short_length;
             if (!read_uint16(state, &short_length, position)) {
@@ -293,15 +300,11 @@ static bool parse_element_header(DcmParseState *state,
 
 static bool parse_element_sequence(DcmParseState *state, 
                                    bool implicit,
-                                   uint32_t tag,
-                                   DcmVR vr,
                                    uint32_t seq_length,
                                    int64_t *position)
 {
-    if (state->parse->sequence_begin(error, state->client,
-                                     tag,
-                                     vr,
-                                     seq_length)) {
+    if (state->parse->sequence_begin &&
+        !state->parse->sequence_begin(state->error, state->client)) {
         return false;
     }
 
@@ -339,7 +342,8 @@ static bool parse_element_sequence(DcmParseState *state,
                           index, item_length);
         }
 
-        if (state->parse->dataset_start(state->error, state->client)) {
+        if (state->parse->dataset_begin &&
+            !state->parse->dataset_begin(state->error, state->client)) {
             return false;
         }
 
@@ -372,18 +376,18 @@ static bool parse_element_sequence(DcmParseState *state,
             }
         }
 
-        seq_position += item_position;
+        *position += item_position;
 
-        if (state->parse->dataset_end(state->error, state->client)) {
+        if (state->parse->dataset_end &&
+            !state->parse->dataset_end(state->error, state->client)) {
             return false;
         }
 
         index += 1;
     }
 
-    *position += seq_position;
-
-    if (state->parse->sequence_end(state->error, state->client)) {
+    if (state->parse->sequence_end &&
+        !state->parse->sequence_end(state->error, state->client)) {
         return false;
     }
 
@@ -396,11 +400,10 @@ static bool parse_element_body(DcmParseState *state,
                                uint32_t tag,
                                DcmVR vr,
                                uint32_t length,
-                               int64_t position)
+                               int64_t *position)
 {
     DcmVRClass klass = dcm_dict_vr_class(vr);
     size_t size = dcm_dict_vr_size(vr);
-    uint32_t vm = length / size;
     char *value;
 
     char *value_free = NULL;
@@ -415,9 +418,8 @@ static bool parse_element_body(DcmParseState *state,
         case DCM_CLASS_BINARY:
             if (klass == DCM_CLASS_NUMERIC) {
                 // all numeric classes have a size
-                g_assert (size != 0);
                 if (length % size != 0) {
-                    dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                    dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
                                   "Reading of Data Element failed",
                                   "Bad length for tag '%08X'",
                                   tag);
@@ -452,17 +454,18 @@ static bool parse_element_body(DcmParseState *state,
             }
 
             if (klass == DCM_CLASS_NUMERIC) {
-                if (filehandle->byteswap) {
+                if (state->byteswap) {
                     byteswap(value, length, size);
                 }
             }
 
-            if (state->parse->element_create(error, 
-                                             state->client,
-                                             tag,
-                                             vr,
-                                             value,
-                                             length)) {
+            if (state->parse->element_create &&
+                !state->parse->element_create(state->error, 
+                                              state->client,
+                                              tag,
+                                              vr,
+                                              value,
+                                              length)) {
                 if (value_free != NULL) {
                     free(value_free);
                 }
@@ -489,8 +492,6 @@ static bool parse_element_body(DcmParseState *state,
             int64_t seq_position = 0;
             if (!parse_element_sequence(state, 
                                         implicit,
-                                        tag,
-                                        vr,
                                         length,
                                         &seq_position)) {
                 return false;
@@ -500,7 +501,7 @@ static bool parse_element_body(DcmParseState *state,
             break;
 
         default:
-            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+            dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
                           "Reading of Data Element failed",
                           "Data Element '%08X' has unexpected "
                           "Value Representation", tag);
@@ -533,12 +534,13 @@ static bool parse_toplevel_dataset(DcmParseState *state,
                                    bool implicit,
                                    int64_t *position)
 {
-    if (!state->parse->dataset_begin(state->error, state->client)) {
+    if (state->parse->dataset_begin &&
+        !state->parse->dataset_begin(state->error, state->client)) {
         return false;
     }
 
     for (;;) {
-        if (dcm_is_eof(state->filehandle)) {
+        if (dcm_is_eof(state)) {
             dcm_log_info("Stop reading Data Set. Reached end of filehandle.");
             break;
         }
@@ -557,7 +559,8 @@ static bool parse_toplevel_dataset(DcmParseState *state,
             break;
         }
 
-        if (state->parse->stop(state->client, implicit, tag, vr, length)) {
+        if (state->parse->stop &&
+            state->parse->stop(state->client, implicit, tag, vr, length)) {
             break;
         }
 
@@ -566,7 +569,8 @@ static bool parse_toplevel_dataset(DcmParseState *state,
         }
     }
 
-    if (!state->parse->dataset_end(state->error, state->client)) {
+    if (state->parse->dataset_end &&
+        !state->parse->dataset_end(state->error, state->client)) {
         return false;
     }
 
@@ -583,7 +587,13 @@ bool dcm_parse_dataset(DcmError **error,
                        bool byteswap,
                        void *client)
 {
-    DcmParseState state = { error, io, parse, byteswap, client };
+    DcmParseState state = { 
+        .error = error, 
+        .io = io, 
+        .parse = parse, 
+        .byteswap = byteswap, 
+        .client = client 
+    };
 
     int64_t position = 0;
     if (!parse_toplevel_dataset(&state, implicit, &position)) {
@@ -592,3 +602,94 @@ bool dcm_parse_dataset(DcmError **error,
 
     return true;
 }
+
+
+/* Parse a group. A length element, followed by a list of elements.
+ */
+bool dcm_parse_group(DcmError **error, 
+                     DcmIO *io,
+                     bool implicit,
+                     const DcmParse *parse, 
+                     bool byteswap,
+                     void *client)
+{
+    DcmParseState state = { 
+        .error = error, 
+        .io = io, 
+        .parse = parse, 
+        .byteswap = byteswap, 
+        .client = client 
+    };
+
+    int64_t position = 0;
+
+    /* Groups start with (xxxx0000, UL, 4), meaning a 32-bit length value.
+     */
+    uint32_t tag;
+    DcmVR vr;
+    uint32_t length;
+    if (!parse_element_header(&state, 
+                              implicit, 
+                              &tag, 
+                              &vr, 
+                              &length, 
+                              &position)) {
+        return false;
+    }
+    uint16_t element_number = tag & 0xffff;
+    uint16_t group_number = tag >> 16;
+    if (element_number != 0x0000 || vr != DCM_VR_UL || length != 4) {
+        dcm_error_set(state.error, DCM_ERROR_CODE_PARSE,
+                      "Reading of Group failed",
+                      "Bad Group length element");
+        return false;
+    }
+    uint32_t group_length;
+    if (!read_uint32(&state, &group_length, &position)) {
+        return false;
+    }
+
+    // parse the elements in the group to a dataset
+    if (state.parse->dataset_begin &&
+        !state.parse->dataset_begin(state.error, state.client)) {
+        return false;
+    }
+
+    while (position < group_length) {
+        int64_t element_start = 0;
+        if (!parse_element_header(&state, 
+                                  implicit, 
+                                  &tag, 
+                                  &vr, 
+                                  &length, 
+                                  &element_start)) {
+            return false;
+        }
+
+        // stop if we run out of the group, or the stop function triggers
+        if ((tag >> 16) != group_number ||
+            (state.parse->stop &&
+             state.parse->stop(state.client, implicit, tag, vr, length))) {
+            // seek back to the start of this element
+            if (dcm_seekcur(&state, -element_start, &element_start)) {
+                return false;
+            }
+
+            break;
+        }
+
+        position += element_start;
+
+        if (!parse_element_body(&state, implicit, tag, vr, length, &position)) {
+            return false;
+        }
+    }
+
+    if (state.parse->dataset_end &&
+        !state.parse->dataset_end(state.error, state.client)) {
+        return false;
+    }
+
+    return true;
+}
+
