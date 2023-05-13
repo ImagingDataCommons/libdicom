@@ -90,11 +90,25 @@ static bool dcm_require(DcmParseState *state,
 }
 
 
+/* will we need these?
 static bool dcm_seekset(DcmParseState *state, int64_t offset)
 {
     int64_t new_offset = dcm_io_seek(state->error, state->io, offset, SEEK_SET);
     return new_offset >= 0;
 }
+
+static bool dcm_offset(DcmParseState *state, int64_t *offset)
+{
+    int64_t new_offset = dcm_io_seek(state->error, state->io, 0, SEEK_CUR);
+    if (new_offset < 0) {
+        return false;
+    }
+
+    *offset = new_offset;
+
+    return true;
+}
+ */
 
 
 static bool dcm_seekcur(DcmParseState *state, int64_t offset, int64_t *position)
@@ -105,19 +119,6 @@ static bool dcm_seekcur(DcmParseState *state, int64_t offset, int64_t *position)
     }
 
     *position += offset;
-
-    return true;
-}
-
-
-static bool dcm_offset(DcmParseState *state, int64_t *offset)
-{
-    int64_t new_offset = dcm_io_seek(state->error, state->io, 0, SEEK_CUR);
-    if (new_offset < 0) {
-        return false;
-    }
-
-    *offset = new_offset;
 
     return true;
 }
@@ -300,6 +301,8 @@ static bool parse_element_header(DcmParseState *state,
 
 static bool parse_element_sequence(DcmParseState *state, 
                                    bool implicit,
+                                   uint32_t seq_tag,
+                                   DcmVR seq_vr,
                                    uint32_t seq_length,
                                    int64_t *position)
 {
@@ -387,7 +390,11 @@ static bool parse_element_sequence(DcmParseState *state,
     }
 
     if (state->parse->sequence_end &&
-        !state->parse->sequence_end(state->error, state->client)) {
+        !state->parse->sequence_end(state->error, 
+                                    state->client,
+                                    seq_tag,
+                                    seq_vr,
+                                    seq_length)) {
         return false;
     }
 
@@ -492,6 +499,8 @@ static bool parse_element_body(DcmParseState *state,
             int64_t seq_position = 0;
             if (!parse_element_sequence(state, 
                                         implicit,
+                                        tag,
+                                        vr,
                                         length,
                                         &seq_position)) {
                 return false;

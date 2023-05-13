@@ -91,9 +91,14 @@ typedef struct _DcmParse {
     bool (*dataset_end)(DcmError **, void *client);
 
     bool (*sequence_begin)(DcmError **, void *client);
-    bool (*sequence_end)(DcmError **, void *client);
+    bool (*sequence_end)(DcmError **, 
+                         void *client,
+                         uint32_t tag,
+                         DcmVR vr,
+                         uint32_t length);
 
-    bool (*element_create)(DcmError **, void *client, 
+    bool (*element_create)(DcmError **, 
+                           void *client, 
                            uint32_t tag,
                            DcmVR vr,
                            char *value,
