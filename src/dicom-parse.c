@@ -664,7 +664,8 @@ bool dcm_parse_group(DcmError **error,
         return false;
     }
 
-    while (position < group_length) {
+    //while (position < group_length) {
+    for (;;) {
         int64_t element_start = 0;
         if (!parse_element_header(&state, 
                                   implicit, 
@@ -680,7 +681,7 @@ bool dcm_parse_group(DcmError **error,
             (state.parse->stop &&
              state.parse->stop(state.client, implicit, tag, vr, length))) {
             // seek back to the start of this element
-            if (dcm_seekcur(&state, -element_start, &element_start)) {
+            if (!dcm_seekcur(&state, -element_start, &element_start)) {
                 return false;
             }
 

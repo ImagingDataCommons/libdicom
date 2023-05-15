@@ -397,7 +397,7 @@ static DcmElement *read_element_header(DcmError **error,
     DcmVR vr;
     if (implicit) {
         // this can be an ambiguious VR, eg. pixeldata is allowed in implicit
-	// mode and has to be disambiguated later from other tags
+        // mode and has to be disambiguated later from other tags
         vr = dcm_vr_from_tag(tag);
         if (vr == DCM_VR_ERROR) {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
@@ -1002,6 +1002,9 @@ DcmBOT *dcm_filehandle_build_bot(DcmError **error,
                                               &length,
                                               &position,
                                               false);
+    if (element == NULL) {
+        return NULL;
+    }
     uint32_t tag = dcm_element_get_tag(element);
     dcm_element_destroy(element);
 
@@ -1410,8 +1413,9 @@ static bool parse_meta_element_create(DcmError **error,
         return false;
     }
 
-    //printf("parse_meta_element_create: create element %p on dataset %p\n", 
-    //        element, dataset);
+    printf("parse_meta_element_create: create element %p on dataset %p\n", 
+           element, dataset);
+    dcm_element_print(element, 4);
 
     return true;
 }
@@ -1488,15 +1492,8 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
                            &parse_meta,
                            filehandle->byteswap,
                            filehandle)) {
-        // destroy any old stack values, perhaps from a previous failed parse
         dcm_filehandle_clear(filehandle);
         return false;
-    }
-
-    // the file pointer will have been left at the start of pixel data
-    if (!dcm_offset(error,
-                    filehandle, &filehandle->pixel_data_offset)) {
-        return NULL;
     }
 
     /* Sanity check. We should have parsed a single dataset into the sequence
@@ -1509,6 +1506,14 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
     if (dcm_sequence_count(sequence) != 1) {
         abort();
     }
+
+    // the file pointer will have been left at the start of pixel data
+    if (!dcm_offset(error,
+                    filehandle, &filehandle->pixel_data_offset)) {
+        return NULL;
+    }
+
+    printf( "pixel_data_offset = %ld\n", filehandle->pixel_data_offset);
 
     // FIXME ... add dcm_sequence_steal() so we can destroy sequence without
     // also destroying meta
