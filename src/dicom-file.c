@@ -1300,8 +1300,6 @@ static bool parse_meta_dataset_begin(DcmError **error,
         return false;
     }
 
-    //printf("parse_meta_dataset_begin: created dataset %p\n", dataset);
-
     utarray_push_back(filehandle->dataset_stack, &dataset);
 
     return true;
@@ -1317,9 +1315,6 @@ static bool parse_meta_dataset_end(DcmError **error,
             utarray_back(filehandle->dataset_stack));
     DcmSequence *sequence = *((DcmSequence **)
             utarray_back(filehandle->sequence_stack));
-
-    //printf("parse_meta_dataset_end: end dataset %p, adding to sequence %p\n", 
-    //        dataset, sequence);
 
     if (!dcm_sequence_append(error, sequence, dataset)) {
         return false;
@@ -1340,8 +1335,6 @@ static bool parse_meta_sequence_begin(DcmError **error,
     if (sequence == NULL) {
         return false;
     }
-
-    //printf("parse_meta_sequence_begin: created sequence %p\n", sequence);
 
     utarray_push_back(filehandle->sequence_stack, &sequence);
 
@@ -1380,10 +1373,6 @@ static bool parse_meta_sequence_end(DcmError **error,
         return false;
     }
 
-    //printf("parse_meta_sequence_end: end sequence %p\n", sequence);
-    //printf("    setting as value for element %p\n", element);
-    //printf("    adding element to dataset %p\n", dataset);
-
     return true;
 }
 
@@ -1412,10 +1401,6 @@ static bool parse_meta_element_create(DcmError **error,
         dcm_element_destroy(element);
         return false;
     }
-
-    printf("parse_meta_element_create: create element %p on dataset %p\n", 
-           element, dataset);
-    dcm_element_print(element, 4);
 
     return true;
 }
@@ -1503,17 +1488,20 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
         utarray_len(filehandle->sequence_stack) != 1) {
         abort();
     }
+
+    // we must read sequence back off the stack since it may have been
+    // realloced
+    sequence = *((DcmSequence **) utarray_back(filehandle->sequence_stack));
     if (dcm_sequence_count(sequence) != 1) {
         abort();
     }
 
-    // the file pointer will have been left at the start of pixel data
+    // the file pointer will have been left at the start of pixel data, or at
+    // the EOF
     if (!dcm_offset(error,
                     filehandle, &filehandle->pixel_data_offset)) {
         return NULL;
     }
-
-    printf( "pixel_data_offset = %ld\n", filehandle->pixel_data_offset);
 
     // FIXME ... add dcm_sequence_steal() so we can destroy sequence without
     // also destroying meta

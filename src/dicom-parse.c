@@ -27,8 +27,8 @@
 #define TAG_ITEM                  0xFFFEE000
 #define TAG_ITEM_DELIM            0xFFFEE00D
 #define TAG_SQ_DELIM              0xFFFEE0DD
-#define TAG_TRAILING_PADDING      0xFFFCFFFC
 #define TAG_EXTENDED_OFFSET_TABLE 0x7FE00001
+#define TAG_TRAILING_PADDING      0xFFFCFFFC
 #define TAG_PIXEL_DATA            0x7FE00010
 #define TAG_FLOAT_PIXEL_DATA      0x7FE00008
 #define TAG_DOUBLE_PIXEL_DATA     0x7FE00009
@@ -557,8 +557,9 @@ static bool parse_toplevel_dataset(DcmParseState *state,
         uint32_t tag;
         DcmVR vr;
         uint32_t length;
+        int64_t element_start = 0;
         if (!parse_element_header(state, implicit, 
-            &tag, &vr, &length, position)) {
+            &tag, &vr, &length, &element_start)) {
             return false;
         }
 
@@ -570,8 +571,15 @@ static bool parse_toplevel_dataset(DcmParseState *state,
 
         if (state->parse->stop &&
             state->parse->stop(state->client, implicit, tag, vr, length)) {
+            // seek back to the start of this element
+            if (!dcm_seekcur(state, -element_start, &element_start)) {
+                return false;
+            }
+
             break;
         }
+
+        position += element_start;
 
         if (!parse_element_body(state, implicit, tag, vr, length, position)) {
             return false;
@@ -676,7 +684,14 @@ bool dcm_parse_group(DcmError **error,
             return false;
         }
 
-        // stop if we run out of the group, or the stop function triggers
+        if (tag == TAG_TRAILING_PADDING) {
+            dcm_log_info("Stop reading Data Set",
+                         "Encountered Data Set Trailing Tag");
+            break;
+        }
+
+        // stop if we read the first tag of the group beyond,
+        // or if the stop function triggers
         if ((tag >> 16) != group_number ||
             (state.parse->stop &&
              state.parse->stop(state.client, implicit, tag, vr, length))) {
