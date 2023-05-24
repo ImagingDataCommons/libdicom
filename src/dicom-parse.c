@@ -575,11 +575,10 @@ static bool parse_toplevel_dataset(DcmParseState *state,
             if (!dcm_seekcur(state, -element_start, &element_start)) {
                 return false;
             }
-
             break;
         }
 
-        position += element_start;
+        *position += element_start;
 
         if (!parse_element_body(state, implicit, tag, vr, length, position)) {
             return false;

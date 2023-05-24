@@ -1,8 +1,11 @@
 # TODO
 
-- need to be able to set a stop-at function on filehandles
+- remove dupe code
 
-- split parser from AST builder
+- look at length checking again in loops
+
+- need to NOT parse PerFrameFunctionalGroupsSequence etc. and have a 
+  separate thing for this
 
 - move implicit into parser state?
 
