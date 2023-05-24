@@ -507,6 +507,45 @@ bool dcm_element_set_value_string_multi(DcmError **error,
 }
 
 
+static char **dcm_parse_character_string(DcmError **error,
+                                         char *string, uint32_t *vm)
+{
+    int n_segments = 1;
+    for (int i = 0; string[i]; i++) {
+        if (string[i] == '\\') {
+            n_segments += 1;
+        }
+    }
+
+    char **parts = DCM_NEW_ARRAY(error, n_segments, char *);
+    if (parts == NULL) {
+        return NULL;
+    }
+
+    char *p = string;
+    for (int segment = 0; segment < n_segments; segment++) {
+        int i;
+        for (i = 0; p[i] && p[i] != '\\'; i++)
+            ;
+
+        parts[segment] = DCM_MALLOC(error, i + 1);
+        if (parts[segment] == NULL) {
+            dcm_free_string_array(parts, n_segments);
+            return NULL;
+        }
+
+        strncpy(parts[segment], p, i);
+        parts[segment][i] = '\0';
+
+        p += i + 1;
+    }
+
+    *vm = n_segments;
+
+    return parts;
+}
+
+
 bool dcm_element_set_value_string(DcmError **error,
                                   DcmElement *element,
                                   char *value,

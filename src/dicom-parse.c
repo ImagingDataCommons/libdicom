@@ -24,15 +24,6 @@
 #include "pdicom.h"
 
 
-#define TAG_ITEM                  0xFFFEE000
-#define TAG_ITEM_DELIM            0xFFFEE00D
-#define TAG_SQ_DELIM              0xFFFEE0DD
-#define TAG_EXTENDED_OFFSET_TABLE 0x7FE00001
-#define TAG_TRAILING_PADDING      0xFFFCFFFC
-#define TAG_PIXEL_DATA            0x7FE00010
-#define TAG_FLOAT_PIXEL_DATA      0x7FE00008
-#define TAG_DOUBLE_PIXEL_DATA     0x7FE00009
-
 /* The size of the buffer we use for reading smaller element values. This is 
  * large enough for most VRs.
  */

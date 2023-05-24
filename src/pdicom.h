@@ -38,6 +38,15 @@
 #define MAX(A, B) ((A) > (B) ? (A) : (B))
 #define USED(x) (void)(x)
 
+#define TAG_ITEM                  0xFFFEE000
+#define TAG_ITEM_DELIM            0xFFFEE00D
+#define TAG_SQ_DELIM              0xFFFEE0DD
+#define TAG_EXTENDED_OFFSET_TABLE 0x7FE00001
+#define TAG_TRAILING_PADDING      0xFFFCFFFC
+#define TAG_PIXEL_DATA            0x7FE00010
+#define TAG_FLOAT_PIXEL_DATA      0x7FE00008
+#define TAG_DOUBLE_PIXEL_DATA     0x7FE00009
+
 
 void *dcm_calloc(DcmError **error, size_t n, size_t size);
 
@@ -69,9 +78,6 @@ size_t dcm_dict_vr_size(DcmVR vr);
 DcmVRClass dcm_dict_vr_class(DcmVR vr);
 uint32_t dcm_dict_vr_capacity(DcmVR vr);
 int dcm_dict_vr_header_length(DcmVR vr);
-
-char **dcm_parse_character_string(DcmError **error, 
-                                  char *string, uint32_t *vm);
 
 #define DCM_SWITCH_NUMERIC(VR, OPERATION) \
     switch (VR) { \
