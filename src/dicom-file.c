@@ -861,114 +861,6 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
 }
 
 
-static bool parse_file_meta_element_create(DcmError **error, 
-                                           void *client, 
-                                           uint32_t tag,
-                                           DcmVR vr,
-                                           char *value,
-                                           uint32_t length)
-{
-    DcmDataSet *file_meta = (DcmDataSet *) client;
-
-    DcmElement *element = dcm_element_create(error, tag, vr);
-    if (element == NULL) {
-        return false;
-    }
-
-    if (!dcm_element_set_value(error, element, value, length, false) ||
-        !dcm_dataset_insert(error, file_meta, element)) {
-        dcm_element_destroy(element);
-        return false;
-    }
-
-    return true;
-}
-
-
-static DcmParse parse_file_meta = {
-    .element_create = parse_file_meta_element_create
-};
-
-
-DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
-                                          DcmFilehandle *filehandle)
-{
-    const bool implicit = false;
-
-    int64_t position = 0;
-
-    // File Preamble
-    char preamble[129];
-    if (!dcm_require(error,
-                     filehandle, preamble, sizeof(preamble) - 1, &position)) {
-        return NULL;
-    }
-    preamble[128] = '\0';
-
-    // DICOM Prefix
-    char prefix[5];
-    if (!dcm_require(error,
-                     filehandle, prefix, sizeof(prefix) - 1, &position)) {
-        return NULL;
-    }
-    prefix[4] = '\0';
-
-    if (strcmp(prefix, "DICM") != 0) {
-        dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                      "Reading of File Meta Information failed",
-                      "Prefix 'DICM' not found.");
-        return NULL;
-    }
-
-    DcmDataSet *file_meta = dcm_dataset_create(error);
-    if (file_meta == NULL) {
-        return NULL;
-    }
-
-    // parse the group elements into ->file_meta
-    if (!dcm_parse_group(error, 
-                         filehandle->io, 
-                         implicit, 
-                         &parse_file_meta,
-                         false,
-                         file_meta)) {
-        dcm_dataset_destroy(file_meta);
-        return false;
-    }
-
-    // record the start point for the image metadata
-    if (!dcm_offset(error, filehandle, &filehandle->offset)) {
-        dcm_dataset_destroy(file_meta);
-        return NULL;
-    }
-
-    DcmElement *element = dcm_dataset_get(error, file_meta, 0x00020010);
-    if (element == NULL) {
-        dcm_dataset_destroy(file_meta);
-        return NULL;
-    }
-
-    const char *transfer_syntax_uid;
-    if (!dcm_element_get_value_string(error,
-                                      element, 
-                                      0, 
-                                      &transfer_syntax_uid)) {
-        dcm_dataset_destroy(file_meta);
-        return NULL;
-    }
-
-    filehandle->transfer_syntax_uid = dcm_strdup(error, transfer_syntax_uid);
-    if (filehandle->transfer_syntax_uid == NULL) {
-        dcm_dataset_destroy(file_meta);
-        return NULL;
-    }
-
-    dcm_dataset_lock(file_meta);
-
-    return file_meta;
-}
-
-
 static bool parse_meta_dataset_begin(DcmError **error, 
                                      void *client) 
 {
@@ -1056,7 +948,6 @@ static bool parse_meta_sequence_end(DcmError **error,
 }
 
 
-// FIXME share with file_meta parse
 static bool parse_meta_element_create(DcmError **error, 
                                       void *client, 
                                       uint32_t tag,
@@ -1085,6 +976,123 @@ static bool parse_meta_element_create(DcmError **error,
 }
 
 
+DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
+                                          DcmFilehandle *filehandle)
+{
+    static DcmParse parse = {
+        .dataset_begin = parse_meta_dataset_begin,
+        .dataset_end = parse_meta_dataset_end,
+        .sequence_begin = parse_meta_sequence_begin,
+        .sequence_end = parse_meta_sequence_end,
+        .element_create = parse_meta_element_create,
+        .stop = NULL,
+    };
+
+    const bool implicit = false;
+
+    int64_t position = 0;
+
+    // File Preamble
+    char preamble[129];
+    if (!dcm_require(error,
+                     filehandle, preamble, sizeof(preamble) - 1, &position)) {
+        return NULL;
+    }
+    preamble[128] = '\0';
+
+    // DICOM Prefix
+    char prefix[5];
+    if (!dcm_require(error,
+                     filehandle, prefix, sizeof(prefix) - 1, &position)) {
+        return NULL;
+    }
+    prefix[4] = '\0';
+
+    if (strcmp(prefix, "DICM") != 0) {
+        dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                      "Reading of File Meta Information failed",
+                      "Prefix 'DICM' not found.");
+        return NULL;
+    }
+
+    // sanity ... the parse stacks should be empty
+    if (utarray_len(filehandle->dataset_stack) != 0 ||
+        utarray_len(filehandle->sequence_stack) != 0) {
+        abort();
+    }
+
+    DcmSequence *sequence = dcm_sequence_create(error);
+    if (sequence == NULL) {
+        return NULL;
+    }
+    utarray_push_back(filehandle->sequence_stack, &sequence);
+
+    // parse all of the first group
+    if (!dcm_parse_group(error,
+                         filehandle->io,
+                         implicit,
+                         &parse,
+                         false,
+                         filehandle)) {
+        dcm_filehandle_clear(filehandle);
+        return false;
+    }
+
+    /* Sanity check. We should have parsed a single dataset into the sequence
+     * we put on the stack.
+     */
+    if (utarray_len(filehandle->dataset_stack) != 0 ||
+        utarray_len(filehandle->sequence_stack) != 1) {
+        abort();
+    }
+
+    // record the start point for the image metadata
+    if (!dcm_offset(error, filehandle, &filehandle->offset)) {
+        return NULL;
+    }
+
+    // we must read sequence back off the stack since it may have been
+    // realloced
+    sequence = *((DcmSequence **) utarray_back(filehandle->sequence_stack));
+    if (dcm_sequence_count(sequence) != 1) {
+        abort();
+    }
+
+    // FIXME ... add dcm_sequence_steal() so we can destroy sequence without
+    // also destroying meta
+    // right now we leak sequence
+    DcmDataSet *file_meta = dcm_sequence_get(error, sequence, 0);
+    if (file_meta == NULL ) {
+        return false;
+    }
+
+    DcmElement *element = dcm_dataset_get(error, file_meta, 0x00020010);
+    if (element == NULL) {
+        return NULL;
+    }
+
+    const char *transfer_syntax_uid;
+    if (!dcm_element_get_value_string(error,
+                                      element, 
+                                      0, 
+                                      &transfer_syntax_uid)) {
+        return NULL;
+    }
+
+    filehandle->transfer_syntax_uid = dcm_strdup(error, transfer_syntax_uid);
+    if (filehandle->transfer_syntax_uid == NULL) {
+        return NULL;
+    }
+
+    // we need to pop sequence off the dataset stack to stop it being destroyed
+    utarray_pop_back(filehandle->sequence_stack);
+
+    dcm_dataset_lock(file_meta);
+
+    return file_meta;
+}
+
+
 static bool parse_meta_stop(void *client, 
                             bool implicit,
                             uint32_t tag,
@@ -1102,19 +1110,18 @@ static bool parse_meta_stop(void *client,
 }
 
 
-static DcmParse parse_meta = {
-    .dataset_begin = parse_meta_dataset_begin,
-    .dataset_end = parse_meta_dataset_end,
-    .sequence_begin = parse_meta_sequence_begin,
-    .sequence_end = parse_meta_sequence_end,
-    .element_create = parse_meta_element_create,
-    .stop = parse_meta_stop,
-};
-
-
 DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
                                          DcmFilehandle *filehandle)
 {
+    static DcmParse parse = {
+        .dataset_begin = parse_meta_dataset_begin,
+        .dataset_end = parse_meta_dataset_end,
+        .sequence_begin = parse_meta_sequence_begin,
+        .sequence_end = parse_meta_sequence_end,
+        .element_create = parse_meta_element_create,
+        .stop = parse_meta_stop,
+    };
+
     bool implicit;
 
     if (filehandle->offset == 0) {
@@ -1153,7 +1160,7 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
     if (!dcm_parse_dataset(error,
                            filehandle->io,
                            implicit,
-                           &parse_meta,
+                           &parse,
                            filehandle->byteswap,
                            filehandle)) {
         dcm_filehandle_clear(filehandle);

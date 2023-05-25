@@ -662,8 +662,7 @@ bool dcm_parse_group(DcmError **error,
         return false;
     }
 
-    //while (position < group_length) {
-    for (;;) {
+    while (position < group_length) {
         int64_t element_start = 0;
         if (!parse_element_header(&state, 
                                   implicit, 
@@ -672,12 +671,6 @@ bool dcm_parse_group(DcmError **error,
                                   &length, 
                                   &element_start)) {
             return false;
-        }
-
-        if (tag == TAG_TRAILING_PADDING) {
-            dcm_log_info("Stop reading Data Set",
-                         "Encountered Data Set Trailing Tag");
-            break;
         }
 
         // stop if we read the first tag of the group beyond,
