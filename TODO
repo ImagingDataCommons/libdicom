@@ -1,11 +1,16 @@
 # TODO
 
+- dcm_filehandle_read_bot() should be in dicom-parse.c
+  
+  also dcm_filehandle_build_bot()
+
 - remove dupe code
 
-- look at length checking again in loops
+- load PerFrameFunctionalGroupsSequence during BOT load
 
-- need to NOT parse PerFrameFunctionalGroupsSequence etc. and have a 
-  separate thing for this
+- getframe should use index
+
+- update openslide for new thing
 
 - move implicit into parser state?
 
@@ -17,15 +22,10 @@
 
 	probably will never be used
 
-- a fast scanner to find the BOT table
-
-
 # data types
 
 - bot frame offsets should be int64_t to match dcm_seekset(), 
   pixel_data_offset, etc.
-
-- should create_element() take a size_t for length?
 
 - remove dcm_dataset_copy_tags() etc should not use uint32_t? what about
   dcm_dataset_count()?
