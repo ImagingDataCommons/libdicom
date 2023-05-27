@@ -12,6 +12,23 @@
 #include <dicom/dicom.h>
 
 
+static char *my_strdup(const char *str)
+{
+    if (str == NULL) {
+        return NULL;
+    }
+
+    size_t length = strlen(str);
+    char *new_str = malloc(length + 1);
+    if (new_str == NULL) {
+        return NULL;
+    }
+    memmove(new_str, str, length + 1);
+
+    return new_str;
+}
+
+
 static char *fixture_path(const char *relpath)
 {
     char *path = malloc(strlen(SRCDIR) + strlen(relpath) + 2);
@@ -20,33 +37,40 @@ static char *fixture_path(const char *relpath)
 }
 
 
-static size_t compute_length_of_string_value(char *value)
+static size_t compute_length_of_string_value(const char *value)
 {
     size_t length = strlen(value);
+
     if (length % 2 != 0) {
         length += 1;  // zero padding
     }
+
     return length;
 }
 
 
-static size_t compute_length_of_string_value_multi(char **values, uint32_t vm)
+static size_t compute_length_of_string_value_multi(char **values, 
+                                                   uint32_t vm)
 {
-    uint32_t i;
-    size_t length;
-
-    length = 3 * 2;  // separators between values
-    for (i = 0; i < vm; i++) {
+    size_t length = 0;
+    for (uint32_t i = 0; i < vm; i++) {
         length += strlen(values[i]);
     }
+
+    if (vm > 1) {
+        // add the separator characters
+        length += vm - 1;
+    }
+
     if (length % 2 != 0) {
         length += 1;  // zero padding
     }
+
     return length;
 }
 
 
-static char *load_filehandle_to_memory(const char *name, long *length_out)
+static char *load_file_to_memory(const char *name, long *length_out)
 {
     FILE *fp;
 
@@ -93,13 +117,14 @@ START_TEST(test_error)
 {
     DcmError *error = NULL;
 
-    DcmFilehandle *filehandle = dcm_filehandle_create_from_file(&error, "banana");
+    DcmFilehandle *filehandle = dcm_filehandle_create_from_file(&error, 
+                                                                "banana");
     ck_assert_ptr_null(filehandle);
     ck_assert_ptr_nonnull(error);
 
-    ck_assert_int_eq(dcm_error_code(error), DCM_ERROR_CODE_IO);
-    ck_assert_ptr_nonnull(dcm_error_summary(error));
-    ck_assert_ptr_nonnull(dcm_error_message(error));
+    ck_assert_int_eq(dcm_error_get_code(error), DCM_ERROR_CODE_IO);
+    ck_assert_ptr_nonnull(dcm_error_get_summary(error));
+    ck_assert_ptr_nonnull(dcm_error_get_message(error));
 
     dcm_error_clear(&error);
     ck_assert_ptr_null(error);
@@ -147,38 +172,41 @@ END_TEST
 
 START_TEST(test_dict_tag_lookups)
 {
-    ck_assert_str_eq(dcm_dict_lookup_keyword(0x00020010), "TransferSyntaxUID");
-    ck_assert_str_eq(dcm_dict_lookup_keyword(0x00080018), "SOPInstanceUID");
-    ck_assert_str_eq(dcm_dict_lookup_keyword(0x00080030), "StudyTime");
-    ck_assert_str_eq(dcm_dict_lookup_keyword(0x00180050), "SliceThickness");
-    ck_assert_str_eq(dcm_dict_lookup_keyword(0x00185100), "PatientPosition");
-    ck_assert_str_eq(dcm_dict_lookup_keyword(0x00200035), "ImageOrientation");
-    ck_assert_str_eq(dcm_dict_lookup_keyword(0x00280008), "NumberOfFrames");
-    ck_assert_str_eq(dcm_dict_lookup_keyword(0x00280010), "Rows");
-    ck_assert_str_eq(dcm_dict_lookup_keyword(0x00400554), "SpecimenUID");
-    ck_assert_str_eq(dcm_dict_lookup_keyword(0x00480003), "ImagedVolumeDepth");
-    ck_assert_str_eq(dcm_dict_lookup_keyword(0x00620021), "TrackingUID");
-    ck_assert_str_eq(dcm_dict_lookup_keyword(0x00660031), "AlgorithmVersion");
-    ck_assert_str_eq(dcm_dict_lookup_keyword(0x00701305), "Plane");
+    ck_assert_str_eq(dcm_dict_keyword_from_tag(0x00020010), "TransferSyntaxUID");
+    ck_assert_str_eq(dcm_dict_keyword_from_tag(0x00080018), "SOPInstanceUID");
+    ck_assert_str_eq(dcm_dict_keyword_from_tag(0x00080030), "StudyTime");
+    ck_assert_str_eq(dcm_dict_keyword_from_tag(0x00180050), "SliceThickness");
+    ck_assert_str_eq(dcm_dict_keyword_from_tag(0x00185100), "PatientPosition");
+    ck_assert_str_eq(dcm_dict_keyword_from_tag(0x00200035), "ImageOrientation");
+    ck_assert_str_eq(dcm_dict_keyword_from_tag(0x00280008), "NumberOfFrames");
+    ck_assert_str_eq(dcm_dict_keyword_from_tag(0x00280010), "Rows");
+    ck_assert_str_eq(dcm_dict_keyword_from_tag(0x00400554), "SpecimenUID");
+    ck_assert_str_eq(dcm_dict_keyword_from_tag(0x00480003), "ImagedVolumeDepth");
+    ck_assert_str_eq(dcm_dict_keyword_from_tag(0x00620021), "TrackingUID");
+    ck_assert_str_eq(dcm_dict_keyword_from_tag(0x00660031), "AlgorithmVersion");
+    ck_assert_str_eq(dcm_dict_keyword_from_tag(0x00701305), "Plane");
+
+    ck_assert_int_eq(dcm_dict_tag_from_keyword("SpecimenUID"), 0x00400554);
+    ck_assert_int_eq(dcm_dict_tag_from_keyword("Banana"), 0xffffffff);
 }
 END_TEST
 
 
 START_TEST(test_dict_vr_lookups)
 {
-    ck_assert_str_eq(dcm_dict_lookup_vr(0x00020010), "UI");
-    ck_assert_str_eq(dcm_dict_lookup_vr(0x00080018), "UI");
-    ck_assert_str_eq(dcm_dict_lookup_vr(0x00080030), "TM");
-    ck_assert_str_eq(dcm_dict_lookup_vr(0x00180050), "DS");
-    ck_assert_str_eq(dcm_dict_lookup_vr(0x00185100), "CS");
-    ck_assert_str_eq(dcm_dict_lookup_vr(0x00200035), "DS");
-    ck_assert_str_eq(dcm_dict_lookup_vr(0x00280008), "IS");
-    ck_assert_str_eq(dcm_dict_lookup_vr(0x00280010), "US");
-    ck_assert_str_eq(dcm_dict_lookup_vr(0x00400554), "UI");
-    ck_assert_str_eq(dcm_dict_lookup_vr(0x00480003), "FL");
-    ck_assert_str_eq(dcm_dict_lookup_vr(0x00620021), "UI");
-    ck_assert_str_eq(dcm_dict_lookup_vr(0x00660031), "LO");
-    ck_assert_str_eq(dcm_dict_lookup_vr(0x00701305), "FD");
+    ck_assert_int_eq(dcm_vr_from_tag(0x00020010), DCM_VR_UI);
+    ck_assert_int_eq(dcm_vr_from_tag(0x00080018), DCM_VR_UI);
+    ck_assert_int_eq(dcm_vr_from_tag(0x00080030), DCM_VR_TM);
+    ck_assert_int_eq(dcm_vr_from_tag(0x00180050), DCM_VR_DS);
+    ck_assert_int_eq(dcm_vr_from_tag(0x00185100), DCM_VR_CS);
+    ck_assert_int_eq(dcm_vr_from_tag(0x00200035), DCM_VR_DS);
+    ck_assert_int_eq(dcm_vr_from_tag(0x00280008), DCM_VR_IS);
+    ck_assert_int_eq(dcm_vr_from_tag(0x00280010), DCM_VR_US);
+    ck_assert_int_eq(dcm_vr_from_tag(0x00400554), DCM_VR_UI);
+    ck_assert_int_eq(dcm_vr_from_tag(0x00480003), DCM_VR_FL);
+    ck_assert_int_eq(dcm_vr_from_tag(0x00620021), DCM_VR_UI);
+    ck_assert_int_eq(dcm_vr_from_tag(0x00660031), DCM_VR_LO);
+    ck_assert_int_eq(dcm_vr_from_tag(0x00701305), DCM_VR_FD);
 }
 END_TEST
 
@@ -186,17 +214,20 @@ END_TEST
 START_TEST(test_element_AE)
 {
     uint32_t tag = 0x00020016;
-    char *value = malloc(DCM_CAPACITY_AE + 1);
+    char *value = "Application";
 
-    strncpy(value, "Application", 12);
-    DcmElement *element = dcm_element_create_AE(NULL, tag, value);
+    DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_AE);
+    (void) dcm_element_set_value_string(NULL, element, value, false);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
-    ck_assert_int_eq(dcm_element_check_vr(element, "AE"), true);
+    ck_assert_int_eq(dcm_element_get_vr(element), DCM_VR_AE);
     ck_assert_int_eq(dcm_element_get_length(element),
                      compute_length_of_string_value(value));
     ck_assert_int_eq(dcm_element_is_multivalued(element), false);
-    ck_assert_str_eq(value, dcm_element_get_value_AE(element, 0));
+
+    const char *string;
+    (void) dcm_element_get_value_string(NULL, element, 0, &string);
+    ck_assert_str_eq(value, string);
 
     dcm_element_print(element, 0);
 
@@ -207,18 +238,21 @@ END_TEST
 
 START_TEST(test_element_AS)
 {
-    uint32_t tag = 0x00020016;
-    char *value = malloc(DCM_CAPACITY_AS + 1);
+    uint32_t tag = 0x00101010;
+    char *value = "99";
 
-    strncpy(value, "99", 3);
-    DcmElement *element = dcm_element_create_AS(NULL, tag, value);
+    DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_AS);
+    (void) dcm_element_set_value_string(NULL, element, value, false);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
-    ck_assert_int_eq(dcm_element_check_vr(element, "AS"), true);
+    ck_assert_int_eq(dcm_element_get_vr(element), DCM_VR_AS);
     ck_assert_int_eq(dcm_element_get_length(element),
                      compute_length_of_string_value(value));
     ck_assert_int_eq(dcm_element_is_multivalued(element), false);
-    ck_assert_str_eq(value, dcm_element_get_value_AS(element, 0));
+
+    const char *string;
+    (void) dcm_element_get_value_string(NULL, element, 0, &string);
+    ck_assert_str_eq(value, string);
 
     dcm_element_print(element, 0);
 
@@ -231,26 +265,26 @@ START_TEST(test_element_CS_multivalue)
 {
     uint32_t tag = 0x00080008;
     uint32_t vm = 4;
-    char **values = malloc(vm * sizeof(char *));
 
-    values[0] = malloc(9);
-    strcpy(values[0], "ORIGINAL");
-    values[1] = malloc(8);
-    strcpy(values[1], "PRIMARY");
-    values[2] = malloc(7);
-    strcpy(values[2], "VOLUME");
-    values[3] = malloc(5);
-    strcpy(values[3], "NONE");
-    DcmElement *element = dcm_element_create_CS_multi(NULL, tag, values, vm);
+    char **values = malloc(vm * sizeof(char *));
+    values[0] = my_strdup("ORIGINAL");
+    values[1] = my_strdup("PRIMARY");
+    values[2] = my_strdup("LABEL");
+    values[3] = my_strdup("NONE");
+
+    DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_CS);
+    (void) dcm_element_set_value_string_multi(NULL, element, values, vm, true);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
-    ck_assert_int_eq(dcm_element_check_vr(element, "CS"), true);
+    ck_assert_int_eq(dcm_element_get_vr(element), DCM_VR_CS);
     ck_assert_int_eq(dcm_element_get_length(element),
                      compute_length_of_string_value_multi(values, vm));
     ck_assert_int_eq(dcm_element_is_multivalued(element), true);
 
     for (uint32_t i = 0; i < vm; i++) {
-        ck_assert_str_eq(values[i], dcm_element_get_value_CS(element, i));
+        const char *value;
+        (void) dcm_element_get_value_string(NULL, element, i, &value);
+        ck_assert_str_eq(values[i], value);
     }
 
     dcm_element_print(element, 0);
@@ -263,17 +297,20 @@ END_TEST
 START_TEST(test_element_DS)
 {
     uint32_t tag = 0x0040072A;
-    char *value = malloc(DCM_CAPACITY_DS + 1);
+    char *value = "0.0025";
 
-    strncpy(value, "0.0025", 7);
-    DcmElement *element = dcm_element_create_DS(NULL, tag, value);
+    DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_DS);
+    (void) dcm_element_set_value_string(NULL, element, value, false);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
-    ck_assert_int_eq(dcm_element_check_vr(element, "DS"), true);
+    ck_assert_int_eq(dcm_element_get_vr(element), DCM_VR_DS);
     ck_assert_int_eq(dcm_element_get_length(element),
                      compute_length_of_string_value(value));
     ck_assert_int_eq(dcm_element_is_multivalued(element), false);
-    ck_assert_str_eq(dcm_element_get_value_DS(element, 0), value);
+
+    const char *string;
+    (void) dcm_element_get_value_string(NULL, element, 0, &string);
+    ck_assert_str_eq(value, string);
 
     dcm_element_print(element, 0);
 
@@ -285,17 +322,20 @@ END_TEST
 START_TEST(test_element_IS)
 {
     uint32_t tag = 0x00280008;
-    char *value = malloc(DCM_CAPACITY_IS + 1);
+    char *value = "10";
 
-    strncpy(value, "10", 3);
-    DcmElement *element = dcm_element_create_IS(NULL, tag, value);
+    DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_IS);
+    (void) dcm_element_set_value_string(NULL, element, value, false);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
-    ck_assert_int_eq(dcm_element_check_vr(element, "IS"), true);
+    ck_assert_int_eq(dcm_element_get_vr(element), DCM_VR_IS);
     ck_assert_int_eq(dcm_element_get_length(element),
                      compute_length_of_string_value(value));
     ck_assert_int_eq(dcm_element_is_multivalued(element), false);
-    ck_assert_str_eq(dcm_element_get_value_IS(element, 0), value);
+
+    const char *string;
+    (void) dcm_element_get_value_string(NULL, element, 0, &string);
+    ck_assert_str_eq(value, string);
 
     dcm_element_print(element, 0);
 
@@ -307,17 +347,20 @@ END_TEST
 START_TEST(test_element_ST)
 {
     uint32_t tag = 0x00080092;
-    char *value = malloc(DCM_CAPACITY_ST + 1);
-    strncpy(value, "Random Street, Sometown", 24);
+    char *value = "Random Street, Sometown";
 
-    DcmElement *element = dcm_element_create_ST(NULL, tag, value);
+    DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_ST);
+    (void) dcm_element_set_value_string(NULL, element, value, false);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
-    ck_assert_int_eq(dcm_element_check_vr(element, "ST"), true);
+    ck_assert_int_eq(dcm_element_get_vr(element), DCM_VR_ST);
     ck_assert_int_eq(dcm_element_get_length(element),
                      compute_length_of_string_value(value));
     ck_assert_int_eq(dcm_element_is_multivalued(element), false);
-    ck_assert_str_eq(dcm_element_get_value_ST(element), value);
+
+    const char *string;
+    (void) dcm_element_get_value_string(NULL, element, 0, &string);
+    ck_assert_str_eq(value, string);
 
     dcm_element_print(element, 0);
 
@@ -328,32 +371,32 @@ END_TEST
 
 START_TEST(test_element_SQ)
 {
-    char *item_value = malloc(DCM_CAPACITY_DS + 1);
+    DcmElement *element = dcm_element_create(NULL, 0x00180050, DCM_VR_DS);
+    (void) dcm_element_set_value_string(NULL, element, "0.01", false);
 
-    strncpy(item_value, "0.01", 5);
-    DcmElement *item_element = dcm_element_create_DS(NULL,
-                                                     0x00180050, item_value);
+    DcmDataSet *dataset = dcm_dataset_create(NULL);
+    ck_assert_int_eq(dcm_dataset_insert(NULL, dataset, element), true);
 
-    DcmDataSet *item = dcm_dataset_create(NULL);
-    ck_assert_int_eq(dcm_dataset_insert(NULL, item, item_element), true);
+    DcmSequence *sequence = dcm_sequence_create(NULL);
+    ck_assert_int_eq(dcm_sequence_append(NULL, sequence, dataset), true);
 
     uint32_t tag = 0x00289110;
-    DcmSequence *value = dcm_sequence_create(NULL);
-    ck_assert_int_eq(dcm_sequence_append(NULL, value, item), true);
-    DcmElement *element = dcm_element_create_SQ(NULL, tag, value);
+    DcmElement *top = dcm_element_create(NULL, tag, DCM_VR_SQ);
+    ck_assert_int_eq(dcm_element_set_value_sequence(NULL, top, sequence), true);
 
-    ck_assert_int_eq(dcm_element_get_tag(element), tag);
-    ck_assert_int_eq(dcm_element_check_vr(element, "SQ"), true);
-    ck_assert_int_eq(dcm_element_get_length(element),
-                     dcm_element_get_length(item_element));
+    ck_assert_int_eq(dcm_element_get_tag(top), tag);
+    ck_assert_int_eq(dcm_element_get_vr(top), DCM_VR_SQ);
+    ck_assert_int_eq(dcm_element_get_length(top),
+                     dcm_element_get_length(element));
     ck_assert_int_eq(dcm_element_is_multivalued(element), false);
 
-    DcmSequence *retrieved_value = dcm_element_get_value_SQ(element);
+    DcmSequence *retrieved_value;
+    (void) dcm_element_get_value_sequence(NULL, top, &retrieved_value);
     ck_assert_int_eq(dcm_sequence_count(retrieved_value), 1);
 
     dcm_element_print(element, 0);
 
-    dcm_element_destroy(element);
+    dcm_element_destroy(top);
 }
 END_TEST
 
@@ -361,15 +404,18 @@ END_TEST
 START_TEST(test_element_SQ_empty)
 {
     uint32_t tag = 0x00400555;
+
     DcmSequence *value = dcm_sequence_create(NULL);
-    DcmElement *element = dcm_element_create_SQ(NULL, tag, value);
+    DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_SQ);
+    dcm_element_set_value_sequence(NULL, element, value);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
-    ck_assert_int_eq(dcm_element_check_vr(element, "SQ"), true);
+    ck_assert_int_eq(dcm_element_get_vr(element), DCM_VR_SQ);
     ck_assert_int_eq(dcm_element_get_length(element), 0);
     ck_assert_int_eq(dcm_element_is_multivalued(element), false);
 
-    DcmSequence *retrieved_value = dcm_element_get_value_SQ(element);
+    DcmSequence *retrieved_value;
+    (void) dcm_element_get_value_sequence(NULL, element, &retrieved_value);
     ck_assert_int_eq(dcm_sequence_count(retrieved_value), 0);
 
     dcm_element_print(element, 0);
@@ -382,17 +428,20 @@ END_TEST
 START_TEST(test_element_UI)
 {
     uint32_t tag = 0x00080018;
-    char *value = malloc(DCM_CAPACITY_UI + 1);
+    char *value = "2.25.1";
 
-    strncpy(value, "2.25.1", 7);
-    DcmElement *element = dcm_element_create_UI(NULL, tag, value);
+    DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_UI);
+    (void) dcm_element_set_value_string(NULL, element, value, false);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
-    ck_assert_int_eq(dcm_element_check_vr(element, "UI"), true);
+    ck_assert_int_eq(dcm_element_get_vr(element), DCM_VR_UI);
     ck_assert_int_eq(dcm_element_get_length(element),
                      compute_length_of_string_value(value));
     ck_assert_int_eq(dcm_element_is_multivalued(element), false);
-    ck_assert_str_eq(dcm_element_get_value_UI(element, 0), value);
+
+    const char *string;
+    (void) dcm_element_get_value_string(NULL, element, 0, &string);
+    ck_assert_str_eq(value, string);
 
     dcm_element_print(element, 0);
 
@@ -406,13 +455,17 @@ START_TEST(test_element_US)
     uint32_t tag = 0x00280010;
     uint16_t value = 512;
 
-    DcmElement *element = dcm_element_create_US(NULL, tag, value);
+    DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_US);
+    (void) dcm_element_set_value_integer(NULL, element, value);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
-    ck_assert_int_eq(dcm_element_check_vr(element, "US"), true);
+    ck_assert_int_eq(dcm_element_get_vr(element), DCM_VR_US);
     ck_assert_int_eq(dcm_element_get_length(element), sizeof(uint16_t));
     ck_assert_int_eq(dcm_element_is_multivalued(element), false);
-    ck_assert_int_eq(dcm_element_get_value_US(element, 0), value);
+
+    int64_t integer;
+    (void) dcm_element_get_value_integer(NULL, element, 0, &integer);
+    ck_assert_int_eq(integer, value);
 
     dcm_element_print(element, 0);
 
@@ -425,25 +478,30 @@ START_TEST(test_sequence)
 {
     DcmElement *element;
 
-    DcmDataSet *dataset = dcm_dataset_create(NULL);
-    DcmDataSet *other_dataset = dcm_dataset_create(NULL);
+    element = dcm_element_create(NULL, 0x00280010, DCM_VR_US);
+    (void) dcm_element_set_value_integer(NULL, element, 256);
 
-    element = dcm_element_create_US(NULL, 0x00280010, 256);
+    DcmDataSet *dataset = dcm_dataset_create(NULL);
     dcm_dataset_insert(NULL, dataset, element);
-    dcm_dataset_insert(NULL, other_dataset, dcm_element_clone(NULL, element));
     ck_assert_int_eq(dcm_dataset_count(dataset), 1);
+
+    DcmDataSet *other_dataset = dcm_dataset_create(NULL);
+    dcm_dataset_insert(NULL, other_dataset, dcm_element_clone(NULL, element));
     ck_assert_int_eq(dcm_dataset_count(other_dataset), 1);
 
-    element = dcm_element_create_US(NULL, 0x00280011, 512);
+    element = dcm_element_create(NULL, 0x00280011, DCM_VR_US);
+    (void) dcm_element_set_value_integer(NULL, element, 512);
+
     dcm_dataset_insert(NULL, dataset, element);
-    dcm_dataset_insert(NULL, other_dataset, dcm_element_clone(NULL, element));
     ck_assert_int_eq(dcm_dataset_count(dataset), 2);
+
+    dcm_dataset_insert(NULL, other_dataset, dcm_element_clone(NULL, element));
     ck_assert_int_eq(dcm_dataset_count(other_dataset), 2);
 
     DcmSequence *seq = dcm_sequence_create(NULL);
-
     dcm_sequence_append(NULL, seq, dataset);
     ck_assert_int_eq(dcm_sequence_count(seq), 1);
+
     dcm_sequence_append(NULL, seq, other_dataset);
     ck_assert_int_eq(dcm_sequence_count(seq), 2);
 
@@ -454,6 +512,7 @@ START_TEST(test_sequence)
 
     dcm_sequence_remove(NULL, seq, 1);
     ck_assert_int_eq(dcm_sequence_count(seq), 1);
+
     dcm_sequence_remove(NULL, seq, 0);
     ck_assert_int_eq(dcm_sequence_count(seq), 0);
 
@@ -465,10 +524,12 @@ END_TEST
 START_TEST(test_dataset)
 {
     uint32_t tag = 0x00280010;
-    DcmElement *element = dcm_element_create_US(NULL, tag, 256);
+    DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_US);
+    (void) dcm_element_set_value_integer(NULL, element, 256);
 
     uint32_t other_tag = 0x00280011;
-    DcmElement *other_element = dcm_element_create_US(NULL, other_tag, 512);
+    DcmElement *other_element = dcm_element_create(NULL, other_tag, DCM_VR_US);
+    (void) dcm_element_set_value_integer(NULL, other_element, 512);
 
     DcmDataSet *dataset = dcm_dataset_create(NULL);
     ck_assert_int_eq(dcm_dataset_count(dataset), 0);
@@ -506,49 +567,55 @@ START_TEST(test_dataset)
 END_TEST
 
 
-START_TEST(test_filehandle_sm_image_filehandle_meta)
+START_TEST(test_file_sm_image_file_meta)
 {
-    uint32_t tag;
+    const char *value;
     DcmElement *element;
 
     char *file_path = fixture_path("data/test_files/sm_image.dcm");
-    DcmFilehandle *filehandle = dcm_filehandle_create_from_file(NULL, file_path);
+    DcmFilehandle *filehandle = 
+        dcm_filehandle_create_from_file(NULL, file_path);
     free(file_path);
+    ck_assert_ptr_nonnull(filehandle);
 
-    DcmDataSet *filehandle_meta = dcm_filehandle_read_filehandle_meta(NULL, filehandle);
+    DcmDataSet *meta = dcm_filehandle_read_file_meta(NULL, filehandle);
+    ck_assert_ptr_nonnull(meta);
 
     // Transfer Syntax UID
-    tag = 0x00020010;
-    element = dcm_dataset_get(NULL, filehandle_meta, tag);
-    ck_assert_str_eq(dcm_element_get_value_UI(element, 0),
-                     "1.2.840.10008.1.2.1");
+    element = dcm_dataset_get(NULL, meta, 0x00020010);
+    (void) dcm_element_get_value_string(NULL, element, 0, &value);
+    ck_assert_str_eq(value, "1.2.840.10008.1.2.1");
 
     // Media Storage SOP Class UID
-    tag = 0x00020002;
-    element = dcm_dataset_get(NULL, filehandle_meta, tag);
-    ck_assert_str_eq(dcm_element_get_value_UI(element, 0),
-                     "1.2.840.10008.5.1.4.1.1.77.1.6");
+    element = dcm_dataset_get(NULL, meta, 0x00020002);
+    (void) dcm_element_get_value_string(NULL, element, 0, &value);
+    ck_assert_str_eq(value, "1.2.840.10008.5.1.4.1.1.77.1.6");
 
-    dcm_dataset_print(filehandle_meta, 0);
+    dcm_dataset_print(meta, 0);
 
-    dcm_dataset_destroy(filehandle_meta);
+    dcm_dataset_destroy(meta);
     dcm_filehandle_destroy(filehandle);
 }
 END_TEST
 
 
-START_TEST(test_filehandle_sm_image_metadata)
+START_TEST(test_file_sm_image_metadata)
 {
     char *file_path = fixture_path("data/test_files/sm_image.dcm");
-    DcmFilehandle *filehandle = dcm_filehandle_create_from_file(NULL, file_path);
+
+    DcmFilehandle *filehandle = 
+        dcm_filehandle_create_from_file(NULL, file_path);
     free(file_path);
+    ck_assert_ptr_nonnull(filehandle);
 
     DcmDataSet *metadata = dcm_filehandle_read_metadata(NULL, filehandle);
+    ck_assert_ptr_nonnull(metadata);
 
     // SOP Class UID
     DcmElement *element = dcm_dataset_get(NULL, metadata, 0x00080016);
-    ck_assert_str_eq(dcm_element_get_value_UI(element, 0),
-                     "1.2.840.10008.5.1.4.1.1.77.1.6");
+    const char *value;
+    (void) dcm_element_get_value_string(NULL, element, 0, &value);
+    ck_assert_str_eq(value, "1.2.840.10008.5.1.4.1.1.77.1.6");
 
     dcm_dataset_print(metadata, 0);
 
@@ -558,12 +625,13 @@ START_TEST(test_filehandle_sm_image_metadata)
 END_TEST
 
 
-START_TEST(test_filehandle_sm_image_frame)
+START_TEST(test_file_sm_image_frame)
 {
     const uint32_t frame_number = 1;
 
     char *file_path = fixture_path("data/test_files/sm_image.dcm");
-    DcmFilehandle *filehandle = dcm_filehandle_create_from_file(NULL, file_path);
+    DcmFilehandle *filehandle = 
+        dcm_filehandle_create_from_file(NULL, file_path);
     free(file_path);
     ck_assert_ptr_nonnull(filehandle);
 
@@ -582,7 +650,8 @@ START_TEST(test_filehandle_sm_image_frame)
     ck_assert_uint_eq(dcm_bot_get_num_frames(bot), 25);
 
     DcmFrame *frame = dcm_filehandle_read_frame(NULL, 
-                                          filehandle, metadata, bot, frame_number);
+                                                filehandle, metadata, bot, 
+                                                frame_number);
     ck_assert_uint_eq(dcm_frame_get_number(frame), frame_number);
     ck_assert_uint_eq(dcm_frame_get_rows(frame), 10);
     ck_assert_uint_eq(dcm_frame_get_columns(frame), 10);
@@ -596,6 +665,7 @@ START_TEST(test_filehandle_sm_image_frame)
     ck_assert_str_eq(dcm_frame_get_transfer_syntax_uid(frame),
                      "1.2.840.10008.1.2.1");
 
+    dcm_frame_destroy(frame);
     dcm_bot_destroy(bot);
     dcm_dataset_destroy(metadata);
     dcm_filehandle_destroy(filehandle);
@@ -603,34 +673,34 @@ START_TEST(test_filehandle_sm_image_frame)
 END_TEST
 
 
-START_TEST(test_filehandle_sm_image_filehandle_meta_memory)
+START_TEST(test_file_sm_image_file_meta_memory)
 {
-    uint32_t tag;
     DcmElement *element;
+    const char *value;
 
     long length;
-    char *memory = load_filehandle_to_memory("data/test_files/sm_image.dcm", &length);
+    char *memory = load_file_to_memory("data/test_files/sm_image.dcm", &length);
     ck_assert_ptr_nonnull(memory);
-    DcmFilehandle *filehandle = dcm_filehandle_create_from_memory(NULL, memory, length);
+
+    DcmFilehandle *filehandle = 
+        dcm_filehandle_create_from_memory(NULL, memory, length);
     ck_assert_ptr_nonnull(filehandle);
 
-    DcmDataSet *filehandle_meta = dcm_filehandle_read_filehandle_meta(NULL, filehandle);
+    DcmDataSet *meta = dcm_filehandle_read_file_meta(NULL, filehandle);
 
     // Transfer Syntax UID
-    tag = 0x00020010;
-    element = dcm_dataset_get(NULL, filehandle_meta, tag);
-    ck_assert_str_eq(dcm_element_get_value_UI(element, 0),
-                     "1.2.840.10008.1.2.1");
+    element = dcm_dataset_get(NULL, meta, 0x00020010);
+    (void) dcm_element_get_value_string(NULL, element, 0, &value);
+    ck_assert_str_eq(value, "1.2.840.10008.1.2.1");
 
     // Media Storage SOP Class UID
-    tag = 0x00020002;
-    element = dcm_dataset_get(NULL, filehandle_meta, tag);
-    ck_assert_str_eq(dcm_element_get_value_UI(element, 0),
-                     "1.2.840.10008.5.1.4.1.1.77.1.6");
+    element = dcm_dataset_get(NULL, meta, 0x00020002);
+    (void) dcm_element_get_value_string(NULL, element, 0, &value);
+    ck_assert_str_eq(value, "1.2.840.10008.5.1.4.1.1.77.1.6");
 
-    dcm_dataset_print(filehandle_meta, 0);
+    dcm_dataset_print(meta, 0);
 
-    dcm_dataset_destroy(filehandle_meta);
+    dcm_dataset_destroy(meta);
     dcm_filehandle_destroy(filehandle);
     free(memory);
 }
@@ -689,24 +759,24 @@ static Suite *create_data_suite(void)
 }
 
 
-static Suite *create_filehandle_suite(void)
+static Suite *create_file_suite(void)
 {
-    Suite *suite = suite_create("filehandle");
+    Suite *suite = suite_create("file");
 
-    TCase *filehandle_meta_case = tcase_create("filehandle_meta");
-    tcase_add_test(filehandle_meta_case, test_filehandle_sm_image_filehandle_meta);
-    suite_add_tcase(suite, filehandle_meta_case);
+    TCase *file_meta_case = tcase_create("file_meta");
+    tcase_add_test(file_meta_case, test_file_sm_image_file_meta);
+    suite_add_tcase(suite, file_meta_case);
 
     TCase *metadata_case = tcase_create("metadata");
-    tcase_add_test(metadata_case, test_filehandle_sm_image_metadata);
+    tcase_add_test(metadata_case, test_file_sm_image_metadata);
     suite_add_tcase(suite, metadata_case);
 
     TCase *frame_case = tcase_create("frame");
-    tcase_add_test(frame_case, test_filehandle_sm_image_frame);
+    tcase_add_test(frame_case, test_file_sm_image_frame);
     suite_add_tcase(suite, frame_case);
 
     TCase *memory_case = tcase_create("memory");
-    tcase_add_test(memory_case, test_filehandle_sm_image_filehandle_meta_memory);
+    tcase_add_test(memory_case, test_file_sm_image_file_meta_memory);
     suite_add_tcase(suite, memory_case);
 
     return suite;
@@ -717,7 +787,7 @@ int main(void)
 {
     SRunner *runner = srunner_create(create_main_suite());
     srunner_add_suite(runner, create_data_suite());
-    srunner_add_suite(runner, create_filehandle_suite());
+    srunner_add_suite(runner, create_file_suite());
     srunner_run_all(runner, CK_VERBOSE);
     int number_failed = srunner_ntests_failed(runner);
     srunner_free(runner);

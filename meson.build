@@ -8,7 +8,7 @@ project(
   ],
   license : 'MIT',
   meson_version : '>=0.50',
-  version : '0.1.0',
+  version : '0.2.1',
 )
 if not meson.is_subproject()
   meson.add_dist_script(
@@ -34,7 +34,7 @@ endif
 #   2. Backward-compatible ABI change: bump minor, reset patch
 #   3. Other, eg. bugfix: bump patch
 abi_version_major = 0
-abi_version_minor = 1
+abi_version_minor = 2
 abi_version_patch = 0
 
 abi_version = '@0@.@1@.@2@'.format(
@@ -173,7 +173,9 @@ import('pkgconfig').generate(
   url : 'https://github.com/ImagingDataCommons/libdicom',
 )
 libdicom_dep = declare_dependency(
-  include_directories : library_includes,
+  # include "." so that our generated version.h can be found if we are used as
+  # a subproject
+  include_directories : [library_includes, include_directories('.')],
   link_with : libdicom,
 )
 if meson.version().version_compare('>=0.54')

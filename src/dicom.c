@@ -39,8 +39,9 @@ void *dcm_calloc(DcmError **error, size_t n, size_t size)
 
 char *dcm_strdup(DcmError **error, const char *str)
 {
-    if (str == NULL)
+    if (str == NULL) {
         return NULL;
+    }
 
     size_t length = strlen(str);
     char *new_str = DCM_MALLOC(error, length + 1);
@@ -189,19 +190,19 @@ void dcm_error_clear(DcmError **error)
 }
 
 
-DcmErrorCode dcm_error_code(DcmError *error)
+DcmErrorCode dcm_error_get_code(DcmError *error)
 {
     return error->code;
 }
 
 
-const char *dcm_error_message(DcmError *error)
+const char *dcm_error_get_message(DcmError *error)
 {
     return (const char *) error->message;
 }
 
 
-const char *dcm_error_summary(DcmError *error)
+const char *dcm_error_get_summary(DcmError *error)
 {
     return (const char *) error->summary;
 }
@@ -224,8 +225,9 @@ DcmLogLevel dcm_log_level = DCM_LOG_NOTSET;
 #ifndef _WIN32
 static int ctime_s(char *buf, size_t size, const time_t *time)
 {
-    assert(size >= 26);
-    ctime_r(time, buf);
+    if (size >= 26) {
+        ctime_r(time, buf);
+    }
     return errno;
 }
 #endif
