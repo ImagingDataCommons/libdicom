@@ -2423,8 +2423,9 @@ DcmFilehandle *dcm_filehandle_create_from_file(DcmError **error,
  * :return: filehandle
  */
 DCM_EXTERN
-DcmFilehandle *dcm_filehandle_create_from_memory(DcmError **error, 
-                                                 char *buffer, int64_t length);
+DcmFilehandle *dcm_filehandle_create_from_memory(DcmError **error,
+                                                 const char *buffer,
+                                                 int64_t length);
 
 /**
  * Read File Metainformation from a File.
