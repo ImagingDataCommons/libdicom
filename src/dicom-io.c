@@ -345,9 +345,9 @@ static int64_t dcm_io_seek_memory(DcmError **error, void *data,
             return -1;
     }
 
-    new_offset = MAX(0, MIN(new_offset, io_memory->length));
+    io_memory->read_point = MAX(0, MIN(new_offset, io_memory->length));
 
-    return new_offset;
+    return io_memory->read_point;
 }
 
 
