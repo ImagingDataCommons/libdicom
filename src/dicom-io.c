@@ -354,7 +354,7 @@ static int64_t dcm_io_seek_memory(DcmError **error, void *data,
 
 
 DcmFilehandle *dcm_filehandle_create_from_memory(DcmError **error,
-                                                 const char *buffer, 
+                                                 const char *buffer,
                                                  int64_t length)
 {
     static DcmIO io = {

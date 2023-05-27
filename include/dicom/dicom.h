@@ -742,7 +742,7 @@ bool dcm_element_set_value_integer(DcmError **error,
  * numeric Value Representation.
  * If that is not the case, the function will fail.
  *
- * Although the value passed is `int*`, it should
+ * Although the value passed is `void*`, it should
  * be a pointer to an array of 16- to 64-bit numeric values of the
  * appropriate type for the Data Element Value Representation.
  *
@@ -761,12 +761,15 @@ bool dcm_element_set_value_integer(DcmError **error,
 DCM_EXTERN
 bool dcm_element_set_value_numeric_multi(DcmError **error,
                                          DcmElement *element,
-                                         int *values,
+                                         void *values,
                                          uint32_t vm,
                                          bool steal);
 
 /**
- * Get a floating-point value of a Data Element.
+ * Get a floating-point value from a Data Element.
+ *
+ * The Data Element Value Reepresentation may be either single- or 
+ * double-precision floating point.
  *
  * :param error: Pointer to error object
  * :param element: Pointer to Data Element
@@ -776,10 +779,10 @@ bool dcm_element_set_value_numeric_multi(DcmError **error,
  * :return: true on success
  */
 DCM_EXTERN
-bool dcm_element_get_value_double(DcmError **error,
-                                  const DcmElement *element,
-                                  uint32_t index,
-                                  double *value);
+bool dcm_element_get_value_floatingpoint(DcmError **error,
+                                         const DcmElement *element,
+                                         uint32_t index,
+                                         double *value);
 
 /**
  * Set the value of a Data Element to a floating-point.
@@ -795,9 +798,9 @@ bool dcm_element_get_value_double(DcmError **error,
  * :return: true on success
  */
 DCM_EXTERN
-bool dcm_element_set_value_double(DcmError **error,
-                                  DcmElement *element,
-                                  double value);
+bool dcm_element_set_value_floatingpoint(DcmError **error,
+                                         DcmElement *element,
+                                         double value);
 
 /**
  * Get a binary value from a Data Element.
