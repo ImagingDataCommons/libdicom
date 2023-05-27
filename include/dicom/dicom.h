@@ -1410,7 +1410,7 @@ uint32_t dcm_bot_get_num_frames(const DcmBOT *bot);
  * Get Frame offset in the Basic Offset Table.
  *
  * :param bot: Basic Offset Table
- * :param index: Zero-based index of Frame in the Pixel Data Element
+ * :param index: One-based index of Frame in the Pixel Data Element
  *
  * :return: offset from pixel_data_offset
  */
@@ -1508,7 +1508,7 @@ DcmIO *dcm_io_create_from_file(DcmError **error,
  */
 DCM_EXTERN
 DcmIO *dcm_io_create_from_memory(DcmError **error,
-                                 char *buffer,
+                                 const char *buffer,
                                  int64_t length);
 
 /**
@@ -1601,7 +1601,8 @@ DcmFilehandle *dcm_filehandle_create_from_file(DcmError **error,
  */
 DCM_EXTERN
 DcmFilehandle *dcm_filehandle_create_from_memory(DcmError **error,
-                                                 char *buffer, int64_t length);
+                                                 const char *buffer, 
+						 int64_t length);
 
 /**
  * Destroy a Filehandle.
@@ -1680,7 +1681,7 @@ DcmBOT *dcm_filehandle_build_bot(DcmError **error, DcmFilehandle *filehandle,
  * :param filehandle: File
  * :param metadata: Metadata
  * :param bot: Basic Offset Table
- * :param index: Zero-based offset of the Frame in the Pixel Data Element
+ * :param index: One-based offset of the Frame in the Pixel Data Element
  *
  * :return: Frame
  */

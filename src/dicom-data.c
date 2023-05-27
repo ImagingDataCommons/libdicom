@@ -363,13 +363,11 @@ static bool element_check_capacity(DcmError **error,
         size_t length = strlen(value);
         if (length > capacity) {
             element->assigned = was_assigned;
-            dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                          "Data Element capacity check failed",
-                          "Value of Data Element '%08X' exceeds "
-                          "maximum length of Value Representation (%d)",
-                          element->tag,
-                          capacity);
-            return false;
+            dcm_log_warning("Data Element capacity check failed -- "
+                            "Value of Data Element '%08X' exceeds "
+                            "maximum length of Value Representation (%d)",
+                            element->tag,
+                            capacity);
         }
     }
 

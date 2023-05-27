@@ -287,7 +287,7 @@ typedef struct _DcmIOMemory {
     DcmIOMethods *methods;
 
     // private fields
-    char *buffer;
+    const char *buffer;
     int64_t length;
     int64_t read_point;
 } DcmIOMemory;
@@ -365,14 +365,15 @@ static int64_t dcm_io_seek_memory(DcmError **error, DcmIO *io,
             return -1;
     }
 
-    new_offset = MAX(0, MIN(new_offset, memory->length));
+    memory->read_point = MAX(0, MIN(new_offset, memory->length));
 
-    return new_offset;
+    return memory->read_point;
 }
 
 
 DcmIO *dcm_io_create_from_memory(DcmError **error,
-                                 char *buffer, int64_t length)
+                                 const char *buffer, 
+                                 int64_t length)
 {
     static DcmIOMethods methods = {
         dcm_io_open_memory,
