@@ -761,10 +761,10 @@ static bool element_check_float(DcmError **error,
 }
 
 
-bool dcm_element_get_value_double(DcmError **error,
-                                  const DcmElement *element,
-                                  uint32_t index,
-                                  double *value)
+bool dcm_element_get_value_floatingpoint(DcmError **error,
+                                         const DcmElement *element,
+                                         uint32_t index,
+                                         double *value)
 {
     if (!element_check_assigned(error, element) ||
         !element_check_numeric(error, element) ||
@@ -787,9 +787,9 @@ bool dcm_element_get_value_double(DcmError **error,
 }
 
 
-bool dcm_element_set_value_double(DcmError **error,
-                                  DcmElement *element,
-                                  double value)
+bool dcm_element_set_value_floatingpoint(DcmError **error,
+                                         DcmElement *element,
+                                         double value)
 {
     if (!element_check_not_assigned(error, element) ||
         !element_check_numeric(error, element) ||
@@ -1108,7 +1108,7 @@ static void element_print_float(const DcmElement *element,
                                 uint32_t index)
 {
     double value;
-    (void) dcm_element_get_value_double(NULL, element, index, &value);
+    (void) dcm_element_get_value_floatingpoint(NULL, element, index, &value);
     printf("%g", value);
 }
 

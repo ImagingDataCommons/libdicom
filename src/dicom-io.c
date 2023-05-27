@@ -269,7 +269,7 @@ DcmFilehandle *dcm_filehandle_create_from_file(DcmError **error,
 
 
 typedef struct _DcmIOMemory {
-    char *buffer;
+    const char *buffer;
     int64_t length;
     int64_t read_point;
 } DcmIOMemory;
@@ -347,14 +347,15 @@ static int64_t dcm_io_seek_memory(DcmError **error, void *data,
             return -1;
     }
 
-    new_offset = MAX(0, MIN(new_offset, io_memory->length));
+    io_memory->read_point = MAX(0, MIN(new_offset, io_memory->length));
 
-    return new_offset;
+    return io_memory->read_point;
 }
 
 
 DcmFilehandle *dcm_filehandle_create_from_memory(DcmError **error,
-                                                 char *buffer, int64_t length)
+                                                 const char *buffer,
+                                                 int64_t length)
 {
     static DcmIO io = {
         dcm_io_open_memory,

@@ -766,7 +766,10 @@ bool dcm_element_set_value_numeric_multi(DcmError **error,
                                          bool steal);
 
 /**
- * Get a floating-point value of a Data Element.
+ * Get a floating-point value from a Data Element.
+ *
+ * The Data Element Value Reepresentation may be either single- or 
+ * double-precision floating point.
  *
  * :param error: Pointer to error object
  * :param element: Pointer to Data Element
@@ -776,10 +779,10 @@ bool dcm_element_set_value_numeric_multi(DcmError **error,
  * :return: true on success
  */
 DCM_EXTERN
-bool dcm_element_get_value_double(DcmError **error,
-                                  const DcmElement *element,
-                                  uint32_t index,
-                                  double *value);
+bool dcm_element_get_value_floatingpoint(DcmError **error,
+                                         const DcmElement *element,
+                                         uint32_t index,
+                                         double *value);
 
 /**
  * Set the value of a Data Element to a floating-point.
@@ -795,9 +798,9 @@ bool dcm_element_get_value_double(DcmError **error,
  * :return: true on success
  */
 DCM_EXTERN
-bool dcm_element_set_value_double(DcmError **error,
-                                  DcmElement *element,
-                                  double value);
+bool dcm_element_set_value_floatingpoint(DcmError **error,
+                                         DcmElement *element,
+                                         double value);
 
 /**
  * Get a binary value from a Data Element.
@@ -1393,7 +1396,7 @@ uint32_t dcm_bot_get_num_frames(const DcmBOT *bot);
  * Get Frame offset in the Basic Offset Table.
  *
  * :param bot: Basic Offset Table
- * :param index: Zero-based index of Frame in the Pixel Data Element
+ * :param index: One-based index of Frame in the Pixel Data Element
  *
  * :return: offset from pixel_data_offset
  */
@@ -1472,8 +1475,8 @@ DcmFilehandle *dcm_filehandle_create_from_file(DcmError **error,
  */
 DCM_EXTERN
 DcmFilehandle *dcm_filehandle_create_from_memory(DcmError **error,
-                                                 char *buffer,
-						 int64_t length);
+                                                 const char *buffer,
+                                                 int64_t length);
 
 /**
  * Read File Meta Information from a File.
@@ -1544,7 +1547,7 @@ DcmBOT *dcm_filehandle_build_bot(DcmError **error, DcmFilehandle *filehandle,
  * :param filehandle: File
  * :param metadata: Metadata
  * :param bot: Basic Offset Table
- * :param index: Zero-based offset of the Frame in the Pixel Data Element
+ * :param index: One-based offset of the Frame in the Pixel Data Element
  *
  * :return: Frame
  */
