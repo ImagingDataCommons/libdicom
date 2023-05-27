@@ -675,7 +675,7 @@ bool dcm_element_set_value_integer(DcmError **error,
 
 bool dcm_element_set_value_numeric_multi(DcmError **error,
                                          DcmElement *element,
-                                         int *value,
+                                         void *value,
                                          uint32_t vm,
                                          bool steal)
 {

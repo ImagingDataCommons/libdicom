@@ -742,7 +742,7 @@ bool dcm_element_set_value_integer(DcmError **error,
  * numeric Value Representation.
  * If that is not the case, the function will fail.
  *
- * Although the value passed is `int*`, it should
+ * Although the value passed is `void*`, it should
  * be a pointer to an array of 16- to 64-bit numeric values of the
  * appropriate type for the Data Element Value Representation.
  *
@@ -761,7 +761,7 @@ bool dcm_element_set_value_integer(DcmError **error,
 DCM_EXTERN
 bool dcm_element_set_value_numeric_multi(DcmError **error,
                                          DcmElement *element,
-                                         int *values,
+                                         void *values,
                                          uint32_t vm,
                                          bool steal);
 
