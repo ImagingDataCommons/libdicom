@@ -7,13 +7,11 @@
 
 - remove dupe code
 
-- load PerFrameFunctionalGroupsSequence during BOT load
+- update build-bot
 
 - getframe should use frame_index
 
 - update openslide for new thing
-
-- move implicit into parser state?
 
 # bot support
 

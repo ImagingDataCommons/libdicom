@@ -113,7 +113,6 @@ typedef struct _DcmParse {
                            uint32_t length);
 
     bool (*stop)(void *client, 
-                 bool implicit,
                  uint32_t tag, 
                  DcmVR vr, 
                  uint32_t length);
@@ -123,14 +122,14 @@ DCM_EXTERN
 bool dcm_parse_dataset(DcmError **error, 
                        DcmIO *io,
                        bool implicit,
-                       const DcmParse *parse, 
                        bool byteswap,
+                       const DcmParse *parse, 
                        void *client);
 
 DCM_EXTERN 
 bool dcm_parse_group(DcmError **error, 
                      DcmIO *io,
                      bool implicit,
-                     const DcmParse *parse, 
                      bool byteswap,
+                     const DcmParse *parse, 
                      void *client);

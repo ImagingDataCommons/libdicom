@@ -33,8 +33,9 @@
 typedef struct _DcmParseState {
     DcmError **error;
     DcmIO *io;
-    const DcmParse *parse;
+    bool implicit;
     bool byteswap;
+    const DcmParse *parse;
     void *client;
 
     DcmDataSet *meta;
@@ -215,12 +216,10 @@ static bool read_tag(DcmParseState *state, uint32_t *tag, int64_t *position)
 /* This is used recursively.
  */
 static bool parse_element(DcmParseState *state,
-                          bool implicit,
                           int64_t *position);
 
 
 static bool parse_element_header(DcmParseState *state, 
-                                 bool implicit,
                                  uint32_t *tag,
                                  DcmVR *vr,
                                  uint32_t *length,
@@ -230,7 +229,7 @@ static bool parse_element_header(DcmParseState *state,
         return false;
     }
 
-    if (implicit) {
+    if (state->implicit) {
         // this can be an ambiguious VR, eg. pixeldata is allowed in implicit
         // mode and has to be disambiguated later from other tags
         *vr = dcm_vr_from_tag(*tag);
@@ -291,7 +290,6 @@ static bool parse_element_header(DcmParseState *state,
 
 
 static bool parse_element_sequence(DcmParseState *state, 
-                                   bool implicit,
                                    uint32_t seq_tag,
                                    DcmVR seq_vr,
                                    uint32_t seq_length,
@@ -365,7 +363,7 @@ static bool parse_element_sequence(DcmParseState *state,
                 return false;
             }
 
-            if (!parse_element(state, implicit, &item_position)) {
+            if (!parse_element(state, &item_position)) {
                 return false;
             }
         }
@@ -394,7 +392,6 @@ static bool parse_element_sequence(DcmParseState *state,
 
 
 static bool parse_element_body(DcmParseState *state, 
-                               bool implicit,
                                uint32_t tag,
                                DcmVR vr,
                                uint32_t length,
@@ -489,7 +486,6 @@ static bool parse_element_body(DcmParseState *state,
 
             int64_t seq_position = 0;
             if (!parse_element_sequence(state, 
-                                        implicit,
                                         tag,
                                         vr,
                                         length,
@@ -513,14 +509,13 @@ static bool parse_element_body(DcmParseState *state,
 
 
 static bool parse_element(DcmParseState *state,
-                          bool implicit,
                           int64_t *position)
 {
     uint32_t tag;
     DcmVR vr;
     uint32_t length;
-    if (!parse_element_header(state, implicit, &tag, &vr, &length, position) ||
-        !parse_element_body(state, implicit, tag, vr, length, position)) {
+    if (!parse_element_header(state, &tag, &vr, &length, position) ||
+        !parse_element_body(state, tag, vr, length, position)) {
         return false;
     }
 
@@ -531,7 +526,6 @@ static bool parse_element(DcmParseState *state,
  * stop function.
  */
 static bool parse_toplevel_dataset(DcmParseState *state,
-                                   bool implicit,
                                    int64_t *position)
 {
     if (state->parse->dataset_begin &&
@@ -549,8 +543,7 @@ static bool parse_toplevel_dataset(DcmParseState *state,
         DcmVR vr;
         uint32_t length;
         int64_t element_start = 0;
-        if (!parse_element_header(state, implicit, 
-            &tag, &vr, &length, &element_start)) {
+        if (!parse_element_header(state, &tag, &vr, &length, &element_start)) {
             return false;
         }
 
@@ -561,7 +554,7 @@ static bool parse_toplevel_dataset(DcmParseState *state,
         }
 
         if (state->parse->stop &&
-            state->parse->stop(state->client, implicit, tag, vr, length)) {
+            state->parse->stop(state->client, tag, vr, length)) {
             // seek back to the start of this element
             if (!dcm_seekcur(state, -element_start, &element_start)) {
                 return false;
@@ -571,7 +564,7 @@ static bool parse_toplevel_dataset(DcmParseState *state,
 
         *position += element_start;
 
-        if (!parse_element_body(state, implicit, tag, vr, length, position)) {
+        if (!parse_element_body(state, tag, vr, length, position)) {
             return false;
         }
     }
@@ -590,20 +583,21 @@ static bool parse_toplevel_dataset(DcmParseState *state,
 bool dcm_parse_dataset(DcmError **error, 
                        DcmIO *io,
                        bool implicit,
-                       const DcmParse *parse, 
                        bool byteswap,
+                       const DcmParse *parse, 
                        void *client)
 {
     DcmParseState state = { 
         .error = error, 
         .io = io, 
-        .parse = parse, 
+        .implicit = implicit, 
         .byteswap = byteswap, 
+        .parse = parse, 
         .client = client 
     };
 
     int64_t position = 0;
-    if (!parse_toplevel_dataset(&state, implicit, &position)) {
+    if (!parse_toplevel_dataset(&state, &position)) {
         return false;
     }
 
@@ -616,15 +610,16 @@ bool dcm_parse_dataset(DcmError **error,
 bool dcm_parse_group(DcmError **error, 
                      DcmIO *io,
                      bool implicit,
-                     const DcmParse *parse, 
                      bool byteswap,
+                     const DcmParse *parse, 
                      void *client)
 {
     DcmParseState state = { 
         .error = error, 
         .io = io, 
-        .parse = parse, 
+        .implicit = implicit, 
         .byteswap = byteswap, 
+        .parse = parse, 
         .client = client 
     };
 
@@ -635,12 +630,7 @@ bool dcm_parse_group(DcmError **error,
     uint32_t tag;
     DcmVR vr;
     uint32_t length;
-    if (!parse_element_header(&state, 
-                              implicit, 
-                              &tag, 
-                              &vr, 
-                              &length, 
-                              &position)) {
+    if (!parse_element_header(&state, &tag, &vr, &length, &position)) {
         return false;
     }
     uint16_t element_number = tag & 0xffff;
@@ -664,12 +654,7 @@ bool dcm_parse_group(DcmError **error,
 
     while (position < group_length) {
         int64_t element_start = 0;
-        if (!parse_element_header(&state, 
-                                  implicit, 
-                                  &tag, 
-                                  &vr, 
-                                  &length, 
-                                  &element_start)) {
+        if (!parse_element_header(&state, &tag, &vr, &length, &element_start)) {
             return false;
         }
 
@@ -677,7 +662,7 @@ bool dcm_parse_group(DcmError **error,
         // or if the stop function triggers
         if ((tag >> 16) != group_number ||
             (state.parse->stop &&
-             state.parse->stop(state.client, implicit, tag, vr, length))) {
+             state.parse->stop(state.client, tag, vr, length))) {
             // seek back to the start of this element
             if (!dcm_seekcur(&state, -element_start, &element_start)) {
                 return false;
@@ -688,7 +673,7 @@ bool dcm_parse_group(DcmError **error,
 
         position += element_start;
 
-        if (!parse_element_body(&state, implicit, tag, vr, length, &position)) {
+        if (!parse_element_body(&state, tag, vr, length, &position)) {
             return false;
         }
     }
@@ -700,4 +685,3 @@ bool dcm_parse_group(DcmError **error,
 
     return true;
 }
-
