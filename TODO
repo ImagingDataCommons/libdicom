@@ -1,14 +1,15 @@
 # TODO
 
-- dcm_filehandle_read_bot() should be in dicom-parse.c
-  
-  also dcm_filehandle_build_bot()
+- dcm-dump could call the parser with a set of print functions
+
+  add a "-a" flag to print everything (inc. pixel data and 
+  perframefunctionalgroupsequence etc.)
 
 - remove dupe code
 
 - load PerFrameFunctionalGroupsSequence during BOT load
 
-- getframe should use index
+- getframe should use frame_index
 
 - update openslide for new thing
 
