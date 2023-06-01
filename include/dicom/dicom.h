@@ -1597,7 +1597,7 @@ bool dcm_filehandle_read_pixeldata(DcmError **error,
 /**
  * Read an individual Frame from a File.
  *
- * Frames are numbered in row-major order starting at the top left.
+ * Frames are numbered from 1 in row-major order starting at the top left.
  *
  * :param error: Pointer to error object
  * :param filehandle: File

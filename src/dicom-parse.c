@@ -713,6 +713,7 @@ bool dcm_parse_pixeldata(DcmError **error,
     uint32_t tag;
     DcmVR vr;
     uint32_t length;
+    uint32_t value;
     if (!parse_element_header(&state, &tag, &vr, &length, &position)) {
         return false;
     }
@@ -746,17 +747,15 @@ bool dcm_parse_pixeldata(DcmError **error,
         // FIXME .. could do this with a single require to a uint32_t array,
         // see numeric array read above
         for (int i = 0; i < num_frames; i++) {
-            uint32_t ui32;
-            if (!read_uint32(&state, &ui32, &position)) {
-                return NULL;
+            if (!read_uint32(&state, &value, &position)) {
+                return false;
             }
-            uint64_t value = ui32;
             if (value == TAG_ITEM) {
                 dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                               "Reading Basic Offset Table failed",
                               "Encountered unexpected Item Tag "
                               "in Basic Offset Table");
-                return NULL;
+                return false;
             }
 
             offsets[i] = value;
@@ -764,6 +763,15 @@ bool dcm_parse_pixeldata(DcmError **error,
 
         // and that's the offset to the item header on the first frame
         *first_frame_offset = position;
+
+        // the next thing should be the tag for frame 1
+        if (!read_uint32(&state, &value, &position) ||
+            value != TAG_ITEM) {
+            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                          "Reading Basic Offset Table failed",
+                          "Basic Offset Table too large");
+            return false;
+        }
     } else {
         // the BOT is missing, we must scan pixeldata to find the position of
         // each frame
@@ -779,7 +787,10 @@ bool dcm_parse_pixeldata(DcmError **error,
             }
 
             if (tag == TAG_SQ_DELIM) {
-                break;
+                dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                              "Reading Basic Offset Table failed",
+                              "Too few frames in PixelData.");
+                return false;
             }
 
             if (tag != TAG_ITEM) {
@@ -798,6 +809,15 @@ bool dcm_parse_pixeldata(DcmError **error,
             if (!dcm_seekcur(&state, length, &position)) {
                 return false;
             }
+        }
+
+        // the next thing should be the end of sequence tag
+        if (!read_tag(&state, &tag, &position) ||
+            tag != TAG_SQ_DELIM) {
+            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                          "Reading Basic Offset Table failed",
+                          "Too many frames in PixelData");
+            return false;
         }
     }
 

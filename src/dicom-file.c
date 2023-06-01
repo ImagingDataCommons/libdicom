@@ -26,20 +26,31 @@
 
 struct _DcmFilehandle {
     DcmIO *io;
-    int64_t offset;
     char *transfer_syntax_uid;
-    int64_t pixel_data_offset;
-    ssize_t first_frame_offset;
-    int64_t *offset_table;
-    uint64_t *extended_offset_table;
     bool byteswap;
     bool implicit;
-    uint32_t last_tag;
-    uint32_t frame_number;
+
+    // start of image metadata
+    int64_t offset;
+    // start of pixel metadata
+    int64_t pixel_data_offset;
+    // distance from pixel metadata to start of first frame
+    ssize_t first_frame_offset;
+
+    // image properties we need to track
     uint32_t tiles_across;
     uint32_t num_frames;
-    uint32_t *frame_index;
     struct PixelDescription desc;
+
+    // both zero-indexed and length num_frames
+    uint32_t *frame_index;
+    int64_t *offset_table;
+
+    // the last top level tag the scanner saw
+    uint32_t last_tag;
+
+    // used to count frames as we scan perframefunctionalgroup
+    uint32_t frame_number;
 
     // push and pop these while we parse
     UT_array *dataset_stack;
@@ -72,7 +83,6 @@ DcmFilehandle *dcm_filehandle_create(DcmError **error, DcmIO *io)
     filehandle->offset = 0;
     filehandle->transfer_syntax_uid = NULL;
     filehandle->pixel_data_offset = 0;
-    filehandle->extended_offset_table = NULL;
     filehandle->byteswap = is_big_endian();
     filehandle->last_tag = 0xffffffff;
     filehandle->frame_index = NULL;
@@ -847,13 +857,21 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
                                     uint32_t frame_number)
 {
     dcm_log_debug("Read frame number #%u.", frame_number);
+
+    if (filehandle->offset_table == NULL) {
+        dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                      "Reading Frame Item failed",
+                      "No offset table loaded");
+        return NULL;
+    }
+
     if (frame_number == 0) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                       "Reading Frame Item failed",
                       "Frame Number must be non-zero");
         return NULL;
     }
-    if (frame_number >= filehandle->num_frames) {
+    if (frame_number > filehandle->num_frames) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                       "Reading Frame Item failed",
                       "Frame Number must be less than %u", 
@@ -861,9 +879,12 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
         return NULL;
     }
 
+    // we are zero-based from here on
+    uint32_t i = frame_number - 1;
+
     if (filehandle->frame_index) {
-        frame_number = filehandle->frame_index[frame_number];
-        if (frame_number == 0xffffffff) {
+        i = filehandle->frame_index[i];
+        if (i == 0xffffffff) {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                           "Reading Frame Item failed",
                           "No such frame"); 
@@ -873,7 +894,7 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
 
     ssize_t total_frame_offset = filehandle->pixel_data_offset + 
                                  filehandle->first_frame_offset + 
-                                 filehandle->offset_table[frame_number];
+                                 filehandle->offset_table[i];
     if (!dcm_seekset(error, filehandle, total_frame_offset)) {
         return NULL;
     }

@@ -67,6 +67,13 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    if (!dcm_filehandle_read_pixeldata(&error, filehandle)) {
+        dcm_error_log(error);
+        dcm_error_clear(&error);
+        dcm_filehandle_destroy(filehandle);
+        return EXIT_FAILURE;
+    }
+
     uint32_t tag = dcm_dict_tag_from_keyword("NumberOfFrames");
     DcmElement *element;
     const char *value;

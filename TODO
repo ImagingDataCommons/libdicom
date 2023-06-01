@@ -5,9 +5,7 @@
   add a "-a" flag to print everything (inc. pixel data and 
   perframefunctionalgroupsequence etc.)
 
-- test getframe
-
-- update docs
+  expose parser in public API? it'd be tricky to bind to python
 
 - update openslide for new thing
 

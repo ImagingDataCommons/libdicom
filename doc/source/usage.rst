@@ -107,14 +107,14 @@ The content of a Part10 file can be read
 using various functions.  The `File Meta Information
 <http://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_3.html#glossentry_FileMetaInformation>`_
 can be read via :c:func:`dcm_filehandle_read_file_meta()`.  The metadata
-of the Data Set (i.e., all Data Elements with the exception of the Pixel
-Data Element) can be read via :c:func:`dcm_filehandle_read_metadata()`.
+of the Data Set (i.e., all Data Elements with the exception of the
+Pixel Data Element and Per Frame Functional Group) can be read via
+:c:func:`dcm_filehandle_read_metadata()`.  
+
 In case the Data Set contained in a Part10 file represents an Image
-instance, individual Frame Items of the Pixel Data Element can be read
-via :c:func:`dcm_filehandle_read_frame()` using a Basic Offset Table
-(BOT) Item.  The BOT Item may either be read from a Filehandle via
-:c:func:`dcm_filehandle_read_bot()` or built for a Filehandle via
-:c:func:`dcm_filehandle_build_bot()`.
+instance, the remaining parts of the image metadata may be loaded with
+:c:func:`dcm_filehandle_read_pixeldata()`. After this, individual frames
+may be read out with :c:func:`dcm_filehandle_read_frame()`.
 
 Thread safety
 +++++++++++++
