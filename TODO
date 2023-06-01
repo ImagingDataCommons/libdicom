@@ -5,35 +5,11 @@
   add a "-a" flag to print everything (inc. pixel data and 
   perframefunctionalgroupsequence etc.)
 
-- remove dupe code
+- test getframe
 
-- update build-bot
-
-- getframe should use frame_index
+- update docs
 
 - update openslide for new thing
-
-# bot support
-
-- need more tests and test images
-
-- extended offset table support seems to be broken? see FIXME comment
-
-	probably will never be used
-
-# data types
-
-- bot frame offsets should be int64_t to match dcm_seekset(), 
-  pixel_data_offset, etc.
-
-- remove dcm_dataset_copy_tags() etc should not use uint32_t? what about
-  dcm_dataset_count()?
-
-	get_num_frames() uses strtol(), so it's a long
-
-- does utarray_len() really return uint32?
-
-	no, it's unsigned int
 
 
 # asserts
@@ -41,21 +17,6 @@
 - should the foreach funcs take two params (one for error)? are they used?
 
 	nope, unused within libdicom
-
-- add eg.
-
-	#define DCM_RETURN_VALUE_IF_FAIL(ERROR, CONDITION, RETURN_VALUE)
-		if (!(CONDITION)) {
-			dcm_error_set(error, invalid,
-				"Pointer is null", "%s:%s (%d)"
-				__FILE__, __FUNCTION__, __LINE__);
-			return RETURN_VALUE
-		}
-
-  and use instead of assert in most places
-
-  hmm a sure way to memleaks because of the way that pointer ownership is 
-  handled, fix that first
 
 
 # Tips

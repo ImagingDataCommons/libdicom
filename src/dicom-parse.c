@@ -685,3 +685,166 @@ bool dcm_parse_group(DcmError **error,
 
     return true;
 }
+
+
+/* Walk pixeldata and set up offsets. We use the BOT, if present, otherwise we
+ * have to scan the whole thing.
+ *
+ * Each offset is the seek from the start of pixeldata to the ITEM for that
+ * frame.
+ */
+bool dcm_parse_pixeldata(DcmError **error,
+                         DcmIO *io,
+                         bool implicit,
+                         bool byteswap,
+                         ssize_t *first_frame_offset,
+                         ssize_t *offsets,
+                         int num_frames)
+{
+    DcmParseState state = { 
+        .error = error, 
+        .io = io, 
+        .implicit = implicit, 
+        .byteswap = byteswap 
+    };
+
+    int64_t position = 0;
+
+    uint32_t tag;
+    DcmVR vr;
+    uint32_t length;
+    if (!parse_element_header(&state, &tag, &vr, &length, &position)) {
+        return false;
+    }
+
+    if (tag != TAG_PIXEL_DATA &&
+        tag != TAG_FLOAT_PIXEL_DATA &&
+        tag != TAG_DOUBLE_PIXEL_DATA) {
+        dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                      "Parsing PixelData failed",
+                      "File pointer not positioned at Pixel Data Element");
+        return false;
+    }
+
+    // The header of the 0th item (the BOT)
+    if (!read_tag(&state, &tag, &position) ||
+        !read_uint32(&state, &length, &position)) {
+        return false;
+    }
+    if (tag != TAG_ITEM) {
+        dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                      "Reading Basic Offset Table failed",
+                      "Unexpected Tag found for Basic Offset Table Item");
+        return false;
+    }
+
+    if (length > 0) {
+        // There is a non-zero length BOT, use that
+        dcm_log_info("Read Basic Offset Table value.");
+
+        // Read offset values from BOT Item value
+        // FIXME .. could do this with a single require to a uint32_t array,
+        // see numeric array read above
+        for (int i = 0; i < num_frames; i++) {
+            uint32_t ui32;
+            if (!read_uint32(&state, &ui32, &position)) {
+                return NULL;
+            }
+            uint64_t value = ui32;
+            if (value == TAG_ITEM) {
+                dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                              "Reading Basic Offset Table failed",
+                              "Encountered unexpected Item Tag "
+                              "in Basic Offset Table");
+                return NULL;
+            }
+
+            offsets[i] = value;
+        }
+
+        // and that's the offset to the item header on the first frame
+        *first_frame_offset = position;
+    } else {
+        // the BOT is missing, we must scan pixeldata to find the position of
+        // each frame
+
+        // 0 in the BOT is the offset to the start of frame 1, ie. here
+        *first_frame_offset = position;
+
+        position = 0;
+        for (int i = 0; i < num_frames; i++) {
+            if (!read_tag(&state, &tag, &position) ||
+                !read_uint32(&state, &length, &position)) {
+                return false;
+            }
+
+            if (tag == TAG_SQ_DELIM) {
+                break;
+            }
+
+            if (tag != TAG_ITEM) {
+                dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                              "Building Basic Offset Table failed",
+                              "Frame Item #%d has wrong Tag '%08X'",
+                              i + 1,
+                              tag);
+                return false;
+            }
+
+            // step back to the start of the item for this frame
+            offsets[i] = position - 8;
+
+            // and seek forward over the value
+            if (!dcm_seekcur(&state, length, &position)) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+char *dcm_parse_frame(DcmError **error,
+                      DcmIO *io,
+                      bool implicit,
+                      bool byteswap,
+                      struct PixelDescription *desc,
+                      uint32_t *length)
+{
+    DcmParseState state = { 
+        .error = error, 
+        .io = io, 
+        .implicit = implicit, 
+        .byteswap = byteswap,
+    };
+
+    int64_t position = 0;
+
+    if (dcm_is_encapsulated_transfer_syntax(desc->transfer_syntax_uid)) {
+        uint32_t tag;
+        if (!read_tag(&state, &tag, &position) ||
+            !read_uint32(&state, length, &position)) {
+            return NULL;
+        }
+
+        if (tag != TAG_ITEM) {
+            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                          "Reading Frame Item failed",
+                          "No Item Tag found for Frame Item");
+            return NULL;
+        }
+    } else {
+        *length = desc->rows * desc->columns * desc->samples_per_pixel;
+    }
+
+    char *value = DCM_MALLOC(error, *length);
+    if (value == NULL) {
+        return NULL;
+    }
+    if (!dcm_require(&state, value, *length, &position)) {
+        free(value);
+        return NULL;
+    }
+
+    return value;
+}

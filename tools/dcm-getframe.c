@@ -49,8 +49,6 @@ int main(int argc, char *argv[])
     }
     const char *file_path = argv[i];
 
-    uint32_t frame_number = atoi(argv[i + 1]);
-
     dcm_log_info("Read filehandle '%s'", file_path);
     DcmFilehandle *filehandle = dcm_filehandle_create_from_file(&error, 
                                                                 file_path);
@@ -69,24 +67,19 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    dcm_log_info("Read BOT");
-    DcmBOT *bot = dcm_filehandle_read_bot(&error, filehandle, metadata);
-    if (bot == NULL) {
-        /* Try to build the BOT instead.
-         */
-        dcm_error_clear(&error);
-        dcm_log_info("Build BOT");
-        bot = dcm_filehandle_build_bot(&error, filehandle, metadata);
-    }
-    if (bot == NULL) {
+    uint32_t tag = dcm_dict_tag_from_keyword("NumberOfFrames");
+    DcmElement *element;
+    const char *value;
+    if (!(element = dcm_dataset_get(&error, metadata, tag)) ||
+        !dcm_element_get_value_string(&error, element, 0, &value)) {
         dcm_error_log(error);
         dcm_error_clear(&error);
-        dcm_dataset_destroy(metadata);
         dcm_filehandle_destroy(filehandle);
         return EXIT_FAILURE;
     }
 
-    uint32_t num_frames = dcm_bot_get_num_frames(bot);
+    int num_frames = atoi(value);
+    int frame_number = atoi(argv[i + 1]);
     if (frame_number < 1 || frame_number > num_frames) {
         dcm_error_set(&error, DCM_ERROR_CODE_INVALID,
                       "Bad frame number",
@@ -94,7 +87,6 @@ int main(int argc, char *argv[])
                       num_frames);
         dcm_error_log(error);
         dcm_error_clear(&error);
-        dcm_bot_destroy(bot);
         dcm_dataset_destroy(metadata);
         dcm_filehandle_destroy(filehandle);
         return EXIT_FAILURE;
@@ -102,12 +94,11 @@ int main(int argc, char *argv[])
 
     dcm_log_info("Read frame %u", frame_number);
     DcmFrame *frame = dcm_filehandle_read_frame(&error, 
-                                                filehandle, metadata, 
-                                                bot, frame_number);
+                                                filehandle,
+                                                frame_number);
     if (frame == NULL) {
         dcm_error_log(error);
         dcm_error_clear(&error);
-        dcm_bot_destroy(bot);
         dcm_dataset_destroy(metadata);
         dcm_filehandle_destroy(filehandle);
         return EXIT_FAILURE;
@@ -154,7 +145,6 @@ int main(int argc, char *argv[])
     }
 
     dcm_frame_destroy(frame);
-    dcm_bot_destroy(bot);
     dcm_dataset_destroy(metadata);
     dcm_filehandle_destroy(filehandle);
 

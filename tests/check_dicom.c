@@ -709,19 +709,12 @@ START_TEST(test_file_sm_image_frame)
     DcmDataSet *metadata = dcm_filehandle_read_metadata(NULL, filehandle);
     ck_assert_ptr_nonnull(metadata);
 
+    ck_assert_int_ne(dcm_filehandle_read_pixeldata(NULL, filehandle), 0);
+
     dcm_log_level = DCM_LOG_INFO;
-    DcmError *error = NULL;
-    DcmBOT *bot = dcm_filehandle_build_bot(&error, filehandle, metadata);
-    if (!bot) {
-        dcm_error_log(error);
-        dcm_error_clear(&error);
-        abort();
-    }
-    ck_assert_ptr_nonnull(bot);
-    ck_assert_uint_eq(dcm_bot_get_num_frames(bot), 25);
 
     DcmFrame *frame = dcm_filehandle_read_frame(NULL, 
-                                                filehandle, metadata, bot, 
+                                                filehandle, 
                                                 frame_number);
     ck_assert_uint_eq(dcm_frame_get_number(frame), frame_number);
     ck_assert_uint_eq(dcm_frame_get_rows(frame), 10);
@@ -737,7 +730,6 @@ START_TEST(test_file_sm_image_frame)
                      "1.2.840.10008.1.2.1");
 
     dcm_frame_destroy(frame);
-    dcm_bot_destroy(bot);
     dcm_dataset_destroy(metadata);
     dcm_filehandle_destroy(filehandle);
 }

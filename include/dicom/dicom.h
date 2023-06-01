@@ -141,11 +141,6 @@ typedef struct _DcmSequence DcmSequence;
 typedef struct _DcmFrame DcmFrame;
 
 /**
- * Basic Offset Table (BOT) Item of Pixel Data Element
- */
-typedef struct _DcmBOT DcmBOT;
-
-/**
  * Start up libdicom.
  *
  * Call this from the main thread during program startup for libdicom to be
@@ -1375,69 +1370,6 @@ void dcm_frame_destroy(DcmFrame *frame);
 
 
 /**
- * Basic Offset Table (BOT).
- */
-
-/**
- * Create a Basic Offset Table.
- *
- * :param error: Pointer to error object
- * :param offsets: Offset of each Frame in the Pixel Data Element
- *                 (measured from the first byte of the first Frame).
- * :param num_frames: Number of Frames in the Pixel Data Element
- * :first_frame_offset: Offset from pixel_data_offset to the first byte of the
- *                      first frame
- *
- * The created object takes over ownership of the memory referenced by `offsets`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Basic Offset Table
- */
-DCM_EXTERN
-DcmBOT *dcm_bot_create(DcmError **error,
-                       ssize_t *offsets,
-                       uint32_t num_frames,
-                       ssize_t first_frame_offset);
-
-/**
- * Get number of Frame offsets in the Basic Offset Table.
- *
- * :param bot: Basic Offset Table
- *
- * :return: number of frames
- */
-DCM_EXTERN
-uint32_t dcm_bot_get_num_frames(const DcmBOT *bot);
-
-/**
- * Get Frame offset in the Basic Offset Table.
- *
- * :param bot: Basic Offset Table
- * :param index: One-based index of Frame in the Pixel Data Element
- *
- * :return: offset from pixel_data_offset
- */
-DCM_EXTERN
-ssize_t dcm_bot_get_frame_offset(const DcmBOT *bot, uint32_t index);
-
-/**
- * Print a Basic Offset Table.
- *
- * :param bot: Basic Offset Table
- */
-DCM_EXTERN
-void dcm_bot_print(const DcmBOT *bot);
-
-/**
- * Destroy a Basic Offset Table.
- *
- * :param bot: Basic Offset Table
- */
-DCM_EXTERN
-void dcm_bot_destroy(DcmBOT *bot);
-
-
-/**
  * Part 10 File
  */
 
@@ -1648,51 +1580,34 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
                                          DcmFilehandle *filehandle);
 
 /**
- * Read Basic Offset Table from a File.
+ * Read everything necessary to fetch frames from the file.
  *
- * In case the Pixel Data Element does not contain a Basic Offset Table item,
- * but contains an Extended Offset Table element, the value of the Extended
- * Offset Table element will be read instead.
- *
- * :param error: Pointer to error object
- * :param filehandle: File
- * :param metadata: Metadata
- *
- * :return: Basic Offset Table
- */
-DCM_EXTERN
-DcmBOT *dcm_filehandle_read_bot(DcmError **error, DcmFilehandle *filehandle,
-                                DcmDataSet *metadata);
-
-/**
- * Build Basic Offset Table for a File.
+ * Scans the PixelData sequence and loads the
+ * PerFrameFunctionalGroupSequence, if present.
  *
  * :param error: Pointer to error object
  * :param filehandle: File
- * :param metadata: Metadata
  *
- * :return: Basic Offset Table
+ * :return: true on success
  */
 DCM_EXTERN
-DcmBOT *dcm_filehandle_build_bot(DcmError **error, DcmFilehandle *filehandle,
-                                 DcmDataSet *metadata);
+bool dcm_filehandle_read_pixeldata(DcmError **error,
+                                   DcmFilehandle *filehandle);
 
 /**
  * Read an individual Frame from a File.
  *
+ * Frames are numbered in row-major order starting at the top left.
+ *
  * :param error: Pointer to error object
  * :param filehandle: File
- * :param metadata: Metadata
- * :param bot: Basic Offset Table
- * :param index: One-based offset of the Frame in the Pixel Data Element
+ * :param index: One-based frame number
  *
  * :return: Frame
  */
 DCM_EXTERN
 DcmFrame *dcm_filehandle_read_frame(DcmError **error,
                                     DcmFilehandle *filehandle,
-                                    DcmDataSet *metadata,
-                                    DcmBOT *bot,
-                                    uint32_t index);
+                                    uint32_t frame_number);
 
 #endif

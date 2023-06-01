@@ -111,13 +111,6 @@ struct _DcmFrame {
 };
 
 
-struct _DcmBOT {
-    uint32_t num_frames;
-    ssize_t *offsets;
-    ssize_t first_frame_offset;
-};
-
-
 struct SequenceItem {
     DcmDataSet *dataset;
 };
@@ -1874,84 +1867,6 @@ void dcm_frame_destroy(DcmFrame *frame)
         }
         free(frame);
         frame = NULL;
-    }
-}
-
-
-// Basic Offset Table
-
-DcmBOT *dcm_bot_create(DcmError **error,
-                       ssize_t *offsets, uint32_t num_frames,
-                       ssize_t first_frame_offset)
-{
-    if (num_frames == 0) {
-        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Constructing Basic Offset Table failed",
-                      "Expected offsets of %ld Frame Items",
-                      num_frames);
-        free(offsets);
-        return NULL;
-    }
-
-    if (offsets == NULL) {
-        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Constructing Basic Offset Table failed",
-                      "No offsets were provided");
-        return NULL;
-    }
-    DcmBOT *bot = DCM_NEW(error, DcmBOT);
-    if (bot == NULL) {
-        free(offsets);
-        return NULL;
-    }
-    bot->num_frames = num_frames;
-    bot->offsets = offsets;
-    bot->first_frame_offset = first_frame_offset;
-    return bot;
-}
-
-
-void dcm_bot_print(const DcmBOT *bot)
-{
-    assert(bot);
-    uint32_t i;
-
-    printf("[");
-    for(i = 0; i < bot->num_frames; i++) {
-        printf("%zd", bot->offsets[i] + bot->first_frame_offset);
-        if (i == (bot->num_frames - 1)) {
-            printf("]\n");
-        } else {
-            printf(",");
-        }
-    }
-}
-
-
-uint32_t dcm_bot_get_num_frames(const DcmBOT *bot)
-{
-    assert(bot);
-    return bot->num_frames;
-}
-
-
-ssize_t dcm_bot_get_frame_offset(const DcmBOT *bot, uint32_t number)
-{
-    assert(bot);
-    assert(number > 0 && number < bot->num_frames + 1);
-    uint32_t index = number - 1;
-    return bot->offsets[index] + bot->first_frame_offset;
-}
-
-
-void dcm_bot_destroy(DcmBOT *bot)
-{
-    if (bot) {
-        if (bot->offsets) {
-            free(bot->offsets);
-        }
-        free(bot);
-        bot = NULL;
     }
 }
 

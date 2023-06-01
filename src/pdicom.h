@@ -133,3 +133,31 @@ bool dcm_parse_group(DcmError **error,
                      bool byteswap,
                      const DcmParse *parse, 
                      void *client);
+
+bool dcm_parse_pixeldata(DcmError **error,
+                         DcmIO *io,
+                         bool implicit,
+                         bool byteswap,
+                         ssize_t *first_frame_offset,
+                         ssize_t *offsets,
+                         int num_frames);
+
+struct PixelDescription {
+    uint16_t rows;
+    uint16_t columns;
+    uint16_t samples_per_pixel;
+    uint16_t bits_allocated;
+    uint16_t bits_stored;
+    uint16_t high_bit;
+    uint16_t pixel_representation;
+    uint16_t planar_configuration;
+    const char *photometric_interpretation;
+    const char *transfer_syntax_uid;
+};
+
+char *dcm_parse_frame(DcmError **error,
+                      DcmIO *io,
+                      bool implicit,
+                      bool byteswap,
+                      struct PixelDescription *desc,
+                      uint32_t *length);
