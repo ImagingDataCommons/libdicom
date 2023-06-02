@@ -38,16 +38,17 @@
 #define MAX(A, B) ((A) > (B) ? (A) : (B))
 #define USED(x) (void)(x)
 
+#define TAG_DIMENSION_INDEX_VALUES                  0x00209157
+#define TAG_REFERENCED_IMAGE_NAVIGATION_SEQUENCE    0x00480200
+#define TAG_PER_FRAME_FUNCTIONAL_GROUP_SEQUENCE     0x52009230
+#define TAG_EXTENDED_OFFSET_TABLE                   0x7FE00001
+#define TAG_FLOAT_PIXEL_DATA                        0x7FE00008
+#define TAG_DOUBLE_PIXEL_DATA                       0x7FE00009
+#define TAG_PIXEL_DATA                              0x7FE00010
+#define TAG_TRAILING_PADDING                        0xFFFCFFFC
 #define TAG_ITEM                                    0xFFFEE000
 #define TAG_ITEM_DELIM                              0xFFFEE00D
 #define TAG_SQ_DELIM                                0xFFFEE0DD
-#define TAG_EXTENDED_OFFSET_TABLE                   0x7FE00001
-#define TAG_TRAILING_PADDING                        0xFFFCFFFC
-#define TAG_PIXEL_DATA                              0x7FE00010
-#define TAG_FLOAT_PIXEL_DATA                        0x7FE00008
-#define TAG_DOUBLE_PIXEL_DATA                       0x7FE00009
-#define TAG_PER_FRAME_FUNCTIONAL_GROUP_SEQUENCE     0x52009230
-#define TAG_DIMENSION_INDEX_VALUES                  0x00209157
 
 
 void *dcm_calloc(DcmError **error, size_t n, size_t size);

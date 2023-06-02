@@ -523,6 +523,7 @@ static bool parse_meta_stop(void *client,
     filehandle->last_tag = tag;
 
     return tag == TAG_PER_FRAME_FUNCTIONAL_GROUP_SEQUENCE ||
+           tag == TAG_REFERENCED_IMAGE_NAVIGATION_SEQUENCE ||
            tag == TAG_PIXEL_DATA ||
            tag == TAG_FLOAT_PIXEL_DATA ||
            tag == TAG_DOUBLE_PIXEL_DATA;
