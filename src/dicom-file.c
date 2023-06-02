@@ -35,7 +35,7 @@ struct _DcmFilehandle {
     // start of pixel metadata
     int64_t pixel_data_offset;
     // distance from pixel metadata to start of first frame
-    ssize_t first_frame_offset;
+    int64_t first_frame_offset;
 
     // image properties we need to track
     uint32_t tiles_across;

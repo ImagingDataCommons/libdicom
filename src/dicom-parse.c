@@ -697,8 +697,8 @@ bool dcm_parse_pixeldata(DcmError **error,
                          DcmIO *io,
                          bool implicit,
                          bool byteswap,
-                         ssize_t *first_frame_offset,
-                         ssize_t *offsets,
+                         int64_t *first_frame_offset,
+                         int64_t *offsets,
                          int num_frames)
 {
     DcmParseState state = { 
