@@ -155,7 +155,7 @@ void dcm_filehandle_destroy(DcmFilehandle *filehandle)
             free(filehandle->frame_index);
         }
 
-        (void) dcm_io_close(NULL, filehandle->io);
+        dcm_io_close(filehandle->io);
 
         utarray_free(filehandle->dataset_stack);
         utarray_free(filehandle->sequence_stack);
@@ -858,13 +858,6 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
 {
     dcm_log_debug("Read frame number #%u.", frame_number);
 
-    if (filehandle->offset_table == NULL) {
-        dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                      "Reading Frame Item failed",
-                      "No offset table loaded");
-        return NULL;
-    }
-
     if (frame_number == 0) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                       "Reading Frame Item failed",
@@ -876,6 +869,12 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
                       "Reading Frame Item failed",
                       "Frame Number must be less than %u", 
                       filehandle->num_frames);
+        return NULL;
+    }
+
+    // load metadata around pixeldata, if we've not loaded it already
+    if (filehandle->offset_table == NULL &&
+        !dcm_filehandle_read_pixeldata(error, filehandle))  {
         return NULL;
     }
 

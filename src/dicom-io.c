@@ -49,30 +49,16 @@ typedef struct _DcmIOFile {
 } DcmIOFile;
 
 
-static bool dcm_io_close_file(DcmError **error, DcmIO *io)
+static void dcm_io_close_file(DcmIO *io)
 {
     DcmIOFile *file = (DcmIOFile *) io;
-    int close_errno = 0;
 
     if (file->fd != -1) {
-        if (close(file->fd)) {
-            close_errno = errno;
-        }
-
-        file->fd = -1;
-
-        if (close_errno) {
-            dcm_error_set(error, DCM_ERROR_CODE_IO,
-                "Unable to close filehandle",
-                "Unable to close %s - %s",
-                file->filename, strerror(close_errno));
-        }
+        (void) close(file->fd);
     }
 
     free(file->filename);
     free(file);
-
-    return close_errno == 0;
 }
 
 
@@ -89,7 +75,7 @@ static DcmIO *dcm_io_open_file(DcmError **error, void *client)
     const char *filename = (const char *) client;
     file->filename = dcm_strdup(error, filename);
     if (file->filename == NULL) {
-        (void) dcm_io_close_file(error, (DcmIO *)file);
+        dcm_io_close_file((DcmIO *)file);
         return NULL;
     }
 
@@ -120,7 +106,7 @@ static DcmIO *dcm_io_open_file(DcmError **error, void *client)
         dcm_error_set(error, DCM_ERROR_CODE_IO,
             "Unable to open filehandle",
             "Unable to open %s - %s", file->filename, strerror(open_errno));
-        (void) dcm_io_close_file(error, (DcmIO *)file);
+        dcm_io_close_file((DcmIO *)file);
         return NULL;
     }
 
@@ -293,14 +279,11 @@ typedef struct _DcmIOMemory {
 } DcmIOMemory;
 
 
-static bool dcm_io_close_memory(DcmError **error, DcmIO *io)
+static void dcm_io_close_memory(DcmIO *io)
 {
     DcmIOMemory *memory = (DcmIOMemory *) io;
 
-    USED(error);
     free(memory);
-
-    return true;
 }
 
 
@@ -393,9 +376,9 @@ DcmIO *dcm_io_create_from_memory(DcmError **error,
 }
 
 
-bool dcm_io_close(DcmError **error, DcmIO *io)
+void dcm_io_close(DcmIO *io)
 {
-    return io->methods->close(error, io);
+    io->methods->close(io);
 }
 
 

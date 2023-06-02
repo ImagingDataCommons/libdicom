@@ -1391,7 +1391,7 @@ typedef struct _DcmIOMethods {
     DcmIO *(*open)(DcmError **error, void *client);
 
     /** Close an IO object */
-    bool (*close)(DcmError **error, DcmIO *io);
+    void (*close)(DcmIO *io);
 
     /** Read from an IO object, semantics as POSIX read() */
     int64_t (*read)(DcmError **error, 
@@ -1449,13 +1449,10 @@ DcmIO *dcm_io_create_from_memory(DcmError **error,
 /**
  * Close an IO object.
  *
- * :param error: Error structure pointer
  * :param io: Pointer to IO object
- *
- * :return: true on success
  */
 DCM_EXTERN
-bool dcm_io_close(DcmError **error, DcmIO *io);
+void dcm_io_close(DcmIO *io);
 
 /**
  * Read from an IO object.
