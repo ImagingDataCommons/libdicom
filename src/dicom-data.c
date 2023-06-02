@@ -921,6 +921,8 @@ bool dcm_element_set_value(DcmError **error,
                            uint32_t length,
                            bool steal)
 {
+    size_t size;
+
     switch (dcm_dict_vr_class(element->vr)) 
     {
         case DCM_CLASS_STRING_SINGLE:
@@ -931,7 +933,7 @@ bool dcm_element_set_value(DcmError **error,
             break;
 
         case DCM_CLASS_NUMERIC:
-            size_t size = dcm_dict_vr_size(element->vr);
+            size = dcm_dict_vr_size(element->vr);
             if (length % size != 0) {
                 dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                               "Reading of Data Element failed",
