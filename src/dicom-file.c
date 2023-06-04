@@ -271,10 +271,14 @@ static bool get_tiles_across(DcmError **error,
     int64_t width;
     int64_t tile_width;
 
-    if (!get_tag_int(error, metadata, "TotalPixelMatrixColumns", &width) ||
-        !get_tag_int(error, metadata, "Columns", &tile_width)) {
+    if (!get_tag_int(error, metadata, "Columns", &tile_width)) {
         return false;
     }
+
+    // TotalPixelMatrixColumns is optional and defaults to Columns, ie. one
+    // tile across
+    width = tile_width;
+    (void) get_tag_int(NULL, metadata, "TotalPixelMatrixColumns", &width);
 
     *tiles_across = width / tile_width + !!(width % tile_width);
 
