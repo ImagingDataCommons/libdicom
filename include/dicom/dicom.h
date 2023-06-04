@@ -1592,9 +1592,29 @@ bool dcm_filehandle_read_pixeldata(DcmError **error,
                                    DcmFilehandle *filehandle);
 
 /**
+ * Read the frame at a position in a File.
+ *
+ * Read a tile from a File at a specified (column, row), numbered from zero.
+ * This takes account of any frame positioning given in 
+ * PerFrameFunctionalGroupSequence, if necessary.
+ *
+ * :param error: Pointer to error object
+ * :param filehandle: File
+ * :param column: Column number, from 0
+ * :param row: Row number, from 0
+ *
+ * :return: Frame
+ */
+DCM_EXTERN
+DcmFrame *dcm_filehandle_read_frame_position(DcmError **error,
+                                             DcmFilehandle *filehandle,
+                                             uint32_t column,
+                                             uint32_t row);
+
+/**
  * Read an individual Frame from a File.
  *
- * Frames are numbered from 1 in row-major order starting at the top left.
+ * Frames are numbered from 1 in the order they appear in the PixelData element.
  *
  * :param error: Pointer to error object
  * :param filehandle: File
@@ -1606,5 +1626,4 @@ DCM_EXTERN
 DcmFrame *dcm_filehandle_read_frame(DcmError **error,
                                     DcmFilehandle *filehandle,
                                     uint32_t frame_number);
-
 #endif

@@ -882,16 +882,6 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
     // we are zero-based from here on
     uint32_t i = frame_number - 1;
 
-    if (filehandle->frame_index) {
-        i = filehandle->frame_index[i];
-        if (i == 0xffffffff) {
-            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                          "Reading Frame Item failed",
-                          "No such frame"); 
-            return NULL;
-        }
-    }
-
     ssize_t total_frame_offset = filehandle->pixel_data_offset + 
                                  filehandle->first_frame_offset + 
                                  filehandle->offset_table[i];
@@ -923,4 +913,50 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
                             filehandle->desc.planar_configuration,
                             filehandle->desc.photometric_interpretation,
                             filehandle->desc.transfer_syntax_uid);
+}
+
+
+DcmFrame *dcm_filehandle_read_frame_position(DcmError **error,
+                                             DcmFilehandle *filehandle,
+                                             uint32_t column,
+                                             uint32_t row)
+{
+    dcm_log_debug("Read frame position (%u, %u)", column, row);
+
+    // load metadata around pixeldata, if we've not loaded it already
+    if (filehandle->offset_table == NULL &&
+        !dcm_filehandle_read_pixeldata(error, filehandle))  {
+        return NULL;
+    }
+
+    if (column >= filehandle->tiles_across) {
+        dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                      "Reading Frame position failed",
+                      "Column must be less than %u", 
+                      filehandle->tiles_across);
+        return NULL;
+    }
+
+    uint32_t index = column + row * filehandle->tiles_across;
+
+    if (index >= filehandle->num_frames) {
+        dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                      "Reading Frame position failed",
+                      "Row must be less than %u", 
+                      filehandle->num_frames / filehandle->tiles_across);
+        return NULL;
+    }
+
+    if (filehandle->frame_index) {
+        index = filehandle->frame_index[index];
+        if (index == 0xffffffff) {
+            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                          "Reading Frame position failed",
+                          "No Frame at position (%u, %u)", column, row);
+            return NULL;
+        }
+    }
+
+    // read_frame() numbers from 1
+    return dcm_filehandle_read_frame(error, filehandle, index + 1);
 }
