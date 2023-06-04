@@ -765,8 +765,8 @@ bool dcm_parse_pixeldata(DcmError **error,
         *first_frame_offset = position;
 
         // the next thing should be the tag for frame 1
-        if (!read_uint32(&state, &value, &position) ||
-            value != TAG_ITEM) {
+        if (!read_tag(&state, &tag, &position) ||
+            tag != TAG_ITEM) {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                           "Reading Basic Offset Table failed",
                           "Basic Offset Table too large");
