@@ -85,6 +85,7 @@ DcmFilehandle *dcm_filehandle_create(DcmError **error, DcmIO *io)
     filehandle->pixel_data_offset = 0;
     filehandle->byteswap = is_big_endian();
     filehandle->last_tag = 0xffffffff;
+    filehandle->frame_number = 0;
     filehandle->frame_index = NULL;
     utarray_new(filehandle->dataset_stack, &ut_ptr_icd); 
     utarray_new(filehandle->sequence_stack, &ut_ptr_icd); 
@@ -526,8 +527,8 @@ static bool parse_meta_stop(void *client,
 
     filehandle->last_tag = tag;
 
-    return tag == TAG_PER_FRAME_FUNCTIONAL_GROUP_SEQUENCE ||
-           tag == TAG_REFERENCED_IMAGE_NAVIGATION_SEQUENCE ||
+    return tag == TAG_REFERENCED_IMAGE_NAVIGATION_SEQUENCE ||
+           tag == TAG_PER_FRAME_FUNCTIONAL_GROUP_SEQUENCE ||
            tag == TAG_PIXEL_DATA ||
            tag == TAG_FLOAT_PIXEL_DATA ||
            tag == TAG_DOUBLE_PIXEL_DATA;
@@ -710,6 +711,7 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
 }
 
 
+
 static bool parse_frame_index_element_create(DcmError **error, 
                                              void *client, 
                                              uint32_t tag,
@@ -789,10 +791,56 @@ static bool read_frame_index(DcmError **error,
 }
 
 
+static bool parse_skip_to_index(void *client, 
+                                uint32_t tag,
+                                DcmVR vr,
+                                uint32_t length)
+{
+    DcmFilehandle *filehandle = (DcmFilehandle *) client;
+
+    USED(vr);
+    USED(length);
+
+    filehandle->last_tag = tag;
+
+    return tag == TAG_PER_FRAME_FUNCTIONAL_GROUP_SEQUENCE ||
+           tag == TAG_PIXEL_DATA ||
+           tag == TAG_FLOAT_PIXEL_DATA ||
+           tag == TAG_DOUBLE_PIXEL_DATA;
+}
+
+
+static bool read_skip_to_index(DcmError **error,
+                             DcmFilehandle *filehandle)
+
+{
+    static DcmParse parse = {
+        .stop = parse_skip_to_index,
+    };
+
+    if (!dcm_parse_dataset(error,
+                           filehandle->io,
+                           filehandle->implicit,
+                           filehandle->byteswap,
+                           &parse,
+                           filehandle)) {
+        return false;
+    }
+
+    return true;
+}
+
+
 bool dcm_filehandle_read_pixeldata(DcmError **error,
                                    DcmFilehandle *filehandle)
 {
-    // did we stop on per-frame func group? parse that to build the index
+    // we may have previously stopped for many reasons ... skip ahead to per
+    // frame functional group, or pixel data
+    if (!read_skip_to_index(error, filehandle)) {
+        return false;
+    }
+
+    // if we're on per frame func, read that in 
     if (filehandle->last_tag == TAG_PER_FRAME_FUNCTIONAL_GROUP_SEQUENCE &&
         !read_frame_index(error, filehandle)) {
         return false;
@@ -811,8 +859,7 @@ bool dcm_filehandle_read_pixeldata(DcmError **error,
     if (filehandle->pixel_data_offset == 0) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                       "Reading PixelData failed",
-                      "Could not determine offset of Pixel Data Element. "
-                      "Read metadata first");
+                      "Could not determine offset of Pixel Data Element.");
         return NULL;
     }
 
