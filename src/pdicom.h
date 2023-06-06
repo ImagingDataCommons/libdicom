@@ -95,6 +95,9 @@ int dcm_dict_vr_header_length(DcmVR vr);
         default: break; \
     }
 
+DcmDataSet *dcm_sequence_steal(DcmError **error,
+                               const DcmSequence *seq, uint32_t index);
+
 typedef struct _DcmParse {
     bool (*dataset_begin)(DcmError **, void *client);
     bool (*dataset_end)(DcmError **, void *client);

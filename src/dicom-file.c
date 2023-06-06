@@ -138,7 +138,7 @@ static void dcm_filehandle_clear(DcmFilehandle *filehandle)
 
     utarray_clear(filehandle->dataset_stack);
 
-    for (i = 0; i < utarray_len(filehandle->dataset_stack); i++) {
+    for (i = 0; i < utarray_len(filehandle->sequence_stack); i++) {
         DcmSequence *sequence = *((DcmSequence **) 
                 utarray_eltptr(filehandle->sequence_stack, i));
 
@@ -160,6 +160,10 @@ void dcm_filehandle_destroy(DcmFilehandle *filehandle)
 
         if (filehandle->frame_index) {
             free(filehandle->frame_index);
+        }
+
+        if (filehandle->offset_table) {
+            free(filehandle->offset_table);
         }
 
         dcm_io_close(filehandle->io);
@@ -450,12 +454,7 @@ DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
         return NULL;
     }
 
-    // sanity ... the parse stacks should be empty
-    if (utarray_len(filehandle->dataset_stack) != 0 ||
-        utarray_len(filehandle->sequence_stack) != 0) {
-        abort();
-    }
-
+    dcm_filehandle_clear(filehandle);
     DcmSequence *sequence = dcm_sequence_create(error);
     if (sequence == NULL) {
         return NULL;
@@ -469,7 +468,6 @@ DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
                          false,
                          &parse,
                          filehandle)) {
-        dcm_filehandle_clear(filehandle);
         return false;
     }
 
@@ -493,9 +491,6 @@ DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
         abort();
     }
 
-    // FIXME ... add dcm_sequence_steal() so we can destroy sequence without
-    // also destroying meta
-    // right now we leak sequence
     DcmDataSet *file_meta = dcm_sequence_get(error, sequence, 0);
     if (file_meta == NULL ) {
         return false;
@@ -519,10 +514,9 @@ DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
         return NULL;
     }
 
-    // we need to pop sequence off the dataset stack to stop it being destroyed
-    utarray_pop_back(filehandle->sequence_stack);
-
-    dcm_dataset_lock(file_meta);
+    // steal file_meta to stop it being destroyed
+    (void) dcm_sequence_steal(NULL, sequence, 0);
+    dcm_filehandle_clear(filehandle);
 
     return file_meta;
 }
@@ -647,12 +641,7 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
         }
     }
 
-    // sanity ... the parse stacks should be empty
-    if (utarray_len(filehandle->dataset_stack) != 0 ||
-        utarray_len(filehandle->sequence_stack) != 0) {
-        abort();
-    }
-
+    dcm_filehandle_clear(filehandle);
     DcmSequence *sequence = dcm_sequence_create(error);
     if (sequence == NULL) {
         return NULL;
@@ -666,7 +655,6 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
                            filehandle->byteswap,
                            &parse,
                            filehandle)) {
-        dcm_filehandle_clear(filehandle);
         return false;
     }
 
@@ -685,9 +673,6 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
         abort();
     }
 
-    // FIXME ... add dcm_sequence_steal() so we can destroy sequence without
-    // also destroying meta
-    // right now we leak sequence
     DcmDataSet *meta = dcm_sequence_get(error, sequence, 0);
     if (meta == NULL ) {
         return false;
@@ -723,10 +708,9 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
         }
     }
 
-    // we need to pop sequence off the dataset stack to stop it being destroyed
-    utarray_pop_back(filehandle->sequence_stack);
-
-    dcm_dataset_lock(meta);
+    // steal meta to stop it being destroyed
+    (void) dcm_sequence_steal(NULL, sequence, 0);
+    dcm_filehandle_clear(filehandle);
 
     return meta;
 }

@@ -1631,6 +1631,24 @@ DcmDataSet *dcm_sequence_get(DcmError **error,
 }
 
 
+DcmDataSet *dcm_sequence_steal(DcmError **error,
+                               const DcmSequence *seq, uint32_t index)
+{
+    if (!sequence_check_index(error, seq, index)) {
+        return NULL;
+    }
+
+    struct SequenceItem *seq_item = utarray_eltptr(seq->items, index);
+    DcmDataSet *result = seq_item->dataset;
+    //dcm_dataset_lock(result);
+    seq_item->dataset = NULL;
+    // this will free the SequenceItem
+    utarray_erase(seq->items, index, 1);
+
+    return result;
+}
+
+
 void dcm_sequence_foreach(const DcmSequence *seq,
                           void (*fn)(const DcmDataSet *item))
 {
