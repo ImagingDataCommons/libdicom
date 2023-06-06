@@ -23,6 +23,10 @@
 #include <dicom/dicom.h>
 #include "pdicom.h"
 
+typedef enum _DcmLayout {
+    DCM_LAYOUT_SPARSE,
+    DCM_LAYOUT_FULL,
+} DcmLayout;
 
 struct _DcmFilehandle {
     DcmIO *io;
@@ -41,6 +45,7 @@ struct _DcmFilehandle {
     uint32_t tiles_across;
     uint32_t num_frames;
     struct PixelDescription desc;
+    DcmLayout layout;
 
     // both zero-indexed and length num_frames
     uint32_t *frame_index;
@@ -86,6 +91,7 @@ DcmFilehandle *dcm_filehandle_create(DcmError **error, DcmIO *io)
     filehandle->byteswap = is_big_endian();
     filehandle->last_tag = 0xffffffff;
     filehandle->frame_number = 0;
+    filehandle->layout = DCM_LAYOUT_FULL;
     filehandle->frame_index = NULL;
     utarray_new(filehandle->dataset_stack, &ut_ptr_icd); 
     utarray_new(filehandle->sequence_stack, &ut_ptr_icd); 
@@ -225,21 +231,40 @@ static bool dcm_offset(DcmError **error,
 }
 
 
+static bool get_tag_int(DcmError **error,
+                        const DcmDataSet *dataset,
+                        const char *keyword,
+                        int64_t *result) 
+{
+    uint32_t tag = dcm_dict_tag_from_keyword(keyword);
+    DcmElement *element = dcm_dataset_get(error, dataset, tag);
+    return element &&
+         dcm_element_get_value_integer(error, element, 0, result);
+}
+
+
+static bool get_tag_str(DcmError **error,
+                        const DcmDataSet *dataset,
+                        const char *keyword,
+                        const char **result) 
+{
+    uint32_t tag = dcm_dict_tag_from_keyword(keyword);
+    DcmElement *element = dcm_dataset_get(error, dataset, tag);
+    return element &&
+         dcm_element_get_value_string(error, element, 0, result);
+}
+
+
 static bool get_num_frames(DcmError **error,
                            const DcmDataSet *metadata,
                            uint32_t *number_of_frames)
 {
-    const uint32_t tag = 0x00280008;
     const char *value;
-    uint32_t num_frames;
-
-    DcmElement *element = dcm_dataset_get(error, metadata, tag);
-    if (element == NULL ||
-        !dcm_element_get_value_string(error, element, 0, &value)) {
+    if (!get_tag_str(error, metadata, "NumberOfFrames", &value)) {
         return false;
     }
 
-    num_frames = strtol(value, NULL, 10);
+    uint32_t num_frames = strtol(value, NULL, 10);
     if (num_frames == 0) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                       "Basic Offset Table read failed",
@@ -250,18 +275,6 @@ static bool get_num_frames(DcmError **error,
     *number_of_frames = num_frames;
 
     return true;
-}
-
-
-static bool get_tag_int(DcmError **error,
-                        const DcmDataSet *dataset,
-                        const char *keyword,
-                        int64_t *result) 
-{
-    uint32_t tag = dcm_dict_tag_from_keyword(keyword);
-    DcmElement *element = dcm_dataset_get(error, dataset, tag);
-    return element &&
-         dcm_element_get_value_integer(error, element, 0, result);
 }
 
 
@@ -691,6 +704,14 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
     }
     filehandle->desc.transfer_syntax_uid = filehandle->transfer_syntax_uid;
 
+    // we support sparse and full tile layout
+    const char *type;
+    if (get_tag_str(NULL, meta, "DimensionOrganizationType", &type) &&
+        strcmp(type, "TILED_SPARSE") == 0 &&
+        strcmp(type, "3D") == 0) {
+        filehandle->layout = DCM_LAYOUT_SPARSE;
+    }
+
     // did we stop on pixel data? record the offset
     if (filehandle->last_tag == TAG_PIXEL_DATA ||
         filehandle->last_tag == TAG_FLOAT_PIXEL_DATA ||
@@ -709,7 +730,6 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
 
     return meta;
 }
-
 
 
 static bool parse_frame_index_element_create(DcmError **error, 
@@ -791,7 +811,7 @@ static bool read_frame_index(DcmError **error,
 }
 
 
-static bool parse_skip_to_index(void *client, 
+static bool parse_skip_to_index(void *client,
                                 uint32_t tag,
                                 DcmVR vr,
                                 uint32_t length)
@@ -998,7 +1018,7 @@ DcmFrame *dcm_filehandle_read_frame_position(DcmError **error,
         return NULL;
     }
 
-    if (filehandle->frame_index) {
+    if (filehandle->layout == DCM_LAYOUT_SPARSE) {
         index = filehandle->frame_index[index];
         if (index == 0xffffffff) {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
