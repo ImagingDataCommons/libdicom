@@ -26,6 +26,7 @@
 typedef enum _DcmLayout {
     DCM_LAYOUT_SPARSE,
     DCM_LAYOUT_FULL,
+    DCM_LAYOUT_UNKNOWN,
 } DcmLayout;
 
 struct _DcmFilehandle {
@@ -689,12 +690,17 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
     }
     filehandle->desc.transfer_syntax_uid = filehandle->transfer_syntax_uid;
 
-    // we support sparse and full tile layout
+    // we support sparse and full tile layout, defaulting to full if no type
+    // is specified
     const char *type;
-    if (get_tag_str(NULL, meta, "DimensionOrganizationType", &type) &&
-        strcmp(type, "TILED_SPARSE") == 0 &&
-        strcmp(type, "3D") == 0) {
-        filehandle->layout = DCM_LAYOUT_SPARSE;
+    if (get_tag_str(NULL, meta, "DimensionOrganizationType", &type)) {
+        if (strcmp(type, "TILED_SPARSE") == 0 || strcmp(type, "3D") == 0) {
+            filehandle->layout = DCM_LAYOUT_SPARSE;
+        } else if (strcmp(type, "TILED_FULL") == 0) {
+            filehandle->layout = DCM_LAYOUT_FULL;
+        } else {
+            filehandle->layout = DCM_LAYOUT_UNKNOWN;
+        }
     }
 
     // did we stop on pixel data? record the offset
@@ -838,6 +844,13 @@ static bool read_skip_to_index(DcmError **error,
 bool dcm_filehandle_read_pixeldata(DcmError **error,
                                    DcmFilehandle *filehandle)
 {
+    if (filehandle->layout == DCM_LAYOUT_UNKNOWN) {
+        dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                      "Reading PixelData failed",
+                      "Unsupported DimensionOrganisationType.");
+        return false;
+    }
+
     // we may have previously stopped for many reasons ... skip ahead to per
     // frame functional group, or pixel data
     if (!read_skip_to_index(error, filehandle)) {
