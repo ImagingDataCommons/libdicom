@@ -1386,7 +1386,7 @@ typedef struct _DcmIO {
 /**
  * A set of IO methods, see dcm_io_create().
  */
-typedef struct _DcmIOMethods {
+struct _DcmIOMethods {
     /** Open an IO object */
     DcmIO *(*open)(DcmError **error, void *client);
 
@@ -1404,7 +1404,7 @@ typedef struct _DcmIOMethods {
                     DcmIO *io, 
                     int64_t offset, 
                     int whence);
-} DcmIOMethods;
+};
 
 /**
  * Create an IO object using a set of IO methods.
