@@ -7,8 +7,6 @@
 
   expose parser in public API? it'd be tricky to bind to python
 
-- update openslide for new thing
-
 
 # asserts
 
