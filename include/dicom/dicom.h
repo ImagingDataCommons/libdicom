@@ -229,6 +229,42 @@ typedef enum _DcmVR {
     DCM_VR_LAST
 } DcmVR;
 
+/** 
+ * The general class of the value associated with a Value Representation.
+ *
+ * DCM_CLASS_STRING_MULTI -- one or more null-terminated strings, cannot 
+ * contain backslash
+ *
+ * DCM_CLASS_STRING_SINGLE -- a single null-terminated string, backslash 
+ * allowed
+ *
+ * DCM_CLASS_NUMERIC -- one or more binary numeric values (float etc.), other 
+ * fields give sizeof(type)
+ *
+ * DCM_CLASS_BINARY -- an uninterpreted array of bytes, length in the 
+ * element header
+ *
+ * DCM_CLASS_SEQUENCE -- Value Representation is a seqeunce
+ */
+typedef enum _DcmVRClass {
+    DCM_CLASS_ERROR,
+    DCM_CLASS_STRING_MULTI,
+    DCM_CLASS_STRING_SINGLE,
+    DCM_CLASS_NUMERIC,
+    DCM_CLASS_BINARY,
+    DCM_CLASS_SEQUENCE
+} DcmVRClass;
+
+/**
+ * Find the general class for a particular Value Representation.
+ *
+ * :param vr: The Value Representation 
+ *
+ * :return: The general class of that Value Representation
+ */
+DCM_EXTERN
+DcmVRClass dcm_dict_vr_class(DcmVR vr);
+
 /**
  * Convert an error code to a human-readable string.
  *
