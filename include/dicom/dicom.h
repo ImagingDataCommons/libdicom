@@ -989,15 +989,24 @@ DcmElement *dcm_dataset_get_clone(DcmError **error,
 /**
  * Iterate over Data Elements in a Data Set.
  *
- * Does not sort Data Elements, but iterates over them in the order in which
- * they were originally inserted into the Data Set.
+ * The user function should return true to continue looping, or false to 
+ * terminate the loop early.
  *
- * :param dataset: Pointer to Data Set
- * :param fn: Pointer to function that should be called for each Data Element
+ * The result is true if the whole Data Set returned true, or false if one
+ * call requested early termination.
+ *
+ * The function must not modify the Data Set.
+ *
+ * :param seq: Pointer to Data Set
+ * :param fn: Pointer to function that should be called for each Data Element 
+ * :param client: Client data for function
+ *
+ * :return: true if all functions return true
  */
 DCM_EXTERN
-void dcm_dataset_foreach(const DcmDataSet *dataset,
-                         void (*fn)(const DcmElement *element));
+bool dcm_dataset_foreach(const DcmDataSet *dataset,
+                         bool (*fn)(const DcmElement *element, void *client),
+			 void *client);
 
 /**
  * Fetch a Data Element from a Data Set, or NULL if not present.
@@ -1124,14 +1133,26 @@ DcmDataSet *dcm_sequence_get(DcmError **error,
                              const DcmSequence *seq, uint32_t index);
 
 /**
- * Iterate over Data Set items in a Sequence.
+ * Iterate over Data Sets in a Sequence.
+ *
+ * The user function should return true to continue looping, or false to 
+ * terminate the loop early.
+ *
+ * The result is true if the whole sequence returned true, or false if one
+ * call requested early termination.
+ *
+ * The function must not modify the seqeucence.
  *
  * :param seq: Pointer to Sequence
- * :param fn: Pointer to function that should be called for each Data Set item
+ * :param fn: Pointer to function that should be called for each Data Set 
+ * :param client: Client data for function
+ *
+ * :return: Pointer to Data Set item
  */
 DCM_EXTERN
-void dcm_sequence_foreach(const DcmSequence *seq,
-                          void (*fn)(const DcmDataSet *item));
+bool dcm_sequence_foreach(const DcmSequence *seq,
+                          bool (*fn)(const DcmDataSet *dataset, void *client),
+			  void *client);
 
 /**
  * Remove a Data Set item from a Sequence.

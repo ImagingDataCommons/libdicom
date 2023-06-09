@@ -8,7 +8,7 @@ project(
   ],
   license : 'MIT',
   meson_version : '>=0.50',
-  version : '0.4.0'
+  version : '0.5.0'
 )
 if not meson.is_subproject()
   meson.add_dist_script(
@@ -34,7 +34,7 @@ endif
 #   2. Backward-compatible ABI change: bump minor, reset patch
 #   3. Other, eg. bugfix: bump patch
 abi_version_major = 0
-abi_version_minor = 4
+abi_version_minor = 5
 abi_version_patch = 0
 
 abi_version = '@0@.@1@.@2@'.format(

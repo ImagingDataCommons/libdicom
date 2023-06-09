@@ -1440,14 +1440,19 @@ bool dcm_dataset_remove(DcmError **error, DcmDataSet *dataset, uint32_t tag)
 }
 
 
-void dcm_dataset_foreach(const DcmDataSet *dataset,
-                         void (*fn)(const DcmElement *element))
+bool dcm_dataset_foreach(const DcmDataSet *dataset,
+                         bool (*fn)(const DcmElement *element, void *client),
+                         void *client)
 {
     DcmElement *element;
 
     for(element = dataset->elements; element; element = element->hh.next) {
-        fn(element);
+        if (!fn(element, client)) {
+            return false;
+        }
     }
+
+    return true;
 }
 
 
@@ -1649,17 +1654,25 @@ DcmDataSet *dcm_sequence_steal(DcmError **error,
 }
 
 
-void dcm_sequence_foreach(const DcmSequence *seq,
-                          void (*fn)(const DcmDataSet *item))
+bool dcm_sequence_foreach(const DcmSequence *seq,
+                          bool (*fn)(const DcmDataSet *item, void *client),
+                          void *client)
 {
     uint32_t i;
 
     uint32_t length = utarray_len(seq->items);
     for (i = 0; i < length; i++) {
         struct SequenceItem *seq_item = utarray_eltptr(seq->items, i);
-        dcm_dataset_lock(seq_item->dataset);
-        fn(seq_item->dataset);
+        DcmDataSet *dataset = seq_item->dataset;
+
+        dcm_dataset_lock(dataset);
+
+        if (!fn(dataset, client)) {
+            return false;
+        }
     }
+
+    return true;
 }
 
 
