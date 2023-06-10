@@ -52,8 +52,9 @@
 
 
 void *dcm_calloc(DcmError **error, size_t n, size_t size);
-
+void *dcm_realloc(DcmError **error, void *ptr, size_t size);
 char *dcm_strdup(DcmError **error, const char *str);
+char *dcm_printf_append(char *str, const char *format, ...);
 
 void dcm_free_string_array(char **strings, int n);
 

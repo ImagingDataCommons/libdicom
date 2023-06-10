@@ -250,7 +250,8 @@ typedef enum _DcmVRClass {
     DCM_CLASS_ERROR,
     DCM_CLASS_STRING_MULTI,
     DCM_CLASS_STRING_SINGLE,
-    DCM_CLASS_NUMERIC,
+    DCM_CLASS_NUMERIC_FLOATINGPOINT,
+    DCM_CLASS_NUMERIC_INTEGER,
     DCM_CLASS_BINARY,
     DCM_CLASS_SEQUENCE
 } DcmVRClass;
@@ -926,6 +927,16 @@ DCM_EXTERN
 bool dcm_element_set_value_sequence(DcmError **error,
                                     DcmElement *element,
                                     DcmSequence *value);
+
+/**
+ * Make a string suitable for display to a user from the value of an element.
+ *
+ * The return result must be freed with free(). The result may be NULL.
+ *
+ * :return: string to display
+ */
+DCM_EXTERN
+char *dcm_element_value_to_string(const DcmElement *element);
 
 /**
  * Print a Data Element.

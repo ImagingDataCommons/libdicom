@@ -387,7 +387,8 @@ static bool dcm_element_validate(DcmError **error, DcmElement *element)
         return false;
     }
 
-    if (klass == DCM_CLASS_NUMERIC) {
+    if (klass == DCM_CLASS_NUMERIC_FLOATINGPOINT || 
+        klass == DCM_CLASS_NUMERIC_INTEGER) {
         if (element->length != element->vm * dcm_dict_vr_size(element->vr)) {
             dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                           "Data Element validation failed",
@@ -626,7 +627,8 @@ static bool element_check_numeric(DcmError **error,
                                   const DcmElement *element)
 {
     DcmVRClass klass = dcm_dict_vr_class(element->vr);
-    if (klass != DCM_CLASS_NUMERIC) {
+    if (klass != DCM_CLASS_NUMERIC_FLOATINGPOINT && 
+        klass != DCM_CLASS_NUMERIC_INTEGER) {
       dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                     "Data Element is not numeric",
                     "Element tag %08X is not numeric",
@@ -932,7 +934,8 @@ bool dcm_element_set_value(DcmError **error,
             }
             break;
 
-        case DCM_CLASS_NUMERIC:
+        case DCM_CLASS_NUMERIC_FLOATINGPOINT:
+        case DCM_CLASS_NUMERIC_INTEGER:
             size = dcm_dict_vr_size(element->vr);
             if (length % size != 0) {
                 dcm_error_set(error, DCM_ERROR_CODE_PARSE,
@@ -1144,7 +1147,8 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
             }
             break;
 
-        case DCM_CLASS_NUMERIC:
+        case DCM_CLASS_NUMERIC_FLOATINGPOINT:
+        case DCM_CLASS_NUMERIC_INTEGER:
             if (element->vm == 1) {
                 clone->value = element->value;
                 clone->vm = 1;
@@ -1180,40 +1184,79 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
 
 // printing elements
 
-static void element_print_integer(const DcmElement *element,
-                                  uint32_t index)
+char *dcm_element_value_to_string(const DcmElement *element)
 {
-    int64_t value;
-    (void) dcm_element_get_value_integer(NULL, element, index, &value);
-    if (element->vr == DCM_VR_UV) {
-        printf("%" PRIu64, (uint64_t)value);
-    } else {
-        printf("%" PRId64, value);
+    DcmVRClass klass = dcm_dict_vr_class(element->vr);
+
+    char *result = NULL;
+
+    if (element->vm > 1) {
+        result = dcm_printf_append(result, "[");
     }
-}
 
+    for (uint32_t i = 0; i < element->vm; i++) {
+        switch (klass) {
+            case DCM_CLASS_NUMERIC_FLOATINGPOINT:
+                double d;
+                (void) dcm_element_get_value_floatingpoint(NULL, 
+                                                           element, 
+                                                           i, 
+                                                           &d);
+                result = dcm_printf_append(result, "%g", d);
+                break;
 
-static void element_print_float(const DcmElement *element,
-                                uint32_t index)
-{
-    double value;
-    (void) dcm_element_get_value_floatingpoint(NULL, element, index, &value);
-    printf("%g", value);
-}
+            case DCM_CLASS_NUMERIC_INTEGER:
+                int64_t i64;
+                (void) dcm_element_get_value_integer(NULL, 
+                                                     element, 
+                                                     i, 
+                                                     &i64);
 
+                if (element->vr == DCM_VR_UV) {
+                    result = dcm_printf_append(result, 
+                                               "%"PRIu64, 
+                                               (uint64_t)i64);
+                } else {
+                    result = dcm_printf_append(result, "%"PRId64, i64);
+                }
+                break;
 
-static void element_print_string(const DcmElement *element,
-                                 uint32_t index)
-{
-    const char *value;
-    (void) dcm_element_get_value_string(NULL, element, index, &value);
-    printf("%s", value);
+            case DCM_CLASS_STRING_SINGLE:
+            case DCM_CLASS_STRING_MULTI:
+                const char *str;
+                (void) dcm_element_get_value_string(NULL, 
+                                                    element, 
+                                                    i, 
+                                                    &str);
+                result = dcm_printf_append(result, "%s", str);
+                break;
+
+            case DCM_CLASS_BINARY:
+                result = dcm_printf_append(result, 
+                                           "<binary value of %u bytes>", 
+                                           dcm_element_get_length(element));
+                break;
+
+            case DCM_CLASS_SEQUENCE:
+            default:
+                dcm_log_warning("Unexpected Value Representation.");
+        }
+
+        if (element->vm > 1) {
+            if (i == element->vm - 1) {
+                result = dcm_printf_append(result, "]");
+            } else {
+                result = dcm_printf_append(result, ", ");
+            }
+        }
+    }
+
+    return result;
 }
 
 
 void dcm_element_print(const DcmElement *element, int indentation)
 {
-    DcmVRClass klass = dcm_dict_vr_class(element->vr);
     const int num_indent = indentation * 2;
     const int num_indent_next = (indentation + 1) * 2;
 
@@ -1265,42 +1308,11 @@ void dcm_element_print(const DcmElement *element, int indentation)
                "                                   ");
     } else {
         printf(" | %u | ", element->length);
-
-        if (element->vm > 1) {
-            printf("[");
+        char *str = dcm_element_value_to_string(element);
+        if (str != NULL) {
+            printf("%s\n", str);
+            free(str);
         }
-        for (i = 0; i < element->vm; i++) {
-            switch (klass) {
-                case DCM_CLASS_NUMERIC:
-                    if (element->vr == DCM_VR_FL || element->vr == DCM_VR_FD) {
-                        element_print_float(element, i);
-                    } else {
-                        element_print_integer(element, i);
-                    }
-                    break;
-
-                case DCM_CLASS_STRING_SINGLE:
-                case DCM_CLASS_STRING_MULTI:
-                    element_print_string(element, i);
-                    break;
-
-                case DCM_CLASS_BINARY:
-                    break;
-
-                case DCM_CLASS_SEQUENCE:
-                default:
-                    dcm_log_warning("Unexpected Value Representation.");
-            }
-
-            if (element->vm > 1) {
-                if (i == (element->vm - 1)) {
-                    printf("]");
-                } else {
-                    printf(", ");
-                }
-            }
-        }
-        printf("\n");
     }
 }
 

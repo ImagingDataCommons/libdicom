@@ -409,9 +409,11 @@ static bool parse_element_body(DcmParseState *state,
     switch (klass) {
         case DCM_CLASS_STRING_SINGLE:
         case DCM_CLASS_STRING_MULTI:
-        case DCM_CLASS_NUMERIC:
+        case DCM_CLASS_NUMERIC_FLOATINGPOINT:
+        case DCM_CLASS_NUMERIC_INTEGER:
         case DCM_CLASS_BINARY:
-            if (klass == DCM_CLASS_NUMERIC) {
+            if (klass == DCM_CLASS_NUMERIC_FLOATINGPOINT ||
+                klass == DCM_CLASS_NUMERIC_INTEGER) {
                 // all numeric classes have a size
                 if (length % size != 0) {
                     dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
@@ -448,7 +450,8 @@ static bool parse_element_body(DcmParseState *state,
                 }
             }
 
-            if (klass == DCM_CLASS_NUMERIC) {
+            if (klass == DCM_CLASS_NUMERIC_FLOATINGPOINT ||
+                klass == DCM_CLASS_NUMERIC_INTEGER) {
                 if (state->byteswap) {
                     byteswap(value, length, size);
                 }

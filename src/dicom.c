@@ -48,6 +48,19 @@ void *dcm_calloc(DcmError **error, size_t n, size_t size)
 }
 
 
+void *dcm_realloc(DcmError **error, void *ptr, size_t size)
+{
+    void *result = realloc(ptr, size);
+    if (!result) {
+        dcm_error_set(error, DCM_ERROR_CODE_NOMEM,
+                      "Out of memory",
+                      "Failed to allocate %zd bytes", size);
+        return NULL;
+    }
+    return result;
+}
+
+
 char *dcm_strdup(DcmError **error, const char *str)
 {
     if (str == NULL) {
@@ -60,6 +73,42 @@ char *dcm_strdup(DcmError **error, const char *str)
         return NULL;
     }
     memmove(new_str, str, length + 1);
+
+    return new_str;
+}
+
+
+char *dcm_printf_append(char *str, const char *format, ...)
+{
+    va_list(args);
+
+    // find size required for new text
+    va_start(args, format);
+    ssize_t n = vsnprintf(NULL, 0, format, args);
+    if (n < 0) {
+        // some very old libcs will return -1 for truncation
+        return NULL;
+    }
+    va_end(args);
+
+    // size of old text
+    if (str == NULL) {
+        str = dcm_strdup(NULL, "");
+        if (str == NULL) {
+            return NULL;
+        }
+    }
+    size_t old_len = strlen(str);
+        
+    // new space, copy and render
+    char *new_str = dcm_realloc(NULL, str, old_len + n + 1);
+    if (new_str == NULL) {
+        free(str);
+        return NULL;
+    }
+    va_start(args, format);
+    vsnprintf(new_str + old_len, n + 1, format, args);
+    va_end(args);
 
     return new_str;
 }

@@ -67,9 +67,9 @@ static const struct _DcmVRTable vr_table[] = {
     {DCM_VR_DT, "DT", DCM_CLASS_STRING_MULTI,
         0,                DCM_CAPACITY_DT,  2},
 
-    {DCM_VR_FL, "FL", DCM_CLASS_NUMERIC,
+    {DCM_VR_FL, "FL", DCM_CLASS_NUMERIC_FLOATINGPOINT,
         sizeof(float),    0,                2},
-    {DCM_VR_FD, "FD", DCM_CLASS_NUMERIC,
+    {DCM_VR_FD, "FD", DCM_CLASS_NUMERIC_FLOATINGPOINT,
         sizeof(double),   0,                2},
 
     {DCM_VR_IS, "IS", DCM_CLASS_STRING_SINGLE,
@@ -96,13 +96,13 @@ static const struct _DcmVRTable vr_table[] = {
     {DCM_VR_SH, "SH", DCM_CLASS_STRING_MULTI,
         0,                DCM_CAPACITY_SH,  2},
 
-    {DCM_VR_SL, "SL", DCM_CLASS_NUMERIC,
+    {DCM_VR_SL, "SL", DCM_CLASS_NUMERIC_INTEGER,
         sizeof(int32_t),  0,                2},
 
     {DCM_VR_SQ, "SQ", DCM_CLASS_SEQUENCE,
         0,                0,                4},
 
-    {DCM_VR_SS, "SS", DCM_CLASS_NUMERIC,
+    {DCM_VR_SS, "SS", DCM_CLASS_NUMERIC_INTEGER,
         sizeof(int16_t),  0,                2},
 
     {DCM_VR_ST, "ST", DCM_CLASS_STRING_SINGLE,
@@ -114,13 +114,13 @@ static const struct _DcmVRTable vr_table[] = {
     {DCM_VR_UI, "UI", DCM_CLASS_STRING_MULTI,
         0,                DCM_CAPACITY_UI,  2},
 
-    {DCM_VR_UL, "UL", DCM_CLASS_NUMERIC,
+    {DCM_VR_UL, "UL", DCM_CLASS_NUMERIC_INTEGER,
         sizeof(uint32_t), 0,                2},
 
     {DCM_VR_UN, "UN", DCM_CLASS_BINARY,
         0,                0,                4},
 
-    {DCM_VR_US, "US", DCM_CLASS_NUMERIC,
+    {DCM_VR_US, "US", DCM_CLASS_NUMERIC_INTEGER,
         sizeof(uint16_t), 0,                2},
 
     {DCM_VR_UT, "UT", DCM_CLASS_STRING_SINGLE,
@@ -136,9 +136,9 @@ static const struct _DcmVRTable vr_table[] = {
     {DCM_VR_OV, "OV", DCM_CLASS_BINARY,
         0,                0,                4},
 
-    {DCM_VR_SV, "SV", DCM_CLASS_NUMERIC,
+    {DCM_VR_SV, "SV", DCM_CLASS_NUMERIC_INTEGER,
         sizeof(int64_t),  0,                4},
-    {DCM_VR_UV, "UV", DCM_CLASS_NUMERIC,
+    {DCM_VR_UV, "UV", DCM_CLASS_NUMERIC_INTEGER,
         sizeof(uint64_t), 0,                4},
 };
 
