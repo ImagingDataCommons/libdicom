@@ -1667,19 +1667,19 @@ DcmDataSet *dcm_sequence_steal(DcmError **error,
 
 
 bool dcm_sequence_foreach(const DcmSequence *seq,
-                          bool (*fn)(const DcmDataSet *item, void *client),
+                          bool (*fn)(const DcmDataSet *item, 
+                                     uint32_t index, 
+                                     void *client),
                           void *client)
 {
-    uint32_t i;
-
     uint32_t length = utarray_len(seq->items);
-    for (i = 0; i < length; i++) {
-        struct SequenceItem *seq_item = utarray_eltptr(seq->items, i);
+    for (uint32_t index = 0; index < length; index++) {
+        struct SequenceItem *seq_item = utarray_eltptr(seq->items, index);
         DcmDataSet *dataset = seq_item->dataset;
 
         dcm_dataset_lock(dataset);
 
-        if (!fn(dataset, client)) {
+        if (!fn(dataset, index, client)) {
             return false;
         }
     }

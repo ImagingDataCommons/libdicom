@@ -1198,7 +1198,9 @@ DcmDataSet *dcm_sequence_get(DcmError **error,
  */
 DCM_EXTERN
 bool dcm_sequence_foreach(const DcmSequence *seq,
-                          bool (*fn)(const DcmDataSet *dataset, void *client),
+                          bool (*fn)(const DcmDataSet *dataset, 
+				     uint32_t index, 
+				     void *client),
 			  void *client);
 
 /**
