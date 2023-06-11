@@ -1190,43 +1190,44 @@ char *dcm_element_value_to_string(const DcmElement *element)
 
     char *result = NULL;
 
+    double d;
+    int64_t i;
+    const char *str;
+
     if (element->vm > 1) {
         result = dcm_printf_append(result, "[");
     }
 
-    for (uint32_t i = 0; i < element->vm; i++) {
+    for (uint32_t index = 0; index < element->vm; index++) {
         switch (klass) {
             case DCM_CLASS_NUMERIC_FLOATINGPOINT:
-                double d;
                 (void) dcm_element_get_value_decimal(NULL, 
                                                      element, 
-                                                     i, 
+                                                     index, 
                                                      &d);
                 result = dcm_printf_append(result, "%g", d);
                 break;
 
             case DCM_CLASS_NUMERIC_INTEGER:
-                int64_t i64;
                 (void) dcm_element_get_value_integer(NULL, 
                                                      element, 
-                                                     i, 
-                                                     &i64);
+                                                     index, 
+                                                     &i);
 
                 if (element->vr == DCM_VR_UV) {
                     result = dcm_printf_append(result, 
                                                "%"PRIu64, 
-                                               (uint64_t)i64);
+                                               (uint64_t)i);
                 } else {
-                    result = dcm_printf_append(result, "%"PRId64, i64);
+                    result = dcm_printf_append(result, "%"PRId64, i);
                 }
                 break;
 
             case DCM_CLASS_STRING_SINGLE:
             case DCM_CLASS_STRING_MULTI:
-                const char *str;
                 (void) dcm_element_get_value_string(NULL, 
                                                     element, 
-                                                    i, 
+                                                    index, 
                                                     &str);
                 result = dcm_printf_append(result, "%s", str);
                 break;
