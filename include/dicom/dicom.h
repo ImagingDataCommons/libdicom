@@ -238,8 +238,11 @@ typedef enum _DcmVR {
  * DCM_CLASS_STRING_SINGLE -- a single null-terminated string, backslash 
  * allowed
  *
- * DCM_CLASS_NUMERIC -- one or more binary numeric values (float etc.), other 
- * fields give sizeof(type)
+ * DCM_CLASS_NUMERIC_DECIMAL -- one or more binary floating point numeric 
+ * values, other fields give sizeof(type)
+ *
+ * DCM_CLASS_NUMERIC_INTEGER -- one or more binary integer numeric 
+ * values, other fields give sizeof(type)
  *
  * DCM_CLASS_BINARY -- an uninterpreted array of bytes, length in the 
  * element header
@@ -250,7 +253,7 @@ typedef enum _DcmVRClass {
     DCM_CLASS_ERROR,
     DCM_CLASS_STRING_MULTI,
     DCM_CLASS_STRING_SINGLE,
-    DCM_CLASS_NUMERIC_FLOATINGPOINT,
+    DCM_CLASS_NUMERIC_DECIMAL,
     DCM_CLASS_NUMERIC_INTEGER,
     DCM_CLASS_BINARY,
     DCM_CLASS_SEQUENCE

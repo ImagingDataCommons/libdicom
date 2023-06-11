@@ -387,7 +387,7 @@ static bool dcm_element_validate(DcmError **error, DcmElement *element)
         return false;
     }
 
-    if (klass == DCM_CLASS_NUMERIC_FLOATINGPOINT || 
+    if (klass == DCM_CLASS_NUMERIC_DECIMAL || 
         klass == DCM_CLASS_NUMERIC_INTEGER) {
         if (element->length != element->vm * dcm_dict_vr_size(element->vr)) {
             dcm_error_set(error, DCM_ERROR_CODE_INVALID,
@@ -627,7 +627,7 @@ static bool element_check_numeric(DcmError **error,
                                   const DcmElement *element)
 {
     DcmVRClass klass = dcm_dict_vr_class(element->vr);
-    if (klass != DCM_CLASS_NUMERIC_FLOATINGPOINT && 
+    if (klass != DCM_CLASS_NUMERIC_DECIMAL && 
         klass != DCM_CLASS_NUMERIC_INTEGER) {
       dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                     "Data Element is not numeric",
@@ -934,7 +934,7 @@ bool dcm_element_set_value(DcmError **error,
             }
             break;
 
-        case DCM_CLASS_NUMERIC_FLOATINGPOINT:
+        case DCM_CLASS_NUMERIC_DECIMAL:
         case DCM_CLASS_NUMERIC_INTEGER:
             size = dcm_dict_vr_size(element->vr);
             if (length % size != 0) {
@@ -1147,7 +1147,7 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
             }
             break;
 
-        case DCM_CLASS_NUMERIC_FLOATINGPOINT:
+        case DCM_CLASS_NUMERIC_DECIMAL:
         case DCM_CLASS_NUMERIC_INTEGER:
             if (element->vm == 1) {
                 clone->value = element->value;
@@ -1200,7 +1200,7 @@ char *dcm_element_value_to_string(const DcmElement *element)
 
     for (uint32_t index = 0; index < element->vm; index++) {
         switch (klass) {
-            case DCM_CLASS_NUMERIC_FLOATINGPOINT:
+            case DCM_CLASS_NUMERIC_DECIMAL:
                 (void) dcm_element_get_value_decimal(NULL, 
                                                      element, 
                                                      index, 

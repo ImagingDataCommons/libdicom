@@ -67,9 +67,9 @@ static const struct _DcmVRTable vr_table[] = {
     {DCM_VR_DT, "DT", DCM_CLASS_STRING_MULTI,
         0,                DCM_CAPACITY_DT,  2},
 
-    {DCM_VR_FL, "FL", DCM_CLASS_NUMERIC_FLOATINGPOINT,
+    {DCM_VR_FL, "FL", DCM_CLASS_NUMERIC_DECIMAL,
         sizeof(float),    0,                2},
-    {DCM_VR_FD, "FD", DCM_CLASS_NUMERIC_FLOATINGPOINT,
+    {DCM_VR_FD, "FD", DCM_CLASS_NUMERIC_DECIMAL,
         sizeof(double),   0,                2},
 
     {DCM_VR_IS, "IS", DCM_CLASS_STRING_SINGLE,
