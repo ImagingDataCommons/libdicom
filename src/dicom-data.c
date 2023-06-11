@@ -792,10 +792,10 @@ static bool element_check_float(DcmError **error,
 }
 
 
-bool dcm_element_get_value_floatingpoint(DcmError **error,
-                                         const DcmElement *element,
-                                         uint32_t index,
-                                         double *value)
+bool dcm_element_get_value_decimal(DcmError **error,
+                                   const DcmElement *element,
+                                   uint32_t index,
+                                   double *value)
 {
     if (!element_check_assigned(error, element) ||
         !element_check_numeric(error, element) ||
@@ -818,9 +818,9 @@ bool dcm_element_get_value_floatingpoint(DcmError **error,
 }
 
 
-bool dcm_element_set_value_floatingpoint(DcmError **error,
-                                         DcmElement *element,
-                                         double value)
+bool dcm_element_set_value_decimal(DcmError **error,
+                                   DcmElement *element,
+                                   double value)
 {
     if (!element_check_not_assigned(error, element) ||
         !element_check_numeric(error, element) ||
@@ -1198,10 +1198,10 @@ char *dcm_element_value_to_string(const DcmElement *element)
         switch (klass) {
             case DCM_CLASS_NUMERIC_FLOATINGPOINT:
                 double d;
-                (void) dcm_element_get_value_floatingpoint(NULL, 
-                                                           element, 
-                                                           i, 
-                                                           &d);
+                (void) dcm_element_get_value_decimal(NULL, 
+                                                     element, 
+                                                     i, 
+                                                     &d);
                 result = dcm_printf_append(result, "%g", d);
                 break;
 

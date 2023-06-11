@@ -811,10 +811,10 @@ bool dcm_element_set_value_numeric_multi(DcmError **error,
  * :return: true on success
  */
 DCM_EXTERN
-bool dcm_element_get_value_floatingpoint(DcmError **error,
-                                         const DcmElement *element,
-                                         uint32_t index,
-                                         double *value);
+bool dcm_element_get_value_decimal(DcmError **error,
+                                   const DcmElement *element,
+                                   uint32_t index,
+                                   double *value);
 
 /**
  * Set the value of a Data Element to a floating-point.
@@ -830,9 +830,9 @@ bool dcm_element_get_value_floatingpoint(DcmError **error,
  * :return: true on success
  */
 DCM_EXTERN
-bool dcm_element_set_value_floatingpoint(DcmError **error,
-                                         DcmElement *element,
-                                         double value);
+bool dcm_element_set_value_decimal(DcmError **error,
+                                   DcmElement *element,
+                                   double value);
 
 /**
  * Get a binary value from a Data Element.
