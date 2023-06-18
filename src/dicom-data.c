@@ -1244,7 +1244,7 @@ char *dcm_element_value_to_string(const DcmElement *element)
         }
 
         if (element->vm > 1) {
-            if (i == element->vm - 1) {
+            if (index == element->vm - 1) {
                 result = dcm_printf_append(result, "]");
             } else {
                 result = dcm_printf_append(result, ", ");

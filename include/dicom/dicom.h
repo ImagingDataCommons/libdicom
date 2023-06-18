@@ -1634,6 +1634,16 @@ DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
                                           DcmFilehandle *filehandle);
 
 /**
+ * Get Transfer Syntax UID for a fileahndle.
+ *
+ * :param filehandle: File
+ *
+ * :return: UID of the transfer syntax for this File.
+ */
+DCM_EXTERN
+const char *dcm_filehandle_get_transfer_syntax_uid(const DcmFilehandle *filehandle);
+
+/**
  * Read metadata from a File.
  *
  * Keeps track of the offset of the Pixel Data Element relative to the

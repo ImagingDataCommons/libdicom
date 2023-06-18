@@ -523,6 +523,12 @@ DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
 }
 
 
+const char *dcm_filehandle_get_transfer_syntax_uid(const DcmFilehandle *filehandle)
+{
+    return filehandle->transfer_syntax_uid;
+}
+
+
 static bool parse_meta_stop(void *client, 
                             uint32_t tag,
                             DcmVR vr,
@@ -636,10 +642,9 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
         return NULL;
     }
 
-    if (filehandle->transfer_syntax_uid) {
-        if (strcmp(filehandle->transfer_syntax_uid, "1.2.840.10008.1.2") == 0) {
-            filehandle->implicit = true;
-        }
+    const char *syntax = dcm_filehandle_get_transfer_syntax_uid(filehandle);
+    if (syntax && strcmp(syntax, "1.2.840.10008.1.2") == 0) {
+        filehandle->implicit = true;
     }
 
     dcm_filehandle_clear(filehandle);
@@ -688,7 +693,7 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
     if (!set_pixel_description(error, &filehandle->desc, meta)) {
         return false;
     }
-    filehandle->desc.transfer_syntax_uid = filehandle->transfer_syntax_uid;
+    filehandle->desc.transfer_syntax_uid = syntax;
 
     // we support sparse and full tile layout, defaulting to full if no type
     // is specified
@@ -893,7 +898,8 @@ bool dcm_filehandle_read_pixeldata(DcmError **error,
 
     dcm_log_debug("Reading PixelData.");
 
-    if (dcm_is_encapsulated_transfer_syntax(filehandle->transfer_syntax_uid)) {
+    const char *syntax = dcm_filehandle_get_transfer_syntax_uid(filehandle);
+    if (dcm_is_encapsulated_transfer_syntax(syntax)) {
         // read the bot if available, otherwise parse pixeldata to find
         // offsets
         if (!dcm_parse_pixeldata(error,
