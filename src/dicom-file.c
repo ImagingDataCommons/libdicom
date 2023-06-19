@@ -430,15 +430,11 @@ DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
         .stop = NULL,
     };
 
-    int64_t position = 0;
-
-    // File Preamble
-    char preamble[129];
-    if (!dcm_require(error,
-                     filehandle, preamble, sizeof(preamble) - 1, &position)) {
+    // skip File Preamble
+    int64_t position = 128;
+    if (!dcm_seekset(error, filehandle, position)) {
         return NULL;
     }
-    preamble[128] = '\0';
 
     // DICOM Prefix
     char prefix[5];
