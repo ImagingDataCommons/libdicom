@@ -148,6 +148,7 @@ install_headers(
 library_includes = include_directories('include')
 library_options = ['-DBUILDING_LIBDICOM']
 library_sources = [
+  'src/getopt.c',
   'src/dicom.c',
   'src/dicom-io.c',
   'src/dicom-data.c',

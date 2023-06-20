@@ -55,7 +55,6 @@ typedef SSIZE_T ssize_t;
 #define TAG_ITEM_DELIM                              0xFFFEE00D
 #define TAG_SQ_DELIM                                0xFFFEE0DD
 
-
 void *dcm_calloc(DcmError **error, size_t n, size_t size);
 void *dcm_realloc(DcmError **error, void *ptr, size_t size);
 char *dcm_strdup(DcmError **error, const char *str);

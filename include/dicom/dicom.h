@@ -130,6 +130,16 @@ DCM_EXTERN
 DCM_CONSTRUCTOR
 void dcm_init(void);
 
+/* Our copy of getopt, since non-glibc platforms are missing this. 
+ * Used by our tools.
+ */
+DCM_EXTERN
+char *dcm_optarg; 
+DCM_EXTERN
+int dcm_optind, dcm_opterr, dcm_optopt, dcm_optreset;
+DCM_EXTERN
+int dcm_getopt(int nargc, char * const nargv[], const char *ostr);
+
 /**
  * Error return object.
  */
@@ -238,6 +248,15 @@ DcmErrorCode dcm_error_get_code(DcmError *error);
  */
 DCM_EXTERN
 void dcm_error_log(DcmError *error);
+
+/**
+ * Print an error message to stderr.
+ *
+ * :param error: Error object
+ */
+DCM_EXTERN
+void dcm_error_print(DcmError *error);
+
 
 /**
  * Enumeration of log levels

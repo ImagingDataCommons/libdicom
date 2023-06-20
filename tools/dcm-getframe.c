@@ -11,50 +11,56 @@
 
 
 static const char usage[] = "usage: "
-    "dcm-getframe [-v] [-V] [-h] [-o OUTPUT-FILE] FILE_PATH FRAME_NUMBER\n";
+    "dcm-getframe [-v] [-V] [-h] [-o OUTPUT-FILE] FILE_PATH FRAME_NUMBER";
 
 
 int main(int argc, char *argv[]) 
 {
-    int i;
+    char *output_file = NULL;
 
-    DcmError *error = NULL;
-    char *output_filehandle = NULL;
+    int c;
 
     dcm_init();
 
-    for (i = 1; i < argc && argv[i][0] == '-'; i++) {
-        switch (argv[i][1]) {
+    while ((c = dcm_getopt(argc, argv, "h?Vvo:")) != -1) {
+        switch (c) {
             case 'h':
+            case '?':
                 printf("%s\n", usage);
                 return EXIT_SUCCESS;
-            case 'V':
+
+            case 'v':
                 printf("%s\n", dcm_get_version());
                 return EXIT_SUCCESS;
-            case 'v':
+
+            case 'V':
                 dcm_log_set_level(DCM_LOG_INFO);
                 break;
+
             case 'o':
-                output_filehandle = argv[i + 1];
-                i += 1;
+                output_file = dcm_optarg;
                 break;
+
+            case '#':
             default:
-                fprintf(stderr, "%s\n", usage);
                 return EXIT_FAILURE;
         }
     }
 
-    if ((i + 2) != argc) {
+    DcmError *error = NULL;
+
+    if (dcm_optind + 2 != argc) {
         fprintf(stderr, "%s\n", usage);
         return EXIT_FAILURE;
     }
-    const char *file_path = argv[i];
+    const char *input_file = argv[dcm_optind];
+    int frame_number = atoi(argv[dcm_optind + 1]);
 
-    dcm_log_info("Read filehandle '%s'", file_path);
+    dcm_log_info("Read filehandle '%s'", input_file);
     DcmFilehandle *filehandle = dcm_filehandle_create_from_file(&error, 
-                                                                file_path);
+                                                                input_file);
     if (filehandle == NULL) {
-        dcm_error_log(error);
+        dcm_error_print(error);
         dcm_error_clear(&error);
         return EXIT_FAILURE;
     }
@@ -62,14 +68,14 @@ int main(int argc, char *argv[])
     dcm_log_info("Read metadata");
     DcmDataSet *metadata = dcm_filehandle_read_metadata(&error, filehandle);
     if (metadata == NULL) {
-        dcm_error_log(error);
+        dcm_error_print(error);
         dcm_error_clear(&error);
         dcm_filehandle_destroy(filehandle);
         return EXIT_FAILURE;
     }
 
     if (!dcm_filehandle_read_pixeldata(&error, filehandle)) {
-        dcm_error_log(error);
+        dcm_error_print(error);
         dcm_error_clear(&error);
         dcm_filehandle_destroy(filehandle);
         return EXIT_FAILURE;
@@ -80,20 +86,19 @@ int main(int argc, char *argv[])
     const char *value;
     if (!(element = dcm_dataset_get(&error, metadata, tag)) ||
         !dcm_element_get_value_string(&error, element, 0, &value)) {
-        dcm_error_log(error);
+        dcm_error_print(error);
         dcm_error_clear(&error);
         dcm_filehandle_destroy(filehandle);
         return EXIT_FAILURE;
     }
-
     int num_frames = atoi(value);
-    int frame_number = atoi(argv[i + 1]);
+
     if (frame_number < 1 || frame_number > num_frames) {
         dcm_error_set(&error, DCM_ERROR_CODE_INVALID,
                       "Bad frame number",
                       "Frame number must be between 1 and %d",
                       num_frames);
-        dcm_error_log(error);
+        dcm_error_print(error);
         dcm_error_clear(&error);
         dcm_dataset_destroy(metadata);
         dcm_filehandle_destroy(filehandle);
@@ -105,7 +110,7 @@ int main(int argc, char *argv[])
                                                 filehandle,
                                                 frame_number);
     if (frame == NULL) {
-        dcm_error_log(error);
+        dcm_error_print(error);
         dcm_error_clear(&error);
         dcm_dataset_destroy(metadata);
         dcm_filehandle_destroy(filehandle);
@@ -134,12 +139,18 @@ int main(int argc, char *argv[])
                  dcm_frame_get_transfer_syntax_uid(frame));
 
     FILE *output_fp;
-    if (output_filehandle != NULL) {
-        output_fp = fopen(output_filehandle, "wb");
+    if (output_file != NULL) {
+        output_fp = fopen(output_file, "wb");
         if (output_fp == NULL) {
             dcm_error_set(&error, DCM_ERROR_CODE_INVALID,
                           "Bad output filehandle name",
-                          "Unable to open %s for output", output_filehandle);
+                          "Unable to open %s for output", output_file);
+            dcm_error_print(error);
+            dcm_error_clear(&error);
+            dcm_frame_destroy(frame);
+            dcm_dataset_destroy(metadata);
+            dcm_filehandle_destroy(filehandle);
+            return EXIT_FAILURE;
         }
     }
     else
@@ -147,7 +158,7 @@ int main(int argc, char *argv[])
 
     fwrite(frame_value, 1, frame_length, output_fp);
 
-    if (output_filehandle != NULL) {
+    if (output_file != NULL) {
         fclose(output_fp);
         output_fp = NULL;
     }

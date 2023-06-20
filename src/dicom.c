@@ -279,6 +279,17 @@ void dcm_error_log(DcmError *error)
 }
 
 
+void dcm_error_print(DcmError *error)
+{
+    if (error) {
+        fprintf(stderr, "%s: %s - %s\n",
+                      dcm_error_code_str(error->code),
+                      error->summary,
+                      error->message);
+    }
+}
+
+
 static DcmLogLevel dcm_log_level = DCM_LOG_NOTSET;
 
 DcmLogLevel dcm_log_set_level(DcmLogLevel log_level)
