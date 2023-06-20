@@ -714,8 +714,6 @@ START_TEST(test_file_sm_image_frame)
 
     ck_assert_int_ne(dcm_filehandle_read_pixeldata(NULL, filehandle), 0);
 
-    dcm_log_level = DCM_LOG_INFO;
-
     DcmFrame *frame = dcm_filehandle_read_frame(NULL, 
                                                 filehandle, 
                                                 frame_number);
@@ -854,6 +852,8 @@ static Suite *create_file_suite(void)
 
 int main(void)
 {
+    dcm_init();
+
     SRunner *runner = srunner_create(create_main_suite());
     srunner_add_suite(runner, create_data_suite());
     srunner_add_suite(runner, create_file_suite());

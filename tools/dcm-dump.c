@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
     DcmDataSet *meta = NULL;
     DcmFilehandle *handle = NULL;
 
-    dcm_log_set_level(DCM_LOG_ERROR);
+    dcm_init();
 
     for (i = 1; i < argc && argv[i][0] == '-'; i++) {
         switch (argv[i][1]) {

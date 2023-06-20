@@ -394,17 +394,3 @@ void dcm_log_debug(const char *format, ...)
         va_end(args);
     }
 }
-
-
-DcmError *dcm_error_newf(const char *domain, int code, const char *format,
-    va_list args) {
-    DcmError *error;
-
-    error = DCM_NEW (DcmError);
-    if (error == NULL) {
-    }
-}
-
-
-DcmError *dcm_error_new(const char *domain, int code, const char *format, ...) {
-}

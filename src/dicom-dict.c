@@ -5187,6 +5187,10 @@ void dcm_init(void)
             HASH_ADD_STR(attribute_from_keyword_dict, keyword, entry);
         }
     }
+
+    if (getenv("DCM_DEBUG")) {
+        dcm_log_set_level(DCM_LOG_DEBUG);
+    }
 }
 
 

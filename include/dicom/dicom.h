@@ -7,11 +7,6 @@
 #ifndef DCM_INCLUDED
 #define DCM_INCLUDED
 
-#if defined(_WIN32) && !defined(__GNUC__)
-#include <BaseTsd.h>
-typedef SSIZE_T ssize_t;
-#endif
-
 #ifdef _WIN32
 #if DCM_STATIC
 #define DCM_EXTERN extern
@@ -115,70 +110,9 @@ typedef SSIZE_T ssize_t;
  */
 #define DCM_CAPACITY_UT 4294967294
 
-/**
- * Error return object.
- */
-typedef struct _DcmError DcmError;
-
-/**
- * Part10 file
- */
-typedef struct _DcmFilehandle DcmFilehandle;
-
-/**
- * Data Element
- */
-typedef struct _DcmElement DcmElement;
-
-/**
- * Data Set
- */
-typedef struct _DcmDataSet DcmDataSet;
-
-/**
- * Sequence of Data Set Items
+/* We need forward references for these types.
  */
 typedef struct _DcmSequence DcmSequence;
-
-/**
- * Frame Item of Pixel Data Element
- */
-typedef struct _DcmFrame DcmFrame;
-
-/**
- * A set of read functions.
- */
-typedef struct _DcmIOMethods DcmIOMethods;
-
-/**
- * An object we can read from.
- */
-typedef struct _DcmIO DcmIO;
-
-/**
- * Error codes
- */
-typedef enum _DcmErrorCode DcmErrorCode;
-
-/**
- * Value Representations
- */
-typedef enum _DcmVR DcmVR;
-
-/**
- * Classes of Value Representations
- */
-typedef enum _DcmVRClass DcmVRClass;
-
-/**
- * Log function. See dcm_log_set_logf().
- */
-typedef void (*DcmLogf)(const char *level, const char *format, va_list args);
-
-/**
- * Log level
- */
-typedef enum _DcmLogLevel DcmLogLevel;
 
 /**
  * Start up libdicom.
@@ -197,9 +131,14 @@ DCM_CONSTRUCTOR
 void dcm_init(void);
 
 /**
+ * Error return object.
+ */
+typedef struct _DcmError DcmError;
+
+/**
  * Enumeration of error codes.
  */
-enum _DcmErrorCode {
+typedef enum _DcmErrorCode {
     /** Out of memory */
     DCM_ERROR_CODE_NOMEM = 1,
     /** Invalid parameter */
@@ -208,101 +147,7 @@ enum _DcmErrorCode {
     DCM_ERROR_CODE_PARSE = 3,
     /** IO error */
     DCM_ERROR_CODE_IO = 4,
-};
-
-/**
- * An enum of Value Representations.
- *
- * Value Representations which are not known to libdicom will be coded as
- * DCM_VR_ERROR (unknown Value Representation).
- *
- * Note to maintainers: this enum must match the table in dicom-dict.c, and
- * the DcmVRTag enum. As the DICOM standard evolves, numbering must be
- * maintained for ABI compatibility.
- */
-enum _DcmVR {
-    // error value, returned for eg. unknown SR strings
-    DCM_VR_ERROR = -1,
-
-    // allowed VRs for DcmElement
-    DCM_VR_AE = 0,
-    DCM_VR_AS,
-    DCM_VR_AT,
-    DCM_VR_CS,
-    DCM_VR_DA,
-    DCM_VR_DS,
-    DCM_VR_DT,
-    DCM_VR_FL,
-    DCM_VR_FD,
-    DCM_VR_IS,
-    DCM_VR_LO,
-    DCM_VR_LT,
-    DCM_VR_OB,
-    DCM_VR_OD,
-    DCM_VR_OF,
-    DCM_VR_OW,
-    DCM_VR_PN,
-    DCM_VR_SH,
-    DCM_VR_SL,
-    DCM_VR_SQ,
-    DCM_VR_SS,
-    DCM_VR_ST,
-    DCM_VR_TM,
-    DCM_VR_UI,
-    DCM_VR_UL,
-    DCM_VR_UN,
-    DCM_VR_US,
-    DCM_VR_UT,
-    DCM_VR_UR,
-    DCM_VR_UC,
-    DCM_VR_OL,
-    DCM_VR_OV,
-    DCM_VR_SV,
-    DCM_VR_UV,
-
-    // used to check enums for range errors, add new VRs before this
-    DCM_VR_LAST
-};
-
-/**
- * The general class of the value associated with a Value Representation.
- *
- * DCM_CLASS_STRING_MULTI -- one or more null-terminated strings, cannot
- * contain backslash
- *
- * DCM_CLASS_STRING_SINGLE -- a single null-terminated string, backslash
- * allowed
- *
- * DCM_CLASS_NUMERIC_DECIMAL -- one or more binary floating point numeric
- * values, other fields give sizeof(type)
- *
- * DCM_CLASS_NUMERIC_INTEGER -- one or more binary integer numeric
- * values, other fields give sizeof(type)
- *
- * DCM_CLASS_BINARY -- an uninterpreted array of bytes, length in the
- * element header
- *
- * DCM_CLASS_SEQUENCE -- Value Representation is a seqeunce
- */
-enum _DcmVRClass {
-    DCM_CLASS_ERROR,
-    DCM_CLASS_STRING_MULTI,
-    DCM_CLASS_STRING_SINGLE,
-    DCM_CLASS_NUMERIC_DECIMAL,
-    DCM_CLASS_NUMERIC_INTEGER,
-    DCM_CLASS_BINARY,
-    DCM_CLASS_SEQUENCE
-};
-
-/**
- * Find the general class for a particular Value Representation.
- *
- * :param vr: The Value Representation
- *
- * :return: The general class of that Value Representation
- */
-DCM_EXTERN
-DcmVRClass dcm_dict_vr_class(DcmVR vr);
+} DcmErrorCode;
 
 /**
  * Convert an error code to a human-readable string.
@@ -397,7 +242,7 @@ void dcm_error_log(DcmError *error);
 /**
  * Enumeration of log levels
  */
-enum _DcmLogLevel {
+typedef enum _DcmLogLevel {
     /** Critical */
     DCM_LOG_CRITICAL = 50,
     /** Error */
@@ -410,7 +255,7 @@ enum _DcmLogLevel {
     DCM_LOG_DEBUG = 10,
     /** Not set (no logging) */
     DCM_LOG_NOTSET = 0,
-};
+} DcmLogLevel;
 
 /**
  * Set the log level.
@@ -420,6 +265,11 @@ enum _DcmLogLevel {
  */
 DCM_EXTERN
 DcmLogLevel dcm_log_set_level(DcmLogLevel log_level);
+
+/**
+ * Log function. See dcm_log_set_logf().
+ */
+typedef void (*DcmLogf)(const char *level, const char *format, va_list args);
 
 /**
  * Set the log function.
@@ -486,6 +336,100 @@ void dcm_log_debug(const char *format, ...);
  */
 DCM_EXTERN
 const char *dcm_get_version(void);
+
+/**
+ * An enum of Value Representations.
+ *
+ * Value Representations which are not known to libdicom will be coded as
+ * DCM_VR_ERROR (unknown Value Representation).
+ *
+ * Note to maintainers: this enum must match the table in dicom-dict.c, and
+ * the DcmVRTag enum. As the DICOM standard evolves, numbering must be
+ * maintained for ABI compatibility.
+ */
+typedef enum _DcmVR {
+    // error value, returned for eg. unknown SR strings
+    DCM_VR_ERROR = -1,
+
+    // allowed VRs for DcmElement
+    DCM_VR_AE = 0,
+    DCM_VR_AS,
+    DCM_VR_AT,
+    DCM_VR_CS,
+    DCM_VR_DA,
+    DCM_VR_DS,
+    DCM_VR_DT,
+    DCM_VR_FL,
+    DCM_VR_FD,
+    DCM_VR_IS,
+    DCM_VR_LO,
+    DCM_VR_LT,
+    DCM_VR_OB,
+    DCM_VR_OD,
+    DCM_VR_OF,
+    DCM_VR_OW,
+    DCM_VR_PN,
+    DCM_VR_SH,
+    DCM_VR_SL,
+    DCM_VR_SQ,
+    DCM_VR_SS,
+    DCM_VR_ST,
+    DCM_VR_TM,
+    DCM_VR_UI,
+    DCM_VR_UL,
+    DCM_VR_UN,
+    DCM_VR_US,
+    DCM_VR_UT,
+    DCM_VR_UR,
+    DCM_VR_UC,
+    DCM_VR_OL,
+    DCM_VR_OV,
+    DCM_VR_SV,
+    DCM_VR_UV,
+
+    // used to check enums for range errors, add new VRs before this
+    DCM_VR_LAST
+} DcmVR;
+
+/**
+ * The general class of the value associated with a Value Representation.
+ *
+ * DCM_CLASS_STRING_MULTI -- one or more null-terminated strings, cannot
+ * contain backslash
+ *
+ * DCM_CLASS_STRING_SINGLE -- a single null-terminated string, backslash
+ * allowed
+ *
+ * DCM_CLASS_NUMERIC_DECIMAL -- one or more binary floating point numeric
+ * values, other fields give sizeof(type)
+ *
+ * DCM_CLASS_NUMERIC_INTEGER -- one or more binary integer numeric
+ * values, other fields give sizeof(type)
+ *
+ * DCM_CLASS_BINARY -- an uninterpreted array of bytes, length in the
+ * element header
+ *
+ * DCM_CLASS_SEQUENCE -- Value Representation is a seqeunce
+ */
+typedef enum _DcmVRClass {
+    DCM_CLASS_ERROR,
+    DCM_CLASS_STRING_MULTI,
+    DCM_CLASS_STRING_SINGLE,
+    DCM_CLASS_NUMERIC_DECIMAL,
+    DCM_CLASS_NUMERIC_INTEGER,
+    DCM_CLASS_BINARY,
+    DCM_CLASS_SEQUENCE
+} DcmVRClass;
+
+/**
+ * Find the general class for a particular Value Representation.
+ *
+ * :param vr: The Value Representation
+ *
+ * :return: The general class of that Value Representation
+ */
+DCM_EXTERN
+DcmVRClass dcm_dict_vr_class(DcmVR vr);
 
 /**
  * Turn a string Value Representation into an enum value.
@@ -608,8 +552,9 @@ bool dcm_is_encapsulated_transfer_syntax(const char *transfer_syntax_uid);
 
 
 /**
- * Data Element
+ * Data Element.
  */
+typedef struct _DcmElement DcmElement;
 
 /**
  * Create a Data Element for a tag.
@@ -1003,6 +948,7 @@ void dcm_element_destroy(DcmElement *element);
 /**
  * Data Set
  */
+typedef struct _DcmDataSet DcmDataSet;
 
 /**
  * Create an empty Data Set.
@@ -1182,8 +1128,8 @@ void dcm_dataset_destroy(DcmDataSet *dataset);
  */
 
 /**
- * Create a Sequence, i.e., a collection of Data Set items that represent the
- * value of a Data Element with Value Representation SQ (Sequence).
+ * Create a Sequence, i.e., an ordered list of Data Set items that represent 
+ * the value of a Data Element with Value Representation SQ (Sequence).
  *
  * Note that created object represents the value of a Data Element rather
  * than a Data Element itself.
@@ -1297,11 +1243,12 @@ void dcm_sequence_destroy(DcmSequence *seq);
 
 
 /**
- * Frame
+ * Frame Item of Pixel Data Element
  *
  * Encoded pixels of an individual pixel matrix and associated
  * descriptive metadata.
  */
+typedef struct _DcmFrame DcmFrame;
 
 /**
  * Create a Frame.
@@ -1486,16 +1433,17 @@ void dcm_frame_destroy(DcmFrame *frame);
 /**
  * Part 10 File
  */
+typedef struct _DcmFilehandle DcmFilehandle;
 
-struct _DcmIOMethods DcmIOMethods;
+typedef struct _DcmIOMethods DcmIOMethods;
 
 /**
- * Something we can read from.
+ * An object we can read from.
  */
-struct _DcmIO {
+typedef struct _DcmIO {
         const DcmIOMethods *methods;
         // more private fields follow
-};
+} DcmIO;
 
 /**
  * A set of IO methods, see dcm_io_create().

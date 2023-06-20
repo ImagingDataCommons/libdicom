@@ -1,5 +1,9 @@
 # TODO
 
+- popt as a subproject?
+
+- read metadata needs an "all" flag, or perhaps a set of stop tags?
+
 - dcm-dump could call the parser with a set of print functions
 
   add a "-a" flag to print everything (inc. pixel data and 

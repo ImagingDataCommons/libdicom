@@ -16,11 +16,12 @@ static const char usage[] = "usage: "
 
 int main(int argc, char *argv[]) 
 {
-    DcmError *error = NULL;
-    char *output_filehandle = NULL;
     int i;
 
-    dcm_log_level = DCM_LOG_ERROR;
+    DcmError *error = NULL;
+    char *output_filehandle = NULL;
+
+    dcm_init();
 
     for (i = 1; i < argc && argv[i][0] == '-'; i++) {
         switch (argv[i][1]) {
@@ -31,7 +32,7 @@ int main(int argc, char *argv[])
                 printf("%s\n", dcm_get_version());
                 return EXIT_SUCCESS;
             case 'v':
-                dcm_log_level = DCM_LOG_INFO;
+                dcm_log_set_level(DCM_LOG_INFO);
                 break;
             case 'o':
                 output_filehandle = argv[i + 1];

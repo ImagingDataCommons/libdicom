@@ -82,27 +82,6 @@ static bool dcm_require(DcmParseState *state,
 }
 
 
-/* will we need these?
-static bool dcm_seekset(DcmParseState *state, int64_t offset)
-{
-    int64_t new_offset = dcm_io_seek(state->error, state->io, offset, SEEK_SET);
-    return new_offset >= 0;
-}
-
-static bool dcm_offset(DcmParseState *state, int64_t *offset)
-{
-    int64_t new_offset = dcm_io_seek(state->error, state->io, 0, SEEK_CUR);
-    if (new_offset < 0) {
-        return false;
-    }
-
-    *offset = new_offset;
-
-    return true;
-}
- */
-
-
 static bool dcm_seekcur(DcmParseState *state, int64_t offset, int64_t *position)
 {
     int64_t new_offset = dcm_io_seek(state->error, state->io, offset, SEEK_CUR);

@@ -1,6 +1,11 @@
 /* Declarations not in the public API.
  */
 
+#if defined(_WIN32) && !defined(__GNUC__)
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#endif
+
 #ifndef NDEBUG
 #  define DCM_DEBUG_ONLY( ... ) __VA_ARGS__
 #else
