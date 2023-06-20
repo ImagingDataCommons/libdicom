@@ -1,0 +1,24 @@
+#ifndef DCM_VERSION_H
+#define DCM_VERSION_H
+
+/* The project version.
+ */
+#define DCM_VERSION            "@DCM_VERSION@"
+#define DCM_SUFFIXED_VERSION   "@DCM_SUFFIXED_VERSION@"
+#define DCM_VERSION_MAJOR      (@DCM_VERSION_MAJOR@)
+#define DCM_VERSION_MINOR      (@DCM_VERSION_MINOR@)
+#define DCM_VERSION_MICRO      (@DCM_VERSION_MICRO@)
+
+/* The ABI version, as used for library versioning.
+ */
+#define DCM_ABI_VERSION_MAJOR  (@DCM_ABI_VERSION_MAJOR@)
+#define DCM_ABI_VERSION_MINOR  (@DCM_ABI_VERSION_MINOR@)
+#define DCM_ABI_VERSION_PATCH  (@DCM_ABI_VERSION_PATCH@)
+
+/* Whether libdicom is built statically.
+ */
+#define DCM_STATIC             (@DCM_STATIC@)
+
+#endif /*DCM_VERSION_H*/
+
+

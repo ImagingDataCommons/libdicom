@@ -10,6 +10,7 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+from glob import glob
 import os
 import sys
 from hawkmoth.util import readthedocs
@@ -70,6 +71,6 @@ else:
     lib_search_dirs = [
         '/usr/lib',
         '/usr/local/lib',
-    ]
+    ] + glob('/usr/lib/llvm-*/lib')
 for lib_dir in lib_search_dirs:
     clang_config.set_library_path(lib_dir)

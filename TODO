@@ -1,0 +1,27 @@
+# TODO
+
+- dcm-dump could call the parser with a set of print functions
+
+  add a "-a" flag to print everything (inc. pixel data and 
+  perframefunctionalgroupsequence etc.)
+
+  expose parser in public API? it'd be tricky to bind to python
+
+
+# asserts
+
+- should the foreach funcs take two params (one for error)? are they used?
+
+	nope, unused within libdicom
+
+
+# Tips
+
+- debug failing test with eg.
+
+	CK_FORK=no CK_RUN_CASE=frame gdb ./check_dicom
+
+- leak check
+
+	CK_FORK=no valgrind --leak-check=full ./check_dicom
+
