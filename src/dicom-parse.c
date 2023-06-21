@@ -404,14 +404,16 @@ static bool parse_element_body(DcmParseState *state,
             }
 
             // read to a static char buffer, if possible
-            if (length + 1 >= INPUT_BUFFER_SIZE) {
-                value = value_free = DCM_MALLOC(state->error, length + 1);
+            if ((int64_t) length + 1 >= INPUT_BUFFER_SIZE) {
+                value = value_free = DCM_MALLOC(state->error, (size_t) length + 1);
                 if (value == NULL) {
                     return false;
                 }
             } else {
                 value = input_buffer;
             }
+
+
 
             if (!dcm_require(state, value, length, position)) {
                 if (value_free != NULL) {

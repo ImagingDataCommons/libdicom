@@ -418,6 +418,34 @@ static bool parse_meta_element_create(DcmError **error,
 }
 
 
+static bool parse_preamble(DcmError **error,
+                           DcmFilehandle *filehandle,
+                           int64_t *position)
+{
+    *position = 128;
+    if (!dcm_seekset(error, filehandle, *position)) {
+        return false;
+    }
+
+    // DICOM Prefix
+    char prefix[5];
+    if (!dcm_require(error,
+                     filehandle, prefix, sizeof(prefix) - 1, position)) {
+        return false;
+    }
+    prefix[4] = '\0';
+
+    if (strcmp(prefix, "DICM") != 0) {
+        dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                      "Reading of File Meta Information failed",
+                      "Prefix 'DICM' not found.");
+        return false;
+    }
+
+    return true;
+}
+
+
 DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
                                           DcmFilehandle *filehandle)
 {
@@ -431,23 +459,8 @@ DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
     };
 
     // skip File Preamble
-    int64_t position = 128;
-    if (!dcm_seekset(error, filehandle, position)) {
-        return NULL;
-    }
-
-    // DICOM Prefix
-    char prefix[5];
-    if (!dcm_require(error,
-                     filehandle, prefix, sizeof(prefix) - 1, &position)) {
-        return NULL;
-    }
-    prefix[4] = '\0';
-
-    if (strcmp(prefix, "DICM") != 0) {
-        dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                      "Reading of File Meta Information failed",
-                      "Prefix 'DICM' not found.");
+    int64_t position = 0;
+    if (!parse_preamble(error, filehandle, &position)) {
         return NULL;
     }
 
@@ -509,6 +522,10 @@ DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
     filehandle->transfer_syntax_uid = dcm_strdup(error, transfer_syntax_uid);
     if (filehandle->transfer_syntax_uid == NULL) {
         return NULL;
+    }
+
+    if (strcmp(filehandle->transfer_syntax_uid, "1.2.840.10008.1.2") == 0) {
+        filehandle->implicit = true;
     }
 
     // steal file_meta to stop it being destroyed
@@ -638,11 +655,6 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
         return NULL;
     }
 
-    const char *syntax = dcm_filehandle_get_transfer_syntax_uid(filehandle);
-    if (syntax && strcmp(syntax, "1.2.840.10008.1.2") == 0) {
-        filehandle->implicit = true;
-    }
-
     dcm_filehandle_clear(filehandle);
     DcmSequence *sequence = dcm_sequence_create(error);
     if (sequence == NULL) {
@@ -689,7 +701,9 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
     if (!set_pixel_description(error, &filehandle->desc, meta)) {
         return false;
     }
-    filehandle->desc.transfer_syntax_uid = syntax;
+
+    filehandle->desc.transfer_syntax_uid = 
+        dcm_filehandle_get_transfer_syntax_uid(filehandle);
 
     // we support sparse and full tile layout, defaulting to full if no type
     // is specified
@@ -1029,4 +1043,112 @@ DcmFrame *dcm_filehandle_read_frame_position(DcmError **error,
 
     // read_frame() numbers from 1
     return dcm_filehandle_read_frame(error, filehandle, index + 1);
+}
+
+
+static bool print_dataset_begin(DcmError **error, 
+                                void *client) 
+{
+    DcmFilehandle *filehandle = (DcmFilehandle *) client;
+
+    printf("dataset_begin\n");
+
+    return true;
+}
+
+
+static bool print_dataset_end(DcmError **error, 
+                              void *client) 
+{
+    DcmFilehandle *filehandle = (DcmFilehandle *) client;
+
+    printf("dataset_end\n");
+
+    return true;
+}
+
+
+static bool print_sequence_begin(DcmError **error, 
+                                 void *client) 
+{
+    DcmFilehandle *filehandle = (DcmFilehandle *) client;
+
+    printf("sequence_begin\n");
+
+    return true;
+}
+
+
+static bool print_sequence_end(DcmError **error, 
+                               void *client,
+                               uint32_t tag,
+                               DcmVR vr,
+                               uint32_t length)
+{
+    DcmFilehandle *filehandle = (DcmFilehandle *) client;
+
+    printf("sequence_end\n");
+
+    return true;
+}
+
+
+static bool print_element_create(DcmError **error, 
+                                 void *client, 
+                                 uint32_t tag,
+                                 DcmVR vr,
+                                 char *value,
+                                 uint32_t length)
+{
+    DcmFilehandle *filehandle = (DcmFilehandle *) client;
+
+    printf("sequence_end\n");
+
+    return true;
+}
+
+bool dcm_filehandle_print(DcmError **error,
+                          DcmFilehandle *filehandle)
+{
+    static DcmParse parse = {
+        .dataset_begin = print_dataset_begin,
+        .dataset_end = print_dataset_end,
+        .sequence_begin = print_sequence_begin,
+        .sequence_end = print_sequence_end,
+        .element_create = print_element_create,
+        .stop = NULL,
+    };
+
+    // skip File Preamble
+    int64_t position = 0;
+    if (!parse_preamble(error, filehandle, &position)) {
+        return false;
+    }
+
+    // print the first group
+    printf("===File Meta Information===\n");
+    dcm_log_info("Read File Meta Information");
+    if (!dcm_parse_group(error,
+                         filehandle->io,
+                         false,
+                         false,
+                         &parse,
+                         filehandle)) {
+        return false;
+    }
+
+    // print the rest of the file
+    printf("===Dataset===\n");
+    dcm_log_info("Read metadata");
+    if (!dcm_parse_dataset(error,
+                           filehandle->io,
+                           // FIXME we should check transfer syntax for this
+                           false,
+                           is_big_endian(),
+                           &parse,
+                           filehandle)) {
+        return false;
+    }
+
+    return true;
 }

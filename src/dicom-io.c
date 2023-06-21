@@ -172,7 +172,7 @@ static int64_t dcm_io_read_file(DcmError **error, DcmIO *io,
             if (refill_bytes < 0) {
                 return refill_bytes;
             } else if (refill_bytes == 0) {
-                // we may be read some bytes in a previous loop
+                // we maybe read some bytes in a previous loop
                 return bytes_read;
             }
         }

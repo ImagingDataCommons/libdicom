@@ -1717,4 +1717,17 @@ DCM_EXTERN
 DcmFrame *dcm_filehandle_read_frame(DcmError **error,
                                     DcmFilehandle *filehandle,
                                     uint32_t frame_number);
+
+/**
+ * Scan a file and print the entire structure to stdout.
+ *
+ * :param error: Pointer to error object
+ * :param filehandle: File
+ *
+ * :return: true on successful parse, false otherwise.
+ */
+DCM_EXTERN
+bool dcm_filehandle_print(DcmError **error,
+                          DcmFilehandle *filehandle);
+
 #endif

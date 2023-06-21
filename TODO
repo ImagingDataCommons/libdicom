@@ -1,6 +1,39 @@
 # TODO
 
-- popt as a subproject?
+- pixeldata has length -1 ... we must parse this as a sequence, not as OB/OW
+
+  maybe an implicit sequence?
+
+  pyr level from dcmdump, DCM_3.dcm
+
+	tag 7fe0,0010, vr OB, length -1 (pixel data)
+	  tag fffe,e000, length 0 (bot)
+	  tag fffe,e000, length 6460 (frame 1)
+	  tag fffe,e000, length 6398 (frame 2)
+	  ...
+	tag fffe,e0dd, length 0 (sequence delimitation item)
+
+  overview DCM_5.dcm
+
+	tag 7fe0,010, vr OB, length 1655040 (pixeldata)
+
+- rules for pixeldata
+
+	- encapsulated trasfer syntax
+		- little endian
+		- explicit VR
+	- pixeldata length == -1 means undefined value length
+		- undefined length means encapsulated pixeldata
+		- only applies to top-level pixeldata elements, so an 
+		  encapsulated transfer syntax might have native sub 
+		  images eg, icon sequence
+	  length == 234234 for example means fixed length pixeldata 
+	  	- defined length means native data
+		- native is always little endian
+
+
+
+
 
 - read metadata needs an "all" flag, or perhaps a set of stop tags?
 
