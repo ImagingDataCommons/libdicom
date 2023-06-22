@@ -24,7 +24,7 @@
 #include "pdicom.h"
 
 
-/* The size of the buffer we use for reading smaller element values. This is 
+/* The size of the buffer we use for reading smaller element values. This is
  * large enough for most VRs.
  */
 #define INPUT_BUFFER_SIZE (256)
@@ -34,7 +34,7 @@ typedef struct _DcmParseState {
     DcmError **error;
     DcmIO *io;
     bool implicit;
-    bool byteswap;
+    bool big_endian;
     const DcmParse *parse;
     void *client;
 
@@ -111,14 +111,28 @@ static bool dcm_is_eof(DcmParseState *state)
 }
 
 
+/* TRUE for big-endian machines, like PPC. We need to byteswap DICOM
+ * numeric types in this case. Run time tests for this are much
+ * simpler to manage when cross-compiling.
+ */
+static bool is_big_endian(void)
+{
+    union {
+        uint32_t i;
+        char c[4];
+    } bint = {0x01020304};
+
+    return bint.c[0] == 1;
+}
+
+
 static void byteswap(char *data, size_t length, size_t size)
 {
-    assert(length >= size);
-
-    if (size > 1) {
-        assert(length % size == 0);
-        assert(size % 2 == 0);
-
+    // only swap if the data is "swappable"
+    if (size > 1 &&
+        length > size &&
+        length % size == 0 &&
+        size % 2 == 0) {
         size_t half_size = size / 2;
 
         for (size_t i = 0; i < length; i += size) {
@@ -145,7 +159,7 @@ static bool read_uint16(DcmParseState *state,
         return false;
     }
 
-    if (state->byteswap) {
+    if (state->big_endian) {
         byteswap(buffer.c, 2, 2);
     }
 
@@ -155,7 +169,7 @@ static bool read_uint16(DcmParseState *state,
 }
 
 
-static bool read_uint32(DcmParseState *state, 
+static bool read_uint32(DcmParseState *state,
     uint32_t *value, int64_t *position)
 {
     union {
@@ -167,7 +181,7 @@ static bool read_uint32(DcmParseState *state,
         return false;
     }
 
-    if (state->byteswap) {
+    if (state->big_endian) {
         byteswap(buffer.c, 4, 4);
     }
 
@@ -198,7 +212,7 @@ static bool parse_element(DcmParseState *state,
                           int64_t *position);
 
 
-static bool parse_element_header(DcmParseState *state, 
+static bool parse_element_header(DcmParseState *state,
                                  uint32_t *tag,
                                  DcmVR *vr,
                                  uint32_t *length,
@@ -268,14 +282,18 @@ static bool parse_element_header(DcmParseState *state,
 }
 
 
-static bool parse_element_sequence(DcmParseState *state, 
+static bool parse_element_sequence(DcmParseState *state,
                                    uint32_t seq_tag,
                                    DcmVR seq_vr,
                                    uint32_t seq_length,
                                    int64_t *position)
 {
     if (state->parse->sequence_begin &&
-        !state->parse->sequence_begin(state->error, state->client)) {
+        !state->parse->sequence_begin(state->error,
+                                      state->client,
+                                      seq_tag,
+                                      seq_vr,
+                                      seq_length)) {
         return false;
     }
 
@@ -358,7 +376,7 @@ static bool parse_element_sequence(DcmParseState *state,
     }
 
     if (state->parse->sequence_end &&
-        !state->parse->sequence_end(state->error, 
+        !state->parse->sequence_end(state->error,
                                     state->client,
                                     seq_tag,
                                     seq_vr,
@@ -370,7 +388,135 @@ static bool parse_element_sequence(DcmParseState *state,
 }
 
 
-static bool parse_element_body(DcmParseState *state, 
+static bool parse_pixeldata_item(DcmParseState *state,
+                                 uint32_t tag,
+                                 DcmVR vr,
+                                 uint32_t length,
+                                 uint32_t item_length,
+                                 int64_t *position)
+{
+    // a read buffer on the stack for small objects
+    char input_buffer[INPUT_BUFFER_SIZE];
+    char *value;
+    char *value_free = NULL;
+
+    USED(tag);
+
+    // read to our stack buffer, if possible
+    if (item_length > INPUT_BUFFER_SIZE) {
+        value = value_free = DCM_MALLOC(state->error, item_length);
+        if (value_free == NULL) {
+            return false;
+        }
+    } else {
+        value = input_buffer;
+    }
+
+    if (!dcm_require(state, value, item_length, position)) {
+        if (value_free != NULL) {
+            free(value_free);
+        }
+        return false;
+    }
+
+    // native (not encapsulated) pixeldata is always little-endian and needs
+    // byteswapping on big-endian machines
+    if (length != 0xffffffff && state->big_endian) {
+        byteswap(value, item_length, dcm_dict_vr_size(vr));
+    }
+
+    if (state->parse->pixeldata_create &&
+        !state->parse->pixeldata_create(state->error,
+                                        state->client,
+                                        tag,
+                                        vr,
+                                        value,
+                                        item_length)) {
+        if (value_free != NULL) {
+            free(value_free);
+        }
+        return false;
+    }
+
+    if (value_free != NULL) {
+        free(value_free);
+    }
+
+    return true;
+}
+
+
+static bool parse_pixeldata(DcmParseState *state,
+                            uint32_t tag,
+                            DcmVR vr,
+                            uint32_t length,
+                            int64_t *position)
+{
+    if (state->parse->pixeldata_begin &&
+        !state->parse->pixeldata_begin(state->error,
+                                       state->client,
+                                       tag,
+                                       vr,
+                                       length)) {
+        return false;
+    }
+
+    if (length == 0xffffffff) {
+        // a sequence of encapsulated pixeldata items
+        for (int index = 0; true; index++) {
+            uint32_t item_tag;
+            uint32_t item_length;
+
+            dcm_log_debug("Read Item #%d.", index);
+            if (!read_tag(state, &item_tag, position) ||
+                !read_uint32(state, &item_length, position)) {
+                return false;
+            }
+
+            if (item_tag == TAG_SQ_DELIM) {
+                dcm_log_debug("Stop reading Data Element. "
+                              "Encountered Sequence Delimination Tag.");
+                break;
+            }
+
+            if (item_tag != TAG_ITEM) {
+                dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
+                              "Reading of Data Element failed",
+                              "Expected tag '%08X' instead of '%08X' "
+                              "for Item #%d",
+                              TAG_ITEM,
+                              item_tag,
+                              index);
+                return false;
+            }
+
+            if (!parse_pixeldata_item(state,
+                                      tag,
+                                      vr,
+                                      length,
+                                      item_length,
+                                      position)) {
+                return false;
+            }
+        }
+    } else {
+        // a single native pixeldata item
+        if (!parse_pixeldata_item(state, tag, vr, length, length, position)) {
+            return false;
+        }
+    }
+
+    if (state->parse->pixeldata_end &&
+        !state->parse->pixeldata_end(state->error,
+                                     state->client)) {
+        return false;
+    }
+
+    return true;
+}
+
+
+static bool parse_element_body(DcmParseState *state,
                                uint32_t tag,
                                DcmVR vr,
                                uint32_t length,
@@ -382,6 +528,15 @@ static bool parse_element_body(DcmParseState *state,
 
     char *value_free = NULL;
     char input_buffer[INPUT_BUFFER_SIZE];
+
+    /* We treat pixeldata as a special case so we can handle encapsulated
+     * image sequences.
+     */
+    if (tag == TAG_PIXEL_DATA ||
+        tag == TAG_FLOAT_PIXEL_DATA ||
+        tag == TAG_DOUBLE_PIXEL_DATA) {
+        return parse_pixeldata(state, tag, vr, length, position);
+    }
 
     dcm_log_debug("Read Data Element body '%08X'", tag);
 
@@ -414,7 +569,6 @@ static bool parse_element_body(DcmParseState *state,
             }
 
 
-
             if (!dcm_require(state, value, length, position)) {
                 if (value_free != NULL) {
                     free(value_free);
@@ -433,13 +587,13 @@ static bool parse_element_body(DcmParseState *state,
 
             if (klass == DCM_CLASS_NUMERIC_DECIMAL ||
                 klass == DCM_CLASS_NUMERIC_INTEGER) {
-                if (state->byteswap) {
+                if (state->big_endian) {
                     byteswap(value, length, size);
                 }
             }
 
             if (state->parse->element_create &&
-                !state->parse->element_create(state->error, 
+                !state->parse->element_create(state->error,
                                               state->client,
                                               tag,
                                               vr,
@@ -469,7 +623,7 @@ static bool parse_element_body(DcmParseState *state,
             }
 
             int64_t seq_position = 0;
-            if (!parse_element_sequence(state, 
+            if (!parse_element_sequence(state,
                                         tag,
                                         vr,
                                         length,
@@ -564,20 +718,19 @@ static bool parse_toplevel_dataset(DcmParseState *state,
 
 /* Parse a dataset from a filehandle.
  */
-bool dcm_parse_dataset(DcmError **error, 
+bool dcm_parse_dataset(DcmError **error,
                        DcmIO *io,
                        bool implicit,
-                       bool byteswap,
-                       const DcmParse *parse, 
+                       const DcmParse *parse,
                        void *client)
 {
-    DcmParseState state = { 
-        .error = error, 
-        .io = io, 
-        .implicit = implicit, 
-        .byteswap = byteswap, 
-        .parse = parse, 
-        .client = client 
+    DcmParseState state = {
+        .error = error,
+        .io = io,
+        .implicit = implicit,
+        .big_endian = is_big_endian(),
+        .parse = parse,
+        .client = client
     };
 
     int64_t position = 0;
@@ -591,20 +744,19 @@ bool dcm_parse_dataset(DcmError **error,
 
 /* Parse a group. A length element, followed by a list of elements.
  */
-bool dcm_parse_group(DcmError **error, 
+bool dcm_parse_group(DcmError **error,
                      DcmIO *io,
                      bool implicit,
-                     bool byteswap,
-                     const DcmParse *parse, 
+                     const DcmParse *parse,
                      void *client)
 {
-    DcmParseState state = { 
-        .error = error, 
-        .io = io, 
-        .implicit = implicit, 
-        .byteswap = byteswap, 
-        .parse = parse, 
-        .client = client 
+    DcmParseState state = {
+        .error = error,
+        .io = io,
+        .implicit = implicit,
+        .big_endian = is_big_endian(),
+        .parse = parse,
+        .client = client
     };
 
     int64_t position = 0;
@@ -677,19 +829,18 @@ bool dcm_parse_group(DcmError **error,
  * Each offset is the seek from the start of pixeldata to the ITEM for that
  * frame.
  */
-bool dcm_parse_pixeldata(DcmError **error,
-                         DcmIO *io,
-                         bool implicit,
-                         bool byteswap,
-                         int64_t *first_frame_offset,
-                         int64_t *offsets,
-                         int num_frames)
+bool dcm_parse_pixeldata_offsets(DcmError **error,
+                                 DcmIO *io,
+                                 bool implicit,
+                                 int64_t *first_frame_offset,
+                                 int64_t *offsets,
+                                 int num_frames)
 {
-    DcmParseState state = { 
-        .error = error, 
-        .io = io, 
-        .implicit = implicit, 
-        .byteswap = byteswap 
+    DcmParseState state = {
+        .error = error,
+        .io = io,
+        .implicit = implicit,
+        .big_endian = is_big_endian()
     };
 
     int64_t position = 0;
@@ -760,6 +911,9 @@ bool dcm_parse_pixeldata(DcmError **error,
         // the BOT is missing, we must scan pixeldata to find the position of
         // each frame
 
+        // we could use our generic parser above ^^ but we have a special loop
+        // here as an optimisation (we can skip over the pixel data itself)
+
         // 0 in the BOT is the offset to the start of frame 1, ie. here
         *first_frame_offset = position;
 
@@ -811,15 +965,14 @@ bool dcm_parse_pixeldata(DcmError **error,
 char *dcm_parse_frame(DcmError **error,
                       DcmIO *io,
                       bool implicit,
-                      bool byteswap,
                       struct PixelDescription *desc,
                       uint32_t *length)
 {
-    DcmParseState state = { 
-        .error = error, 
-        .io = io, 
-        .implicit = implicit, 
-        .byteswap = byteswap,
+    DcmParseState state = {
+        .error = error,
+        .io = io,
+        .implicit = implicit,
+        .big_endian = is_big_endian(),
     };
 
     int64_t position = 0;

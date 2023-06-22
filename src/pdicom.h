@@ -86,49 +86,64 @@ typedef struct _DcmParse {
     bool (*dataset_begin)(DcmError **, void *client);
     bool (*dataset_end)(DcmError **, void *client);
 
-    bool (*sequence_begin)(DcmError **, void *client);
-    bool (*sequence_end)(DcmError **, 
+    bool (*sequence_begin)(DcmError **,
+                           void *client,
+                           uint32_t tag,
+                           DcmVR vr,
+                           uint32_t length);
+    bool (*sequence_end)(DcmError **,
                          void *client,
                          uint32_t tag,
                          DcmVR vr,
                          uint32_t length);
 
-    bool (*element_create)(DcmError **, 
-                           void *client, 
+    bool (*pixeldata_begin)(DcmError **,
+                            void *client,
+                            uint32_t tag,
+                            DcmVR vr,
+                            uint32_t length);
+    bool (*pixeldata_end)(DcmError **, void *client);
+
+    bool (*element_create)(DcmError **,
+                           void *client,
                            uint32_t tag,
                            DcmVR vr,
                            char *value,
                            uint32_t length);
 
-    bool (*stop)(void *client, 
-                 uint32_t tag, 
-                 DcmVR vr, 
+    bool (*pixeldata_create)(DcmError **,
+                             void *client,
+                             uint32_t tag,
+                             DcmVR vr,
+                             char *value,
+                             uint32_t length);
+
+    bool (*stop)(void *client,
+                 uint32_t tag,
+                 DcmVR vr,
                  uint32_t length);
 } DcmParse;
 
-DCM_EXTERN 
-bool dcm_parse_dataset(DcmError **error, 
+DCM_EXTERN
+bool dcm_parse_dataset(DcmError **error,
                        DcmIO *io,
                        bool implicit,
-                       bool byteswap,
-                       const DcmParse *parse, 
+                       const DcmParse *parse,
                        void *client);
 
-DCM_EXTERN 
-bool dcm_parse_group(DcmError **error, 
+DCM_EXTERN
+bool dcm_parse_group(DcmError **error,
                      DcmIO *io,
                      bool implicit,
-                     bool byteswap,
-                     const DcmParse *parse, 
+                     const DcmParse *parse,
                      void *client);
 
-bool dcm_parse_pixeldata(DcmError **error,
-                         DcmIO *io,
-                         bool implicit,
-                         bool byteswap,
-                         int64_t *first_frame_offset,
-                         int64_t *offsets,
-                         int num_frames);
+bool dcm_parse_pixeldata_offsets(DcmError **error,
+                                 DcmIO *io,
+                                 bool implicit,
+                                 int64_t *first_frame_offset,
+                                 int64_t *offsets,
+                                 int num_frames);
 
 struct PixelDescription {
     uint16_t rows;
@@ -146,6 +161,5 @@ struct PixelDescription {
 char *dcm_parse_frame(DcmError **error,
                       DcmIO *io,
                       bool implicit,
-                      bool byteswap,
                       struct PixelDescription *desc,
                       uint32_t *length);

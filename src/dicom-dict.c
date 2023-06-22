@@ -49,97 +49,63 @@ struct _DcmVRTable_hash_entry {
  *
  * sizeof(value) > 0 -- one or more numeric values of the specified size
  *
- * enum     name    class   sizeof(value) capacity  header_length
+ *   enum       name  class                        size capacity  header_length
  */
 static const struct _DcmVRTable vr_table[] = {
-    {DCM_VR_AE, "AE", DCM_CLASS_STRING_MULTI,
-        0,                DCM_CAPACITY_AE,  2},
-    {DCM_VR_AS, "AS", DCM_CLASS_STRING_SINGLE,
-        0,                DCM_CAPACITY_AS,  2},
-    {DCM_VR_AT, "AT", DCM_CLASS_STRING_MULTI,
-        0,                DCM_CAPACITY_AT,  2},
-    {DCM_VR_CS, "CS", DCM_CLASS_STRING_MULTI,
-        0,                DCM_CAPACITY_CS,  2},
-    {DCM_VR_DA, "DA", DCM_CLASS_STRING_SINGLE,
-        0,                DCM_CAPACITY_DA,  2},
-    {DCM_VR_DS, "DS", DCM_CLASS_STRING_MULTI,
-        0,                DCM_CAPACITY_DS,  2},
-    {DCM_VR_DT, "DT", DCM_CLASS_STRING_MULTI,
-        0,                DCM_CAPACITY_DT,  2},
+    {DCM_VR_AE, "AE", DCM_CLASS_STRING_MULTI,       0, DCM_CAPACITY_AE, 2},
+    {DCM_VR_AS, "AS", DCM_CLASS_STRING_SINGLE,      0, DCM_CAPACITY_AS, 2},
+    {DCM_VR_AT, "AT", DCM_CLASS_STRING_MULTI,       0, DCM_CAPACITY_AT, 2},
+    {DCM_VR_CS, "CS", DCM_CLASS_STRING_MULTI,       0, DCM_CAPACITY_CS, 2},
+    {DCM_VR_DA, "DA", DCM_CLASS_STRING_SINGLE,      0, DCM_CAPACITY_DA, 2},
+    {DCM_VR_DS, "DS", DCM_CLASS_STRING_MULTI,       0, DCM_CAPACITY_DS, 2},
+    {DCM_VR_DT, "DT", DCM_CLASS_STRING_MULTI,       0, DCM_CAPACITY_DT, 2},
 
-    {DCM_VR_FL, "FL", DCM_CLASS_NUMERIC_DECIMAL,
-        sizeof(float),    0,                2},
-    {DCM_VR_FD, "FD", DCM_CLASS_NUMERIC_DECIMAL,
-        sizeof(double),   0,                2},
+    {DCM_VR_FL, "FL", DCM_CLASS_NUMERIC_DECIMAL,    4, 0,               2},
+    {DCM_VR_FD, "FD", DCM_CLASS_NUMERIC_DECIMAL,    8, 0,               2},
 
-    {DCM_VR_IS, "IS", DCM_CLASS_STRING_SINGLE,
-        0,                DCM_CAPACITY_IS,  2},
-    {DCM_VR_LO, "LO", DCM_CLASS_STRING_SINGLE,
-        0,                DCM_CAPACITY_LO,  2},
+    {DCM_VR_IS, "IS", DCM_CLASS_STRING_SINGLE,      0, DCM_CAPACITY_IS, 2},
+    {DCM_VR_LO, "LO", DCM_CLASS_STRING_SINGLE,      0, DCM_CAPACITY_LO, 2},
 
-    {DCM_VR_LT, "LT", DCM_CLASS_STRING_SINGLE,
-        0,                DCM_CAPACITY_LT,  2},
+    {DCM_VR_LT, "LT", DCM_CLASS_STRING_SINGLE,      0, DCM_CAPACITY_LT, 2},
 
-    {DCM_VR_OB, "OB", DCM_CLASS_BINARY,
-        0,                0,                4},
+    {DCM_VR_OB, "OB", DCM_CLASS_BINARY,             0, 0,               4},
 
-    {DCM_VR_OD, "OD", DCM_CLASS_BINARY,
-        0,                0,                4},
-    {DCM_VR_OF, "OF", DCM_CLASS_BINARY,
-        0,                0,                4},
+    {DCM_VR_OD, "OD", DCM_CLASS_BINARY,             8, 0,               4},
+    {DCM_VR_OF, "OF", DCM_CLASS_BINARY,             4, 0,               4},
 
-    {DCM_VR_OW, "OW", DCM_CLASS_BINARY,
-        0,                0,                4},
+    {DCM_VR_OW, "OW", DCM_CLASS_BINARY,             2, 0,               4},
 
-    {DCM_VR_PN, "PN", DCM_CLASS_STRING_MULTI,
-        0,                DCM_CAPACITY_PN,  2},
-    {DCM_VR_SH, "SH", DCM_CLASS_STRING_MULTI,
-        0,                DCM_CAPACITY_SH,  2},
+    {DCM_VR_PN, "PN", DCM_CLASS_STRING_MULTI,       0, DCM_CAPACITY_PN, 2},
+    {DCM_VR_SH, "SH", DCM_CLASS_STRING_MULTI,       0, DCM_CAPACITY_SH, 2},
 
-    {DCM_VR_SL, "SL", DCM_CLASS_NUMERIC_INTEGER,
-        sizeof(int32_t),  0,                2},
+    {DCM_VR_SL, "SL", DCM_CLASS_NUMERIC_INTEGER,    4, 0,               2},
 
-    {DCM_VR_SQ, "SQ", DCM_CLASS_SEQUENCE,
-        0,                0,                4},
+    {DCM_VR_SQ, "SQ", DCM_CLASS_SEQUENCE,           0, 0,               4},
 
-    {DCM_VR_SS, "SS", DCM_CLASS_NUMERIC_INTEGER,
-        sizeof(int16_t),  0,                2},
+    {DCM_VR_SS, "SS", DCM_CLASS_NUMERIC_INTEGER,    2, 0,               2},
 
-    {DCM_VR_ST, "ST", DCM_CLASS_STRING_SINGLE,
-        0,                DCM_CAPACITY_ST,  2},
+    {DCM_VR_ST, "ST", DCM_CLASS_STRING_SINGLE,      0, DCM_CAPACITY_ST, 2},
 
-    {DCM_VR_TM, "TM", DCM_CLASS_STRING_MULTI,
-        0,                DCM_CAPACITY_TM,  2},
+    {DCM_VR_TM, "TM", DCM_CLASS_STRING_MULTI,       0, DCM_CAPACITY_TM, 2},
 
-    {DCM_VR_UI, "UI", DCM_CLASS_STRING_MULTI,
-        0,                DCM_CAPACITY_UI,  2},
+    {DCM_VR_UI, "UI", DCM_CLASS_STRING_MULTI,       0, DCM_CAPACITY_UI, 2},
 
-    {DCM_VR_UL, "UL", DCM_CLASS_NUMERIC_INTEGER,
-        sizeof(uint32_t), 0,                2},
+    {DCM_VR_UL, "UL", DCM_CLASS_NUMERIC_INTEGER,    4, 0,               2},
 
-    {DCM_VR_UN, "UN", DCM_CLASS_BINARY,
-        0,                0,                4},
+    {DCM_VR_UN, "UN", DCM_CLASS_BINARY,             0, 0,               4},
 
-    {DCM_VR_US, "US", DCM_CLASS_NUMERIC_INTEGER,
-        sizeof(uint16_t), 0,                2},
+    {DCM_VR_US, "US", DCM_CLASS_NUMERIC_INTEGER,    2, 0,               2},
 
-    {DCM_VR_UT, "UT", DCM_CLASS_STRING_SINGLE,
-        0,                DCM_CAPACITY_UT,  4},
-    {DCM_VR_UR, "UR", DCM_CLASS_STRING_SINGLE,
-        0,                DCM_CAPACITY_UR,  4},
+    {DCM_VR_UT, "UT", DCM_CLASS_STRING_SINGLE,      0, DCM_CAPACITY_UT, 4},
+    {DCM_VR_UR, "UR", DCM_CLASS_STRING_SINGLE,      0, DCM_CAPACITY_UR, 4},
 
-    {DCM_VR_UC, "UC", DCM_CLASS_BINARY,
-        0,                0,                4},
+    {DCM_VR_UC, "UC", DCM_CLASS_BINARY,             0, 0,               4},
 
-    {DCM_VR_OL, "OL", DCM_CLASS_BINARY,
-        0,                0,                4},
-    {DCM_VR_OV, "OV", DCM_CLASS_BINARY,
-        0,                0,                4},
+    {DCM_VR_OL, "OL", DCM_CLASS_BINARY,             0, 0,               4},
+    {DCM_VR_OV, "OV", DCM_CLASS_BINARY,             0, 0,               4},
 
-    {DCM_VR_SV, "SV", DCM_CLASS_NUMERIC_INTEGER,
-        sizeof(int64_t),  0,                4},
-    {DCM_VR_UV, "UV", DCM_CLASS_NUMERIC_INTEGER,
-        sizeof(uint64_t), 0,                4},
+    {DCM_VR_SV, "SV", DCM_CLASS_NUMERIC_INTEGER,    8, 0,               4},
+    {DCM_VR_UV, "UV", DCM_CLASS_NUMERIC_INTEGER,    8, 0,               4},
 };
 
 static const int n_vrs = sizeof(vr_table) / sizeof(struct _DcmVRTable);
@@ -5347,8 +5313,8 @@ bool dcm_is_valid_vr_for_tag(DcmVR vr, uint32_t tag)
 
     const struct _DcmAttribute *attribute = attribute_from_tag(tag);
     if (attribute == NULL) {
-        // unknown public tag ... we don't include retired tags in our 
-        // dictionary, so we can't check them, but we don't want to fail 
+        // unknown public tag ... we don't include retired tags in our
+        // dictionary, so we can't check them, but we don't want to fail
         // for them either
         return true;
     } else if (vr == (DcmVR) attribute->vr_tag) {
