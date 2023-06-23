@@ -948,7 +948,7 @@ bool dcm_filehandle_read_pixeldata(DcmError **error,
         }
 
         // Header of Pixel Data Element
-        filehandle->first_frame_offset = 10;
+        filehandle->first_frame_offset = 12;
     }
 
     return true;
