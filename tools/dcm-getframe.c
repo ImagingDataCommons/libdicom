@@ -14,7 +14,7 @@ static const char usage[] = "usage: "
     "dcm-getframe [-v] [-V] [-h] [-o OUTPUT-FILE] FILE_PATH FRAME_NUMBER";
 
 
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
     char *output_file = NULL;
 
@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
     int frame_number = atoi(argv[dcm_optind + 1]);
 
     dcm_log_info("Read filehandle '%s'", input_file);
-    DcmFilehandle *filehandle = dcm_filehandle_create_from_file(&error, 
+    DcmFilehandle *filehandle = dcm_filehandle_create_from_file(&error,
                                                                 input_file);
     if (filehandle == NULL) {
         dcm_error_print(error);
@@ -66,7 +66,9 @@ int main(int argc, char *argv[])
     }
 
     dcm_log_info("Read metadata");
-    DcmDataSet *metadata = dcm_filehandle_read_metadata(&error, filehandle);
+    DcmDataSet *metadata = dcm_filehandle_read_metadata(&error,
+                                                        filehandle,
+                                                        NULL);
     if (metadata == NULL) {
         dcm_error_print(error);
         dcm_error_clear(&error);
@@ -106,7 +108,7 @@ int main(int argc, char *argv[])
     }
 
     dcm_log_info("Read frame %u", frame_number);
-    DcmFrame *frame = dcm_filehandle_read_frame(&error, 
+    DcmFrame *frame = dcm_filehandle_read_frame(&error,
                                                 filehandle,
                                                 frame_number);
     if (frame == NULL) {
@@ -124,18 +126,18 @@ int main(int argc, char *argv[])
     dcm_log_info("length = %u bytes", frame_length);
     dcm_log_info("rows = %u", dcm_frame_get_rows(frame));
     dcm_log_info("columns = %u", dcm_frame_get_columns(frame));
-    dcm_log_info("samples per pixel = %u", 
+    dcm_log_info("samples per pixel = %u",
                  dcm_frame_get_samples_per_pixel(frame));
     dcm_log_info("bits allocated = %u", dcm_frame_get_bits_allocated(frame));
     dcm_log_info("bits stored = %u", dcm_frame_get_bits_stored(frame));
     dcm_log_info("high bit = %u", dcm_frame_get_high_bit(frame));
-    dcm_log_info("pixel representation = %u", 
+    dcm_log_info("pixel representation = %u",
                  dcm_frame_get_pixel_representation(frame));
-    dcm_log_info("planar configuration = %u", 
+    dcm_log_info("planar configuration = %u",
                  dcm_frame_get_planar_configuration(frame));
-    dcm_log_info("photometric interpretation = %s", 
+    dcm_log_info("photometric interpretation = %s",
                  dcm_frame_get_photometric_interpretation(frame));
-    dcm_log_info("transfer syntax uid = %s", 
+    dcm_log_info("transfer syntax uid = %s",
                  dcm_frame_get_transfer_syntax_uid(frame));
 
     FILE *output_fp;

@@ -49,7 +49,7 @@ static size_t compute_length_of_string_value(const char *value)
 }
 
 
-static size_t compute_length_of_string_value_multi(char **values, 
+static size_t compute_length_of_string_value_multi(char **values,
                                                    uint32_t vm)
 {
     size_t length = 0;
@@ -98,8 +98,8 @@ static char *load_file_to_memory(const char *name, long *length_out)
 
     long total_read = 0;
     while (total_read < length) {
-        size_t bytes_read = fread(result + total_read, 
-                                  1, 
+        size_t bytes_read = fread(result + total_read,
+                                  1,
                                   length - total_read,
                                   fp);
         total_read += bytes_read;
@@ -117,7 +117,7 @@ START_TEST(test_error)
 {
     DcmError *error = NULL;
 
-    DcmFilehandle *filehandle = dcm_filehandle_create_from_file(&error, 
+    DcmFilehandle *filehandle = dcm_filehandle_create_from_file(&error,
                                                                 "banana");
     ck_assert_ptr_null(filehandle);
     ck_assert_ptr_nonnull(error);
@@ -505,7 +505,7 @@ START_TEST(test_element_US_multivalue)
     uint32_t vm = sizeof(value) / sizeof(value[0]);
 
     DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_US);
-    (void) dcm_element_set_value_numeric_multi(NULL, 
+    (void) dcm_element_set_value_numeric_multi(NULL,
         element, (int*) value, vm, false);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
@@ -533,7 +533,7 @@ START_TEST(test_element_US_multivalue_empty)
     uint32_t vm = sizeof(value) / sizeof(value[0]);
 
     DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_US);
-    (void) dcm_element_set_value_numeric_multi(NULL, 
+    (void) dcm_element_set_value_numeric_multi(NULL,
         element, (int*) &value, vm, false);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
@@ -647,7 +647,7 @@ START_TEST(test_file_sm_image_file_meta)
     DcmElement *element;
 
     char *file_path = fixture_path("data/test_files/sm_image.dcm");
-    DcmFilehandle *filehandle = 
+    DcmFilehandle *filehandle =
         dcm_filehandle_create_from_file(NULL, file_path);
     free(file_path);
     ck_assert_ptr_nonnull(filehandle);
@@ -677,12 +677,12 @@ START_TEST(test_file_sm_image_metadata)
 {
     char *file_path = fixture_path("data/test_files/sm_image.dcm");
 
-    DcmFilehandle *filehandle = 
+    DcmFilehandle *filehandle =
         dcm_filehandle_create_from_file(NULL, file_path);
     free(file_path);
     ck_assert_ptr_nonnull(filehandle);
 
-    DcmDataSet *metadata = dcm_filehandle_read_metadata(NULL, filehandle);
+    DcmDataSet *metadata = dcm_filehandle_read_metadata(NULL, filehandle, NULL);
     ck_assert_ptr_nonnull(metadata);
 
     // SOP Class UID
@@ -704,18 +704,18 @@ START_TEST(test_file_sm_image_frame)
     const uint32_t frame_number = 1;
 
     char *file_path = fixture_path("data/test_files/sm_image.dcm");
-    DcmFilehandle *filehandle = 
+    DcmFilehandle *filehandle =
         dcm_filehandle_create_from_file(NULL, file_path);
     free(file_path);
     ck_assert_ptr_nonnull(filehandle);
 
-    DcmDataSet *metadata = dcm_filehandle_read_metadata(NULL, filehandle);
+    DcmDataSet *metadata = dcm_filehandle_read_metadata(NULL, filehandle, NULL);
     ck_assert_ptr_nonnull(metadata);
 
     ck_assert_int_ne(dcm_filehandle_read_pixeldata(NULL, filehandle), 0);
 
-    DcmFrame *frame = dcm_filehandle_read_frame(NULL, 
-                                                filehandle, 
+    DcmFrame *frame = dcm_filehandle_read_frame(NULL,
+                                                filehandle,
                                                 frame_number);
     ck_assert_uint_eq(dcm_frame_get_number(frame), frame_number);
     ck_assert_uint_eq(dcm_frame_get_rows(frame), 10);
@@ -746,7 +746,7 @@ START_TEST(test_file_sm_image_file_meta_memory)
     char *memory = load_file_to_memory("data/test_files/sm_image.dcm", &length);
     ck_assert_ptr_nonnull(memory);
 
-    DcmFilehandle *filehandle = 
+    DcmFilehandle *filehandle =
         dcm_filehandle_create_from_memory(NULL, memory, length);
     ck_assert_ptr_nonnull(filehandle);
 

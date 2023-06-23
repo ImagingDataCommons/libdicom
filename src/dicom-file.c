@@ -33,6 +33,7 @@ struct _DcmFilehandle {
     DcmIO *io;
     char *transfer_syntax_uid;
     bool implicit;
+    uint32_t *stop_tags;
 
     // start of image metadata
     int64_t offset;
@@ -558,11 +559,13 @@ static bool parse_meta_stop(void *client,
 
     filehandle->last_tag = tag;
 
-    return tag == TAG_REFERENCED_IMAGE_NAVIGATION_SEQUENCE ||
-           tag == TAG_PER_FRAME_FUNCTIONAL_GROUP_SEQUENCE ||
-           tag == TAG_PIXEL_DATA ||
-           tag == TAG_FLOAT_PIXEL_DATA ||
-           tag == TAG_DOUBLE_PIXEL_DATA;
+    for (int i = 0; filehandle->stop_tags[i]; i++) {
+        if (tag == filehandle->stop_tags[i]) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 
@@ -635,9 +638,23 @@ static bool set_pixel_description(DcmError **error,
 
 
 DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
-                                         DcmFilehandle *filehandle)
+                                         DcmFilehandle *filehandle,
+                                         uint32_t *stop_tags)
 {
+    // by default, we stop on any of the tags that start a huge group that
+    // would take a long time to parse
+    static uint32_t default_stop_tags[] = {
+        TAG_REFERENCED_IMAGE_NAVIGATION_SEQUENCE,
+        TAG_PER_FRAME_FUNCTIONAL_GROUP_SEQUENCE,
+        TAG_PIXEL_DATA,
+        TAG_FLOAT_PIXEL_DATA,
+        TAG_DOUBLE_PIXEL_DATA,
+        0,
+    };
+
     static DcmParse parse = {
+        // we don't need to define the pixeldata callbacks since we have no
+        // concrete representation for them
         .dataset_begin = parse_meta_dataset_begin,
         .dataset_end = parse_meta_dataset_end,
         .sequence_begin = parse_meta_sequence_begin,
@@ -645,6 +662,8 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
         .element_create = parse_meta_element_create,
         .stop = parse_meta_stop,
     };
+
+    filehandle->stop_tags = stop_tags == NULL ? default_stop_tags : stop_tags;
 
     if (filehandle->offset == 0) {
         DcmDataSet *file_meta = dcm_filehandle_read_file_meta(error,
@@ -666,7 +685,6 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
     }
     utarray_push_back(filehandle->sequence_stack, &sequence);
 
-    // parse up to perframefunctionalgroupsequence, or the pixel data
     if (!dcm_parse_dataset(error,
                            filehandle->io,
                            filehandle->implicit,
@@ -1242,7 +1260,7 @@ static bool print_pixeldata_create(DcmError **,
         default:
         case 1:
             for (uint32_t i = 0; i < MIN(length, 17); i++) {
-                printf("%02x ", value[i]);
+                printf("%02x ", ((uint8_t *)value)[i]);
             }
 
             if (length > 17) {

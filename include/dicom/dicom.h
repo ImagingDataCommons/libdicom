@@ -130,11 +130,11 @@ DCM_EXTERN
 DCM_CONSTRUCTOR
 void dcm_init(void);
 
-/* Our copy of getopt, since non-glibc platforms are missing this. 
+/* Our copy of getopt, since non-glibc platforms are missing this.
  * Used by our tools.
  */
 DCM_EXTERN
-char *dcm_optarg; 
+char *dcm_optarg;
 DCM_EXTERN
 int dcm_optind, dcm_opterr, dcm_optopt, dcm_optreset;
 DCM_EXTERN
@@ -1147,7 +1147,7 @@ void dcm_dataset_destroy(DcmDataSet *dataset);
  */
 
 /**
- * Create a Sequence, i.e., an ordered list of Data Set items that represent 
+ * Create a Sequence, i.e., an ordered list of Data Set items that represent
  * the value of a Data Element with Value Representation SQ (Sequence).
  *
  * Note that created object represents the value of a Data Element rather
@@ -1658,14 +1658,20 @@ const char *dcm_filehandle_get_transfer_syntax_uid(const DcmFilehandle *filehand
  * beginning of the filehandle to speed up subsequent access to individual
  * Frame items.
  *
+ * Reading stops when any of the tags in the stop_tags array are seen. If this
+ * pointer is NULL, then reading will stop on any tag that is likely to take a
+ * long time to parse.
+ *
  * :param error: Pointer to error object
  * :param filehandle: File
+ * :param stop_tags: Zero-terminated array of tags to stop on
  *
  * :return: metadata
  */
 DCM_EXTERN
 DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
-                                         DcmFilehandle *filehandle);
+                                         DcmFilehandle *filehandle,
+                                         uint32_t *stop_tags);
 
 /**
  * Read everything necessary to fetch frames from the file.
