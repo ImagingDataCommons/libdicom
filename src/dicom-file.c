@@ -61,7 +61,7 @@ struct _DcmFilehandle {
     int indent;
 
     // dataset index for file print
-    int index;
+    UT_array *index_stack;
 
     // push and pop these while we parse
     UT_array *dataset_stack;
@@ -84,6 +84,7 @@ DcmFilehandle *dcm_filehandle_create(DcmError **error, DcmIO *io)
     filehandle->frame_number = 0;
     filehandle->layout = DCM_LAYOUT_FULL;
     filehandle->frame_index = NULL;
+    utarray_new(filehandle->index_stack, &ut_int_icd);
     utarray_new(filehandle->dataset_stack, &ut_ptr_icd);
     utarray_new(filehandle->sequence_stack, &ut_ptr_icd);
 
@@ -119,6 +120,12 @@ DcmFilehandle *dcm_filehandle_create_from_memory(DcmError **error,
 static void dcm_filehandle_clear(DcmFilehandle *filehandle)
 {
     unsigned int i;
+
+    utarray_clear(filehandle->index_stack);
+
+    // we always need at least 1 item on the index stack
+    int index = 0;
+    utarray_push_back(filehandle->index_stack, &index);
 
     for (i = 0; i < utarray_len(filehandle->dataset_stack); i++) {
         DcmDataSet *dataset = *((DcmDataSet **)
@@ -159,6 +166,7 @@ void dcm_filehandle_destroy(DcmFilehandle *filehandle)
 
         dcm_io_close(filehandle->io);
 
+        utarray_free(filehandle->index_stack);
         utarray_free(filehandle->dataset_stack);
         utarray_free(filehandle->sequence_stack);
 
@@ -1041,17 +1049,18 @@ static bool print_dataset_begin(DcmError **error,
                                 void *client)
 {
     DcmFilehandle *filehandle = (DcmFilehandle *) client;
+    int *index = (int *) utarray_back(filehandle->index_stack);
 
     USED(error);
 
-    filehandle->index += 1;
+    *index += 1;
 
     if (filehandle->indent > 0) {
         printf("%*.*s---Item #%d---\n",
                    filehandle->indent * 2,
                    filehandle->indent * 2,
                    "                                   ",
-                   filehandle->index);
+                   *index);
     }
 
     return true;
@@ -1084,7 +1093,8 @@ static bool print_sequence_begin(DcmError **error,
     printf("[\n");
 
     filehandle->indent += 1;
-    filehandle->index = 0;
+    int index = 0;
+    utarray_push_back(filehandle->index_stack, &index);
 
     return true;
 }
@@ -1104,6 +1114,7 @@ static bool print_sequence_end(DcmError **error,
     USED(length);
 
     filehandle->indent -= 1;
+    utarray_pop_back(filehandle->index_stack);
 
     printf("%*.*s]\n",
            filehandle->indent * 2,
@@ -1140,7 +1151,8 @@ static bool print_pixeldata_begin(DcmError **error,
     printf("[\n");
 
     filehandle->indent += 1;
-    filehandle->index = 0;
+    int index = 0;
+    utarray_push_back(filehandle->index_stack, &index);
 
     return true;
 }
@@ -1153,6 +1165,7 @@ static bool print_pixeldata_end(DcmError **error, void *client)
     USED(error);
 
     filehandle->indent -= 1;
+    utarray_pop_back(filehandle->index_stack);
 
     printf("%*.*s]\n",
            filehandle->indent * 2,
@@ -1213,6 +1226,7 @@ static bool print_pixeldata_create(DcmError **,
 {
     DcmFilehandle *filehandle = (DcmFilehandle *) client;
     size_t size = dcm_dict_vr_size(vr);
+    int *index = (int *) utarray_back(filehandle->index_stack);
 
     USED(tag);
 
@@ -1220,7 +1234,7 @@ static bool print_pixeldata_create(DcmError **,
            filehandle->indent * 2,
            filehandle->indent * 2,
            "                                   ",
-           filehandle->index);
+           *index);
 
     printf("| %u | ", length);
 
@@ -1262,7 +1276,7 @@ static bool print_pixeldata_create(DcmError **,
 
     printf("\n");
 
-    filehandle->index += 1;
+    *index += 1;
 
     return true;
 }
@@ -1284,7 +1298,7 @@ bool dcm_filehandle_print(DcmError **error,
     // skip File Preamble
     int64_t position = 0;
     filehandle->indent = 0;
-    filehandle->index = 0;
+    dcm_filehandle_clear(filehandle);
     if (!parse_preamble(error, filehandle, &position)) {
         return false;
     }

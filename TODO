@@ -1,6 +1,16 @@
 # TODO
 
-- read metadata needs an "all" flag, or perhaps a set of stop tags?
+- read metadata needs to define callbacks for pixeldata
+
+- note tag positions in the stop function
+
+- read metadata needs a set of stop tags
+
+	DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
+                                                 DcmFilehandle *filehandle,
+						 uint32_t *stop_tags)
+
+  where stop_tags == NULL means stop set as now
 
 # Tips
 

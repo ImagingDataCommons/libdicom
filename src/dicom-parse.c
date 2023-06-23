@@ -229,7 +229,7 @@ static bool parse_element_header(DcmParseState *state,
         if (*vr == DCM_VR_ERROR) {
             dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
                           "Reading of Data Element header failed",
-                          "Tag %08X not allowed in implicit mode", *tag);
+                          "Tag %08x not allowed in implicit mode", *tag);
             return false;
         }
 
@@ -248,7 +248,7 @@ static bool parse_element_header(DcmParseState *state,
         if (!dcm_is_valid_vr_for_tag(*vr, *tag)) {
             dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
                           "Reading of Data Element header failed",
-                          "Tag %08X cannot have VR '%s'", *tag, vr_str);
+                          "Tag %08x cannot have VR '%s'", *tag, vr_str);
             return false;
         }
 
@@ -271,7 +271,7 @@ static bool parse_element_header(DcmParseState *state,
                 dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
                               "Reading of Data Element header failed",
                               "Unexpected value for reserved bytes "
-                              "of Data Element %08X with VR '%s'.",
+                              "of Data Element %08x with VR '%s'.",
                               tag, vr);
                 return false;
             }
@@ -316,7 +316,7 @@ static bool parse_element_sequence(DcmParseState *state,
         if (item_tag != TAG_ITEM) {
             dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
                           "Reading of Data Element failed",
-                          "Expected tag '%08X' instead of '%08X' "
+                          "Expected tag '%08x' instead of '%08x' "
                           "for Item #%d",
                           TAG_ITEM,
                           item_tag,
@@ -482,7 +482,7 @@ static bool parse_pixeldata(DcmParseState *state,
             if (item_tag != TAG_ITEM) {
                 dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
                               "Reading of Data Element failed",
-                              "Expected tag '%08X' instead of '%08X' "
+                              "Expected tag '%08x' instead of '%08x' "
                               "for Item #%d",
                               TAG_ITEM,
                               item_tag,
@@ -538,7 +538,7 @@ static bool parse_element_body(DcmParseState *state,
         return parse_pixeldata(state, tag, vr, length, position);
     }
 
-    dcm_log_debug("Read Data Element body '%08X'", tag);
+    dcm_log_debug("Read Data Element body '%08x'", tag);
 
     switch (klass) {
         case DCM_CLASS_STRING_SINGLE:
@@ -552,7 +552,7 @@ static bool parse_element_body(DcmParseState *state,
                 if (length % size != 0) {
                     dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
                                   "Reading of Data Element failed",
-                                  "Bad length for tag '%08X'",
+                                  "Bad length for tag '%08x'",
                                   tag);
                     return false;
                 }
@@ -613,11 +613,11 @@ static bool parse_element_body(DcmParseState *state,
 
         case DCM_CLASS_SEQUENCE:
             if (length == 0xFFFFFFFF) {
-                dcm_log_debug("Sequence of Data Element '%08X' "
+                dcm_log_debug("Sequence of Data Element '%08x' "
                               "has undefined length.",
                               tag);
             } else {
-                dcm_log_debug("Sequence of Data Element '%08X' "
+                dcm_log_debug("Sequence of Data Element '%08x' "
                               "has defined length %d.",
                               tag, length);
             }
@@ -637,7 +637,7 @@ static bool parse_element_body(DcmParseState *state,
         default:
             dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
                           "Reading of Data Element failed",
-                          "Data Element '%08X' has unexpected "
+                          "Data Element '%08x' has unexpected "
                           "Value Representation", tag);
             return false;
     }
@@ -934,7 +934,7 @@ bool dcm_parse_pixeldata_offsets(DcmError **error,
             if (tag != TAG_ITEM) {
                 dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                               "Building Basic Offset Table failed",
-                              "Frame Item #%d has wrong Tag '%08X'",
+                              "Frame Item #%d has wrong Tag '%08x'",
                               i + 1,
                               tag);
                 return false;
