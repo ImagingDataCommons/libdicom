@@ -126,22 +126,62 @@ static bool is_big_endian(void)
 }
 
 
+#define SWAP16(V) \
+    ((uint16_t) ( \
+        (uint16_t) ((uint16_t) (V) >> 8) | \
+        (uint16_t) ((uint16_t) (V) << 8) \
+    ))
+
+#define SWAP32(V) \
+    ((uint32_t) ( \
+        ((uint32_t) (V) & UINT32_C(0x000000ff) << 24) | \
+        ((uint32_t) (V) & UINT32_C(0x0000ff00) <<  8) | \
+        ((uint32_t) (V) & UINT32_C(0x00ff0000) >>  8) | \
+        ((uint32_t) (V) & UINT32_C(0xff000000) >> 24) \
+    ))
+
+#define SWAP64(V) \
+    ((uint64_t) ( \
+        ((uint64_t) (V) & UINT64_C(0x00000000000000ff) << 56) | \
+        ((uint64_t) (V) & UINT64_C(0x000000000000ff00) << 40) | \
+        ((uint64_t) (V) & UINT64_C(0x0000000000ff0000) << 24) | \
+        ((uint64_t) (V) & UINT64_C(0x00000000ff000000) <<  8) | \
+        ((uint64_t) (V) & UINT64_C(0x000000ff00000000) >>  8) | \
+        ((uint64_t) (V) & UINT64_C(0x0000ff0000000000) >> 24) | \
+        ((uint64_t) (V) & UINT64_C(0x00ff000000000000) >> 40) | \
+        ((uint64_t) (V) & UINT64_C(0xff00000000000000) >> 56) \
+    ))
+
 static void byteswap(char *data, size_t length, size_t size)
 {
     // only swap if the data is "swappable"
-    if (size > 1 &&
-        length > size &&
-        length % size == 0 &&
-        size % 2 == 0) {
-        size_t half_size = size / 2;
+    if (length > size && length % size == 0) {
+        size_t n_elements = length / size;
 
-        for (size_t i = 0; i < length; i += size) {
-            for (size_t j = 0; j < half_size; j++) {
-                char *p = data + i;
-                char t = p[j];
-                p[j] = p[size - j - 1];
-                p[size - j - 1] = t;
-            }
+        switch (size) {
+            case 2:
+                for (size_t i = 0; i < n_elements; i++) {
+                    uint16_t *v = &((uint16_t *) data)[i];
+                    *v = SWAP16(*v);
+                }
+                break;
+
+            case 4:
+                for (size_t i = 0; i < n_elements; i++) {
+                    uint32_t *v = &((uint32_t *) data)[i];
+                    *v = SWAP32(*v);
+                }
+                break;
+
+            case 8:
+                for (size_t i = 0; i < n_elements; i++) {
+                    uint64_t *v = &((uint64_t *) data)[i];
+                    *v = SWAP64(*v);
+                }
+                break;
+
+            default:
+                break;
         }
     }
 }
