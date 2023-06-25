@@ -181,6 +181,10 @@ void dcm_filehandle_destroy(DcmFilehandle *filehandle)
             dcm_dataset_destroy(filehandle->meta);
         }
 
+        if (filehandle->file_meta) {
+            dcm_dataset_destroy(filehandle->file_meta);
+        }
+
         free(filehandle);
     }
 }
