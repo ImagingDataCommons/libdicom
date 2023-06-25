@@ -206,7 +206,7 @@ DCM_EXTERN
 void dcm_error_clear(DcmError **error);
 
 /**
-* Get a summary of the error.
+ * Get a summary of the error.
  *
  * Do not free this result. The pointer will be valid as long as error is
  * valid.
@@ -713,7 +713,7 @@ bool dcm_element_set_value_string(DcmError **error,
                                   bool steal);
 
 /**
-* Set the value of a Data Element to an array of character strings.
+ * Set the value of a Data Element to an array of character strings.
  *
  * The Data Element must have a Tag that allows for a
  * character string Value Representation and for a
@@ -1557,8 +1557,8 @@ int64_t dcm_io_read(DcmError **error,
 /**
  * Seek an IO object.
  *
- * Set whence to SEEK_CUR to seek relative to the current file position,
- * SEEK_END to seek relative to the end of the file, or SEEK_SET to seek
+ * Set whence to `SEEK_CUR` to seek relative to the current file position,
+ * `SEEK_END` to seek relative to the end of the file, or `SEEK_SET` to seek
  * relative to the start.
  *
  * Returns the new absolute read position, or -1 for IO error.
@@ -1634,8 +1634,8 @@ void dcm_filehandle_destroy(DcmFilehandle *filehandle);
  * implicit mode.
  *
  * The resturn result must not be destroyed. Make a clone of it with
- * dcm_dataset_clone() if you need it to remain valid after closing the File
- * handle.
+ * :c:func:`dcm_dataset_clone()` if you need it to remain valid after
+ * closing the File handle.
  *
  * After calling this function, the filehandle read point is always
  * positioned at the start of the File metadata.
@@ -1668,7 +1668,7 @@ const char *dcm_filehandle_get_transfer_syntax_uid(const DcmFilehandle *filehand
  * seen. If the stop list pointer is NULL, it will stop on any of the pixel
  * data tags.
  *
- * The return result must be destroyed with dcm_dataset_destroy().
+ * The return result must be destroyed with :c:func:`dcm_dataset_destroy()`.
  *
  * After calling this function, the filehandle read point is always
  * positioned at the tag that stopped the read. You can call this function
@@ -1693,8 +1693,8 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
  * to set various internal fields.
  *
  * The return result must not be destroyed. Make a clone of it with
- * dcm_dataset_clone() if you need it to remain valid after closing the File
- * handle.
+ * :c:func:`dcm_dataset_clone()` if you need it to remain valid after
+ * closing the File handle.
  *
  * After calling this function, the filehandle read point is always
  * positioned at the tag that stopped the read.
@@ -1717,12 +1717,13 @@ const DcmDataSet *dcm_filehandle_get_metadata(DcmError **error,
  * if present.
  *
  * This function will be called automatically on the first call to
- * dcm_filehandle_read_frame_position() or dcm_filehandle_read_frame(). It can
- * take some time to execute, so it is available as a separate function call
- * in case this delay need to be managed.
+ * :c:func:`dcm_filehandle_read_frame_position()` or
+ * :c:func:`dcm_filehandle_read_frame()`. It can take some time to execute,
+ * so it is available as a separate function call in case this delay needs
+ * to be managed.
  *
  * After calling this function, the filehandle read point is always
- * positioned at the pixeldata tag.
+ * positioned at the PixelData tag.
  *
  * It is safe to call this function many times.
  *

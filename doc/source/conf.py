@@ -22,7 +22,6 @@ project = 'libdicom'
 copyright = '2021, Markus D. Herrmann'
 author = 'Markus D. Herrmann'
 
-
 # -- General configuration ---------------------------------------------------
 
 primary_domain = 'c'
@@ -57,7 +56,7 @@ html_static_path = ['_static']
 
 # -- Hawkmoth extension ------------------------------------------------------
 
-cautodoc_root = os.path.abspath('../../include')
+hawkmoth_root = os.path.abspath('../../include')
 readthedocs.clang_setup()
 if sys.platform == 'darwin':
     lib_search_dirs = [

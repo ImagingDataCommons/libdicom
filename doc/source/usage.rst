@@ -4,17 +4,43 @@ Usage
 API overview
 ++++++++++++
 
+A Filehandle (:c:type:`DcmFilehandle`) enables access of a `DICOM file
+<http://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_3.html#glossentry_DICOMFile>`_,
+which contains an encoded Data Set representing a SOP Instance.
+A Filehandle can be created via :c:func:`dcm_filehandle_create_from_file()`
+or :c:func:`dcm_filehandle_create_from_memory()` , and destroyed via
+:c:func:`dcm_filehandle_destroy()`.  You can make your own load functions
+to load from other IO sources, see :c:func:`dcm_filehandle_create()`.
+
+The content of a Part10 file can be read using various functions.
+
+The `File Meta Information
+<http://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_3.html#glossentry_FileMetaInformation>`_
+can be accessed via :c:func:`dcm_filehandle_get_file_meta()`.
+
+The principal metadata of the Data Set can be accessed via
+:c:func:`dcm_filehandle_get_metadata()`. This function will stop read on tags
+which are likely to take a long time to process.
+
+You can read all metadata and control read stop using a sequence of calls to
+:c:func:`dcm_filehandle_read_metadata()`.
+
+In case the Data Set contained in a Part10 file represents an Image instance,
+individual frames may be read out with :c:func:`dcm_filehandle_read_frame()`.
+Use :c:func:`dcm_filehandle_read_frame_position()` to read the frame at a
+certain (column, row) position.
+
 A `Data Element
 <http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_3.html#glossentry_DataElement>`_
-(:c:type:`DcmElement`) is an immutable data container for
-storing values.  
+(:c:type:`DcmElement`) is an immutable data container for storing values.
 
 Every data element has a tag indicating its purpose. Tags are 32-bit
-unsigned ints with the top 16 bits indicating the group and the bottom 16 the
-element. They are usually written in hexadecimal, perhaps 0x00400554, meaning
-element 0x554 of group 0x40, or as keywords, in this case `SpecimenUID`. You
-can get the tag from its corresponding keyword with :c:func:`dcm_dict_tag_from_keyword()`,
-or find the keyword from a tag with :c:func:`dcm_dict_keyword_from_tag()`.
+unsigned ints with the top 16 bits indicating the group and the bottom 16
+the element. They are usually written in hexadecimal, perhaps 0x00400554,
+meaning element 0x554 of group 0x40, or as keywords, in this case
+`SpecimenUID`. You can get the tag from its corresponding keyword with
+:c:func:`dcm_dict_tag_from_keyword()`, or find the keyword from a tag with
+:c:func:`dcm_dict_keyword_from_tag()`.
 
 Every Data Element has a `Value Representation (VR)
 <http://dicom.nema.org/medical/dicom/current/output/chtml/part05/sect_6.2.html>`_,
@@ -24,8 +50,8 @@ numeric strings (strings of characters encoding numbers using the decimal
 or scientific notation), character strings (text of restriction length and
 character repertoire), or byte strings (unicode).  Each VR is represented
 using a standard C type (e.g,. VR ``"US"`` has type ``uint16_t`` and VR
-``"UI"`` has type ``char *``) and additional value constraints may be checked
-at runtime (e.g., the maximal capacity of a character string).  
+``"UI"`` has type ``char *``) and additional value constraints may be
+checked at runtime (e.g., the maximal capacity of a character string).
 
 The VR must be appropriate for the tag. Use :c:func:`dcm_vr_from_tag()` to
 find the set of allowed VRs for a tag. Use :c:func:`dcm_is_valid_vr_for_tag()`
@@ -39,12 +65,12 @@ a Data Element may thus contain an array of values.
 
 A Data Element can be created with :c:func:`dcm_element_create()`, it can have
 a value assigned to it with eg.
-:c:func:`dcm_element_set_value_integer()`, and it can be destroyed with 
+:c:func:`dcm_element_set_value_integer()`, and it can be destroyed with
 :c:func:`dcm_element_destroy()`. See `Memory management <Memory Management_>`_ below for details on
 pointer ownership.
 
 An individual value can be retrieved via the getter functions like
-(e.g., :c:func:`dcm_element_get_value_integer()`).  Note that in case of 
+(e.g., :c:func:`dcm_element_get_value_integer()`).  Note that in case of
 character
 string or binary values, the getter function returns the pointer to the
 stored character array  (``const char *``) and that pointer is only valid
@@ -84,7 +110,7 @@ via :c:func:`dcm_sequence_create()` and destroyed via
 :c:func:`dcm_sequence_destroy()`.  Data Sets can be added to a Sequence
 via :c:func:`dcm_sequence_append()`, removed from a Sequence via
 :c:func:`dcm_sequence_remove()`, and retrieved from a Sequence via
-:c:func:`dcm_sequence_get()`.  
+:c:func:`dcm_sequence_get()`.
 
 When a Data Set is added to a sequence, the sequence takes over ownership of
 the memory allocated for the Data Set (and consequently of each contained
@@ -94,27 +120,6 @@ with the sequence.  Retrieved Data Sets are immutable (locked).  When a
 Data Set is removed from a sequence, the Data Set is destroyed (i.e., the
 allocated memory is freed).  When a Sequence is destroyed, all contained
 Data Sets are also automatically destroyed.
-
-A Filehandle (:c:type:`DcmFilehandle`) enables access of a `DICOM file
-<http://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_3.html#glossentry_DICOMFile>`_,
-which contains an encoded Data Set representing a SOP Instance.
-A Filehandle can be created via :c:func:`dcm_filehandle_create_from_file()`
-or :c:func:`dcm_filehandle_create_from_memory()` , and destroyed via
-:c:func:`dcm_filehandle_destroy()`.  You can make your own load functions
-to load from other IO sources, see :c:func:`dcm_filehandle_create()`.
-
-The content of a Part10 file can be read
-using various functions.  The `File Meta Information
-<http://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_3.html#glossentry_FileMetaInformation>`_
-can be read via :c:func:`dcm_filehandle_read_file_meta()`.  The metadata
-of the Data Set (i.e., all Data Elements with the exception of the
-Pixel Data Element and Per Frame Functional Group) can be read via
-:c:func:`dcm_filehandle_read_metadata()`.  
-
-In case the Data Set contained in a Part10 file represents an Image
-instance, the remaining parts of the image metadata may be loaded with
-:c:func:`dcm_filehandle_read_pixeldata()`. After this, individual frames
-may be read out with :c:func:`dcm_filehandle_read_frame()`.
 
 Thread safety
 +++++++++++++
@@ -196,22 +201,22 @@ destroyed.
 If this function fails, ownership does not transfer.
 
 libdicom objects can also contain references to data structures allocated by
-other programs, for example, arrays of numeric values. 
+other programs, for example, arrays of numeric values.
 
 .. code-block:: c
 
     int *values = pointer to array of integers;
     uint32_t vm = number of ints in array;
-    if( !dcm_element_set_value_numeric_multi(error, 
-                                             element, 
-                                             values, 
-                                             vm, 
+    if( !dcm_element_set_value_numeric_multi(error,
+                                             element,
+                                             values,
+                                             vm,
                                              true)) {
       handle error;
     }
 
-The final parameter, `steal` sets whether ownership of the pointer to the 
-array should be "stolen" by libdicom. If it is true, then libdicom will use 
+The final parameter, `steal` sets whether ownership of the pointer to the
+array should be "stolen" by libdicom. If it is true, then libdicom will use
 :c:func:`free()` to free the array when the element is freed. If it is false,
 libdiom will take a copy of the array.
 
@@ -219,7 +224,7 @@ Getting started
 +++++++++++++++
 
 Below is an example for reading metadata from a DICOM Part10 file and
-printing it to standard output:
+printing an element to standard output:
 
 .. code:: c
 
@@ -237,7 +242,7 @@ printing it to standard output:
             return 1;
         }
 
-        DcmDataSet *metadata = dcm_filehandle_read_metadata(&error, filehandle);
+        const DcmDataSet *metadata = dcm_filehandle_get_metadata(&error, filehandle);
         if (metadata == NULL) {
             dcm_error_log(error);
             dcm_error_clear(&error);
@@ -245,10 +250,20 @@ printing it to standard output:
             return 1;
         }
 
-        dcm_dataset_print(metadata, 0);
+        const char *num_frames;
+        uint32_t tag = dcm_dict_tag_from_keyword("NumberOfFrames");
+        DcmElement *element = dcm_dataset_get(error, metadata, tag);
+        if (element == NULL ||
+            !dcm_element_get_value_string(error, element, 0, &num_frames)) {
+            dcm_error_log(error);
+            dcm_error_clear(&error);
+            dcm_filehandle_destroy(filehandle);
+            return 1;
+        }
+
+        printf("NumerOfFrames == %s\n", num_frames);
 
         dcm_filehandle_destroy(filehandle);
-        dcm_dataset_destroy(metadata);
 
         return 0;
     }
