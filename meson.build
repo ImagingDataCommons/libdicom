@@ -33,8 +33,8 @@ endif
 #   1. Backward-incompatible ABI change: bump major, reset minor and patch
 #   2. Backward-compatible ABI change: bump minor, reset patch
 #   3. Other, eg. bugfix: bump patch
-abi_version_major = 0
-abi_version_minor = 5
+abi_version_major = 1
+abi_version_minor = 0
 abi_version_patch = 0
 
 abi_version = '@0@.@1@.@2@'.format(
