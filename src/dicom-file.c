@@ -1235,7 +1235,7 @@ static bool print_element_create(DcmError **error,
 }
 
 
-static bool print_pixeldata_create(DcmError **,
+static bool print_pixeldata_create(DcmError **error,
                                    void *client,
                                    uint32_t tag,
                                    DcmVR vr,
@@ -1246,6 +1246,7 @@ static bool print_pixeldata_create(DcmError **,
     size_t size = dcm_dict_vr_size(vr);
     int *index = (int *) utarray_back(filehandle->index_stack);
 
+    USED(error);
     USED(tag);
 
     printf("%*.*sframe %d ",
