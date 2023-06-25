@@ -1026,6 +1026,10 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
 {
     dcm_log_debug("Read frame number #%u.", frame_number);
 
+    if (!dcm_filehandle_read_pixeldata(error, filehandle)) {
+        return NULL;
+    }
+
     if (frame_number == 0) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                       "Reading Frame Item failed",
@@ -1037,10 +1041,6 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
                       "Reading Frame Item failed",
                       "Frame Number must be less than %u",
                       filehandle->num_frames);
-        return NULL;
-    }
-
-    if (!dcm_filehandle_read_pixeldata(error, filehandle)) {
         return NULL;
     }
 
@@ -1087,7 +1087,6 @@ DcmFrame *dcm_filehandle_read_frame_position(DcmError **error,
 {
     dcm_log_debug("Read frame position (%u, %u)", column, row);
 
-    // load metadata around pixeldata, if we've not loaded it already
     if (!dcm_filehandle_read_pixeldata(error, filehandle)) {
         return NULL;
     }

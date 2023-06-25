@@ -1062,7 +1062,7 @@ DcmElement *dcm_dataset_get_clone(DcmError **error,
 DCM_EXTERN
 bool dcm_dataset_foreach(const DcmDataSet *dataset,
                          bool (*fn)(const DcmElement *element, void *client),
-			 void *client);
+                         void *client);
 
 /**
  * Fetch a Data Element from a Data Set, or NULL if not present.
@@ -1208,9 +1208,8 @@ DcmDataSet *dcm_sequence_get(DcmError **error,
 DCM_EXTERN
 bool dcm_sequence_foreach(const DcmSequence *seq,
                           bool (*fn)(const DcmDataSet *dataset,
-				     uint32_t index,
-				     void *client),
-			  void *client);
+                              uint32_t index, void *client),
+                          void *client);
 
 /**
  * Remove a Data Set item from a Sequence.
