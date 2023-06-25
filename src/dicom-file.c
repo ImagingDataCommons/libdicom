@@ -42,6 +42,10 @@ struct _DcmFilehandle {
     // distance from pixel metadata to start of first frame
     int64_t first_frame_offset;
 
+    // the file metadata and selected DICOM metadata
+    DcmDataSet *file_meta;
+    DcmDataSet *meta;
+
     // image properties we need to track
     uint32_t tiles_across;
     uint32_t num_frames;
@@ -170,6 +174,10 @@ void dcm_filehandle_destroy(DcmFilehandle *filehandle)
         utarray_free(filehandle->index_stack);
         utarray_free(filehandle->dataset_stack);
         utarray_free(filehandle->sequence_stack);
+
+        if (filehandle->meta) {
+            dcm_dataset_destroy(filehandle->meta);
+        }
 
         free(filehandle);
     }
@@ -452,8 +460,8 @@ static bool parse_preamble(DcmError **error,
 }
 
 
-DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
-                                          DcmFilehandle *filehandle)
+static DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
+                                                 DcmFilehandle *filehandle)
 {
     static DcmParse parse = {
         .dataset_begin = parse_meta_dataset_begin,
@@ -494,11 +502,6 @@ DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
         abort();
     }
 
-    // record the start point for the image metadata
-    if (!dcm_offset(error, filehandle, &filehandle->offset)) {
-        return NULL;
-    }
-
     // we must read sequence back off the stack since it may have been
     // realloced
     sequence = *((DcmSequence **) utarray_back(filehandle->sequence_stack));
@@ -511,33 +514,64 @@ DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
         return false;
     }
 
-    DcmElement *element = dcm_dataset_get(error, file_meta, 0x00020010);
-    if (element == NULL) {
-        return NULL;
-    }
-
-    const char *transfer_syntax_uid;
-    if (!dcm_element_get_value_string(error,
-                                      element,
-                                      0,
-                                      &transfer_syntax_uid)) {
-        return NULL;
-    }
-
-    filehandle->transfer_syntax_uid = dcm_strdup(error, transfer_syntax_uid);
-    if (filehandle->transfer_syntax_uid == NULL) {
-        return NULL;
-    }
-
-    if (strcmp(filehandle->transfer_syntax_uid, "1.2.840.10008.1.2") == 0) {
-        filehandle->implicit = true;
-    }
-
     // steal file_meta to stop it being destroyed
     (void) dcm_sequence_steal(NULL, sequence, 0);
     dcm_filehandle_clear(filehandle);
 
     return file_meta;
+}
+
+DcmDataSet *dcm_filehandle_get_file_meta(DcmError **error,
+                                         DcmFilehandle *filehandle)
+{
+    if (filehandle->file_meta == NULL) {
+        DcmDataSet *file_meta =
+            dcm_filehandle_read_file_meta(error, filehandle);
+        if (file_meta == NULL) {
+            return NULL;
+        }
+
+        // record the start point for the image metadata
+        if (!dcm_offset(error, filehandle, &filehandle->offset)) {
+            dcm_dataset_destroy(file_meta);
+            return NULL;
+        }
+
+        DcmElement *element = dcm_dataset_get(error, file_meta, 0x00020010);
+        if (element == NULL) {
+            dcm_dataset_destroy(file_meta);
+            return NULL;
+        }
+
+        const char *transfer_syntax_uid;
+        if (!dcm_element_get_value_string(error,
+                                          element,
+                                          0,
+                                          &transfer_syntax_uid)) {
+            dcm_dataset_destroy(file_meta);
+            return NULL;
+        }
+
+        filehandle->transfer_syntax_uid =
+            dcm_strdup(error, transfer_syntax_uid);
+        if (filehandle->transfer_syntax_uid == NULL) {
+            dcm_dataset_destroy(file_meta);
+            return NULL;
+        }
+
+        if (strcmp(filehandle->transfer_syntax_uid, "1.2.840.10008.1.2") == 0) {
+            filehandle->implicit = true;
+        }
+
+        filehandle->desc.transfer_syntax_uid = filehandle->transfer_syntax_uid;
+
+        filehandle->file_meta = file_meta;
+    }
+
+
+    FIXME need to always leave the file read point in the same place
+
+    return filehandle->file_meta;
 }
 
 
@@ -570,8 +604,8 @@ static bool parse_meta_stop(void *client,
 
 
 static bool set_pixel_description(DcmError **error,
-                                  struct PixelDescription *desc,
-                                  const DcmDataSet *metadata)
+                                  const DcmDataSet *metadata,
+                                  struct PixelDescription *desc)
 {
     DcmElement *element;
     int64_t value;
@@ -641,11 +675,8 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
                                          DcmFilehandle *filehandle,
                                          uint32_t *stop_tags)
 {
-    // by default, we stop on any of the tags that start a huge group that
-    // would take a long time to parse
+    // by default, we don't stop anywhere (except pixeldata)
     static uint32_t default_stop_tags[] = {
-        TAG_REFERENCED_IMAGE_NAVIGATION_SEQUENCE,
-        TAG_PER_FRAME_FUNCTIONAL_GROUP_SEQUENCE,
         TAG_PIXEL_DATA,
         TAG_FLOAT_PIXEL_DATA,
         TAG_DOUBLE_PIXEL_DATA,
@@ -666,12 +697,11 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
     filehandle->stop_tags = stop_tags == NULL ? default_stop_tags : stop_tags;
 
     if (filehandle->offset == 0) {
-        DcmDataSet *file_meta = dcm_filehandle_read_file_meta(error,
-                                                              filehandle);
+        DcmDataSet *file_meta = dcm_filehandle_get_file_meta(error,
+                                                             filehandle);
         if (file_meta == NULL) {
             return NULL;
         }
-        dcm_dataset_destroy(file_meta);
     }
 
     if (!dcm_seekset(error, filehandle, filehandle->offset)) {
@@ -713,48 +743,70 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
         return false;
     }
 
-    // useful values for later
-    if (!get_tiles_across(error, meta, &filehandle->tiles_across) ||
-        !get_num_frames(error, meta, &filehandle->num_frames)) {
-        return false;
-    }
-
-    if (!set_pixel_description(error, &filehandle->desc, meta)) {
-        return false;
-    }
-
-    filehandle->desc.transfer_syntax_uid =
-        dcm_filehandle_get_transfer_syntax_uid(filehandle);
-
-    // we support sparse and full tile layout, defaulting to full if no type
-    // is specified
-    const char *type;
-    if (get_tag_str(NULL, meta, "DimensionOrganizationType", &type)) {
-        if (strcmp(type, "TILED_SPARSE") == 0 || strcmp(type, "3D") == 0) {
-            filehandle->layout = DCM_LAYOUT_SPARSE;
-        } else if (strcmp(type, "TILED_FULL") == 0) {
-            filehandle->layout = DCM_LAYOUT_FULL;
-        } else {
-            filehandle->layout = DCM_LAYOUT_UNKNOWN;
-        }
-    }
-
-    // did we stop on pixel data? record the offset
-    if (filehandle->last_tag == TAG_PIXEL_DATA ||
-        filehandle->last_tag == TAG_FLOAT_PIXEL_DATA ||
-        filehandle->last_tag == TAG_DOUBLE_PIXEL_DATA) {
-        if (!dcm_offset(error,
-                        filehandle,
-                        &filehandle->pixel_data_offset)) {
-            return NULL;
-        }
-    }
-
     // steal meta to stop it being destroyed
     (void) dcm_sequence_steal(NULL, sequence, 0);
     dcm_filehandle_clear(filehandle);
 
     return meta;
+}
+
+
+DcmDataSet *dcm_filehandle_get_metadata(DcmError **error,
+                                        DcmFilehandle *filehandle)
+{
+    // we stop on any of the tags that start a huge group that
+    // would take a long time to parse
+    static uint32_t stop_tags[] = {
+        TAG_REFERENCED_IMAGE_NAVIGATION_SEQUENCE,
+        TAG_PER_FRAME_FUNCTIONAL_GROUP_SEQUENCE,
+        TAG_PIXEL_DATA,
+        TAG_FLOAT_PIXEL_DATA,
+        TAG_DOUBLE_PIXEL_DATA,
+        0,
+    };
+
+    if (filehandle->meta == NULL) {
+        Dataset *meta = dcm_filehandle_read_metadata(error,
+                                                     filehandle,
+                                                     stop_tags);
+
+        // useful values for later
+        if (!get_tiles_across(error, meta, &filehandle->tiles_across) ||
+            !get_num_frames(error, meta, &filehandle->num_frames) ||
+            !set_pixel_description(error, meta, &filehandle->desc)) {
+            dcm_dataset_destroy(meta);
+            return false;
+        }
+
+        // we support sparse and full tile layout, defaulting to full if no type
+        // is specified
+        const char *type;
+        if (get_tag_str(NULL, meta, "DimensionOrganizationType", &type)) {
+            if (strcmp(type, "TILED_SPARSE") == 0 || strcmp(type, "3D") == 0) {
+                filehandle->layout = DCM_LAYOUT_SPARSE;
+            } else if (strcmp(type, "TILED_FULL") == 0) {
+                filehandle->layout = DCM_LAYOUT_FULL;
+            } else {
+                filehandle->layout = DCM_LAYOUT_UNKNOWN;
+            }
+        }
+
+        // did we stop on pixel data? record the offset
+        if (filehandle->last_tag == TAG_PIXEL_DATA ||
+            filehandle->last_tag == TAG_FLOAT_PIXEL_DATA ||
+            filehandle->last_tag == TAG_DOUBLE_PIXEL_DATA) {
+            if (!dcm_offset(error,
+                            filehandle,
+                            &filehandle->pixel_data_offset)) {
+                dcm_dataset_destroy(meta);
+                return NULL;
+            }
+        }
+
+        filehandle->meta = meta;
+    }
+
+    return filehandle->meta;
 }
 
 
@@ -878,6 +930,10 @@ static bool read_skip_to_index(DcmError **error,
 bool dcm_filehandle_read_pixeldata(DcmError **error,
                                    DcmFilehandle *filehandle)
 {
+    if (dcm_filehandle_get_metadata(error, filehandle) == NULL) {
+        return false;
+    }
+
     if (filehandle->layout == DCM_LAYOUT_UNKNOWN) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                       "Reading PixelData failed",
