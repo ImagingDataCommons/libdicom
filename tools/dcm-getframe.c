@@ -65,48 +65,6 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    dcm_log_info("Read metadata");
-    DcmDataSet *metadata = dcm_filehandle_read_metadata(&error,
-                                                        filehandle,
-                                                        NULL);
-    if (metadata == NULL) {
-        dcm_error_print(error);
-        dcm_error_clear(&error);
-        dcm_filehandle_destroy(filehandle);
-        return EXIT_FAILURE;
-    }
-
-    if (!dcm_filehandle_read_pixeldata(&error, filehandle)) {
-        dcm_error_print(error);
-        dcm_error_clear(&error);
-        dcm_filehandle_destroy(filehandle);
-        return EXIT_FAILURE;
-    }
-
-    uint32_t tag = dcm_dict_tag_from_keyword("NumberOfFrames");
-    DcmElement *element;
-    const char *value;
-    if (!(element = dcm_dataset_get(&error, metadata, tag)) ||
-        !dcm_element_get_value_string(&error, element, 0, &value)) {
-        dcm_error_print(error);
-        dcm_error_clear(&error);
-        dcm_filehandle_destroy(filehandle);
-        return EXIT_FAILURE;
-    }
-    int num_frames = atoi(value);
-
-    if (frame_number < 1 || frame_number > num_frames) {
-        dcm_error_set(&error, DCM_ERROR_CODE_INVALID,
-                      "Bad frame number",
-                      "Frame number must be between 1 and %d",
-                      num_frames);
-        dcm_error_print(error);
-        dcm_error_clear(&error);
-        dcm_dataset_destroy(metadata);
-        dcm_filehandle_destroy(filehandle);
-        return EXIT_FAILURE;
-    }
-
     dcm_log_info("Read frame %u", frame_number);
     DcmFrame *frame = dcm_filehandle_read_frame(&error,
                                                 filehandle,
@@ -114,7 +72,6 @@ int main(int argc, char *argv[])
     if (frame == NULL) {
         dcm_error_print(error);
         dcm_error_clear(&error);
-        dcm_dataset_destroy(metadata);
         dcm_filehandle_destroy(filehandle);
         return EXIT_FAILURE;
     }
@@ -150,7 +107,6 @@ int main(int argc, char *argv[])
             dcm_error_print(error);
             dcm_error_clear(&error);
             dcm_frame_destroy(frame);
-            dcm_dataset_destroy(metadata);
             dcm_filehandle_destroy(filehandle);
             return EXIT_FAILURE;
         }
@@ -166,7 +122,6 @@ int main(int argc, char *argv[])
     }
 
     dcm_frame_destroy(frame);
-    dcm_dataset_destroy(metadata);
     dcm_filehandle_destroy(filehandle);
 
     return EXIT_SUCCESS;

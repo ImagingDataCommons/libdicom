@@ -652,7 +652,7 @@ START_TEST(test_file_sm_image_file_meta)
     free(file_path);
     ck_assert_ptr_nonnull(filehandle);
 
-    DcmDataSet *meta = dcm_filehandle_read_file_meta(NULL, filehandle);
+    const DcmDataSet *meta = dcm_filehandle_get_file_meta(NULL, filehandle);
     ck_assert_ptr_nonnull(meta);
 
     // Transfer Syntax UID
@@ -667,7 +667,6 @@ START_TEST(test_file_sm_image_file_meta)
 
     dcm_dataset_print(meta, 0);
 
-    dcm_dataset_destroy(meta);
     dcm_filehandle_destroy(filehandle);
 }
 END_TEST
@@ -682,7 +681,7 @@ START_TEST(test_file_sm_image_metadata)
     free(file_path);
     ck_assert_ptr_nonnull(filehandle);
 
-    DcmDataSet *metadata = dcm_filehandle_read_metadata(NULL, filehandle, NULL);
+    const DcmDataSet *metadata = dcm_filehandle_get_metadata(NULL, filehandle);
     ck_assert_ptr_nonnull(metadata);
 
     // SOP Class UID
@@ -693,7 +692,6 @@ START_TEST(test_file_sm_image_metadata)
 
     dcm_dataset_print(metadata, 0);
 
-    dcm_dataset_destroy(metadata);
     dcm_filehandle_destroy(filehandle);
 }
 END_TEST
@@ -709,7 +707,7 @@ START_TEST(test_file_sm_image_frame)
     free(file_path);
     ck_assert_ptr_nonnull(filehandle);
 
-    DcmDataSet *metadata = dcm_filehandle_read_metadata(NULL, filehandle, NULL);
+    const DcmDataSet *metadata = dcm_filehandle_get_metadata(NULL, filehandle);
     ck_assert_ptr_nonnull(metadata);
 
     ck_assert_int_ne(dcm_filehandle_read_pixeldata(NULL, filehandle), 0);
@@ -731,7 +729,6 @@ START_TEST(test_file_sm_image_frame)
                      "1.2.840.10008.1.2.1");
 
     dcm_frame_destroy(frame);
-    dcm_dataset_destroy(metadata);
     dcm_filehandle_destroy(filehandle);
 }
 END_TEST
@@ -750,7 +747,7 @@ START_TEST(test_file_sm_image_file_meta_memory)
         dcm_filehandle_create_from_memory(NULL, memory, length);
     ck_assert_ptr_nonnull(filehandle);
 
-    DcmDataSet *meta = dcm_filehandle_read_file_meta(NULL, filehandle);
+    const DcmDataSet *meta = dcm_filehandle_get_file_meta(NULL, filehandle);
 
     // Transfer Syntax UID
     element = dcm_dataset_get(NULL, meta, 0x00020010);
@@ -764,7 +761,6 @@ START_TEST(test_file_sm_image_file_meta_memory)
 
     dcm_dataset_print(meta, 0);
 
-    dcm_dataset_destroy(meta);
     dcm_filehandle_destroy(filehandle);
     free(memory);
 }

@@ -1626,11 +1626,21 @@ DCM_EXTERN
 void dcm_filehandle_destroy(DcmFilehandle *filehandle);
 
 /**
- * Read File Meta Information from a File.
+ * Get File Meta Information from a File.
  *
- * Keeps track of the offset of the Data Set relative to the beginning of the
- * filehandle to speed up subsequent access, and determines the Transfer
- * Syntax in which the contained Data Set is encoded.
+ * Reads the File Meta Information and saves it in the File handle. A pointer
+ * to libdicom's copy of the File Meta Information is returned. The File Meta
+ * Information is used to set the Transfer Syntax and enable or disable
+ * implicit mode.
+ *
+ * The resturn result must not be destroyed. Make a clone of it with
+ * dcm_dataset_clone() if you need it to remain valid after closing the File
+ * handle.
+ *
+ * After calling this function, the filehandle read point is always
+ * positioned at the start of the File metadata.
+ *
+ * It is safe to call this function many times.
  *
  * :param error: Pointer to error object
  * :param filehandle: Pointer to file handle
@@ -1638,8 +1648,8 @@ void dcm_filehandle_destroy(DcmFilehandle *filehandle);
  * :return: File Meta Information
  */
 DCM_EXTERN
-DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
-                                          DcmFilehandle *filehandle);
+const DcmDataSet *dcm_filehandle_get_file_meta(DcmError **error,
+                                               DcmFilehandle *filehandle);
 
 /**
  * Get Transfer Syntax UID for a fileahndle.
@@ -1654,30 +1664,67 @@ const char *dcm_filehandle_get_transfer_syntax_uid(const DcmFilehandle *filehand
 /**
  * Read metadata from a File.
  *
- * Keeps track of the offset of the Pixel Data Element relative to the
- * beginning of the filehandle to speed up subsequent access to individual
- * Frame items.
+ * Read slide metadata, stopping when one of the tags in the stop list is
+ * seen. If the stop list pointer is NULL, it will stop on any of the pixel
+ * data tags.
  *
- * Reading stops when any of the tags in the stop_tags array are seen. If this
- * pointer is NULL, then reading will stop on any tag that is likely to take a
- * long time to parse.
+ * The return result must be destroyed with dcm_dataset_destroy().
+ *
+ * After calling this function, the filehandle read point is always
+ * positioned at the tag that stopped the read. You can call this function
+ * with a different stop set to read more of the metadata.
  *
  * :param error: Pointer to error object
  * :param filehandle: File
- * :param stop_tags: Zero-terminated array of tags to stop on
+ * :param stop_tags: NULL, or Zero-terminated array of tags to stop on
  *
  * :return: metadata
  */
 DCM_EXTERN
 DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
                                          DcmFilehandle *filehandle,
-                                         uint32_t *stop_tags);
+                                         const uint32_t *stop_tags);
+
+/**
+ * Get metadata from a File.
+ *
+ * Gets the File's metadata and saves it in the File handle. A pointer
+ * to libdicom's copy of the File metadata is returned. The metadata is used
+ * to set various internal fields.
+ *
+ * The return result must not be destroyed. Make a clone of it with
+ * dcm_dataset_clone() if you need it to remain valid after closing the File
+ * handle.
+ *
+ * After calling this function, the filehandle read point is always
+ * positioned at the tag that stopped the read.
+ *
+ * It is safe to call this function many times.
+ *
+ * :param error: Pointer to error object
+ * :param filehandle: File
+ *
+ * :return: metadata
+ */
+DCM_EXTERN
+const DcmDataSet *dcm_filehandle_get_metadata(DcmError **error,
+                                              DcmFilehandle *filehandle);
 
 /**
  * Read everything necessary to fetch frames from the file.
  *
- * Scans the PixelData sequence and loads the
- * PerFrameFunctionalGroupSequence, if present.
+ * Scans the PixelData sequence and loads the PerFrameFunctionalGroupSequence,
+ * if present.
+ *
+ * This function will be called automatically on the first call to
+ * dcm_filehandle_read_frame_position() or dcm_filehandle_read_frame(). It can
+ * take some time to execute, so it is available as a separate function call
+ * in case this delay need to be managed.
+ *
+ * After calling this function, the filehandle read point is always
+ * positioned at the pixeldata tag.
+ *
+ * It is safe to call this function many times.
  *
  * :param error: Pointer to error object
  * :param filehandle: File
@@ -1687,6 +1734,22 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
 DCM_EXTERN
 bool dcm_filehandle_read_pixeldata(DcmError **error,
                                    DcmFilehandle *filehandle);
+
+/**
+ * Read an individual Frame from a File.
+ *
+ * Frames are numbered from 1 in the order they appear in the PixelData element.
+ *
+ * :param error: Pointer to error object
+ * :param filehandle: File
+ * :param index: One-based frame number
+ *
+ * :return: Frame
+ */
+DCM_EXTERN
+DcmFrame *dcm_filehandle_read_frame(DcmError **error,
+                                    DcmFilehandle *filehandle,
+                                    uint32_t frame_number);
 
 /**
  * Read the frame at a position in a File.
@@ -1707,22 +1770,6 @@ DcmFrame *dcm_filehandle_read_frame_position(DcmError **error,
                                              DcmFilehandle *filehandle,
                                              uint32_t column,
                                              uint32_t row);
-
-/**
- * Read an individual Frame from a File.
- *
- * Frames are numbered from 1 in the order they appear in the PixelData element.
- *
- * :param error: Pointer to error object
- * :param filehandle: File
- * :param index: One-based frame number
- *
- * :return: Frame
- */
-DCM_EXTERN
-DcmFrame *dcm_filehandle_read_frame(DcmError **error,
-                                    DcmFilehandle *filehandle,
-                                    uint32_t frame_number);
 
 /**
  * Scan a file and print the entire structure to stdout.

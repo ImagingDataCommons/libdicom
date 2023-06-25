@@ -33,10 +33,12 @@ struct _DcmFilehandle {
     DcmIO *io;
     char *transfer_syntax_uid;
     bool implicit;
-    uint32_t *stop_tags;
+    const uint32_t *stop_tags;
 
     // start of image metadata
     int64_t offset;
+    // just after read_metadata
+    int64_t after_read_metadata;
     // start of pixel metadata
     int64_t pixel_data_offset;
     // distance from pixel metadata to start of first frame
@@ -521,8 +523,9 @@ static DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
     return file_meta;
 }
 
-DcmDataSet *dcm_filehandle_get_file_meta(DcmError **error,
-                                         DcmFilehandle *filehandle)
+
+const DcmDataSet *dcm_filehandle_get_file_meta(DcmError **error,
+                                               DcmFilehandle *filehandle)
 {
     if (filehandle->file_meta == NULL) {
         DcmDataSet *file_meta =
@@ -566,10 +569,12 @@ DcmDataSet *dcm_filehandle_get_file_meta(DcmError **error,
         filehandle->desc.transfer_syntax_uid = filehandle->transfer_syntax_uid;
 
         filehandle->file_meta = file_meta;
+    } else {
+        // move the read point to the start of the slide metadata
+        if (!dcm_seekset(error, filehandle, filehandle->offset)) {
+            return NULL;
+        }
     }
-
-
-    FIXME need to always leave the file read point in the same place
 
     return filehandle->file_meta;
 }
@@ -673,10 +678,10 @@ static bool set_pixel_description(DcmError **error,
 
 DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
                                          DcmFilehandle *filehandle,
-                                         uint32_t *stop_tags)
+                                         const uint32_t *stop_tags)
 {
     // by default, we don't stop anywhere (except pixeldata)
-    static uint32_t default_stop_tags[] = {
+    static const uint32_t default_stop_tags[] = {
         TAG_PIXEL_DATA,
         TAG_FLOAT_PIXEL_DATA,
         TAG_DOUBLE_PIXEL_DATA,
@@ -694,21 +699,18 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
         .stop = parse_meta_stop,
     };
 
-    filehandle->stop_tags = stop_tags == NULL ? default_stop_tags : stop_tags;
-
-    if (filehandle->offset == 0) {
-        DcmDataSet *file_meta = dcm_filehandle_get_file_meta(error,
-                                                             filehandle);
+    // only get the file_meta if it's not there ... we don't want to rewind
+    // filehandle every time
+    if (filehandle->file_meta == NULL) {
+        const DcmDataSet *file_meta = dcm_filehandle_get_file_meta(error,
+                                                                   filehandle);
         if (file_meta == NULL) {
             return NULL;
         }
     }
 
-    if (!dcm_seekset(error, filehandle, filehandle->offset)) {
-        return NULL;
-    }
-
     dcm_filehandle_clear(filehandle);
+    filehandle->stop_tags = stop_tags == NULL ? default_stop_tags : stop_tags;
     DcmSequence *sequence = dcm_sequence_create(error);
     if (sequence == NULL) {
         return NULL;
@@ -751,8 +753,8 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
 }
 
 
-DcmDataSet *dcm_filehandle_get_metadata(DcmError **error,
-                                        DcmFilehandle *filehandle)
+const DcmDataSet *dcm_filehandle_get_metadata(DcmError **error,
+                                              DcmFilehandle *filehandle)
 {
     // we stop on any of the tags that start a huge group that
     // would take a long time to parse
@@ -766,9 +768,22 @@ DcmDataSet *dcm_filehandle_get_metadata(DcmError **error,
     };
 
     if (filehandle->meta == NULL) {
-        Dataset *meta = dcm_filehandle_read_metadata(error,
-                                                     filehandle,
-                                                     stop_tags);
+        // always rewind the filehandle
+        const DcmDataSet *file_meta = dcm_filehandle_get_file_meta(error,
+                                                                   filehandle);
+        if (file_meta == NULL) {
+            return NULL;
+        }
+
+        DcmDataSet *meta = dcm_filehandle_read_metadata(error,
+                                                        filehandle,
+                                                        stop_tags);
+
+        // record the position of the tag that stopped the read
+        if (!dcm_offset(error, filehandle, &filehandle->after_read_metadata)) {
+            dcm_dataset_destroy(meta);
+            return NULL;
+        }
 
         // useful values for later
         if (!get_tiles_across(error, meta, &filehandle->tiles_across) ||
@@ -791,19 +806,12 @@ DcmDataSet *dcm_filehandle_get_metadata(DcmError **error,
             }
         }
 
-        // did we stop on pixel data? record the offset
-        if (filehandle->last_tag == TAG_PIXEL_DATA ||
-            filehandle->last_tag == TAG_FLOAT_PIXEL_DATA ||
-            filehandle->last_tag == TAG_DOUBLE_PIXEL_DATA) {
-            if (!dcm_offset(error,
-                            filehandle,
-                            &filehandle->pixel_data_offset)) {
-                dcm_dataset_destroy(meta);
-                return NULL;
-            }
-        }
-
         filehandle->meta = meta;
+    } else {
+        // move the read point to the tag we stopped read on
+        if (!dcm_seekset(error, filehandle, filehandle->after_read_metadata)) {
+            return NULL;
+        }
     }
 
     return filehandle->meta;
@@ -930,81 +938,82 @@ static bool read_skip_to_index(DcmError **error,
 bool dcm_filehandle_read_pixeldata(DcmError **error,
                                    DcmFilehandle *filehandle)
 {
-    if (dcm_filehandle_get_metadata(error, filehandle) == NULL) {
-        return false;
-    }
-
-    if (filehandle->layout == DCM_LAYOUT_UNKNOWN) {
-        dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                      "Reading PixelData failed",
-                      "Unsupported DimensionOrganisationType.");
-        return false;
-    }
-
-    // we may have previously stopped for many reasons ... skip ahead to per
-    // frame functional group, or pixel data
-    if (!read_skip_to_index(error, filehandle)) {
-        return false;
-    }
-
-    // if we're on per frame func, read that in
-    if (filehandle->last_tag == TAG_PER_FRAME_FUNCTIONAL_GROUP_SEQUENCE &&
-        !read_frame_index(error, filehandle)) {
-        return false;
-    }
-
-    // and hopefully we're now on the pixel data
-    if (filehandle->last_tag == TAG_PIXEL_DATA ||
-        filehandle->last_tag == TAG_FLOAT_PIXEL_DATA ||
-        filehandle->last_tag == TAG_DOUBLE_PIXEL_DATA) {
-        if (!dcm_offset(error,
-                        filehandle, &filehandle->pixel_data_offset)) {
-            return NULL;
-        }
-    }
-
-    if (filehandle->pixel_data_offset == 0) {
-        dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                      "Reading PixelData failed",
-                      "Could not determine offset of Pixel Data Element.");
-        return NULL;
-    }
-
-    if (!dcm_seekset(error, filehandle, filehandle->pixel_data_offset)) {
-        return NULL;
-    }
-
-    filehandle->offset_table = DCM_NEW_ARRAY(error,
-                                             filehandle->num_frames,
-                                             int64_t);
     if (filehandle->offset_table == NULL) {
-        return NULL;
-    }
-
-    dcm_log_debug("Reading PixelData.");
-
-    const char *syntax = dcm_filehandle_get_transfer_syntax_uid(filehandle);
-    if (dcm_is_encapsulated_transfer_syntax(syntax)) {
-        // read the bot if available, otherwise parse pixeldata to find
-        // offsets
-        if (!dcm_parse_pixeldata_offsets(error,
-                                         filehandle->io,
-                                         filehandle->implicit,
-                                         &filehandle->first_frame_offset,
-                                         filehandle->offset_table,
-                                         filehandle->num_frames)) {
+        // move to the first of our stop tags
+        if (dcm_filehandle_get_metadata(error, filehandle) == NULL) {
             return false;
         }
-    } else {
-        for (uint32_t i = 0; i < filehandle->num_frames; i++) {
-            filehandle->offset_table[i] = i *
-                                          filehandle->desc.rows *
-                                          filehandle->desc.columns *
-                                          filehandle->desc.samples_per_pixel;
+
+        if (filehandle->layout == DCM_LAYOUT_UNKNOWN) {
+            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                          "Reading PixelData failed",
+                          "Unsupported DimensionOrganisationType.");
+            return false;
         }
 
-        // Header of Pixel Data Element
-        filehandle->first_frame_offset = 12;
+        // we may have previously stopped for many reasons ... skip ahead to per
+        // frame functional group, or pixel data
+        if (!read_skip_to_index(error, filehandle)) {
+            return false;
+        }
+
+        // if we're on per frame func, read that in
+        if (filehandle->last_tag == TAG_PER_FRAME_FUNCTIONAL_GROUP_SEQUENCE &&
+            !read_frame_index(error, filehandle)) {
+            return false;
+        }
+
+        // and we must now be on pixel data
+        if (filehandle->last_tag != TAG_PIXEL_DATA &&
+            filehandle->last_tag != TAG_FLOAT_PIXEL_DATA &&
+            filehandle->last_tag != TAG_DOUBLE_PIXEL_DATA) {
+            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                          "Reading PixelData failed",
+                          "Could not determine offset of Pixel Data Element.");
+            return false;
+        }
+
+        if (!dcm_offset(error, filehandle, &filehandle->pixel_data_offset)) {
+            return false;
+        }
+
+        // read the BOT, or build it
+        dcm_log_debug("Reading PixelData.");
+        filehandle->offset_table = DCM_NEW_ARRAY(error,
+                                                 filehandle->num_frames,
+                                                 int64_t);
+        if (filehandle->offset_table == NULL) {
+            return false;
+        }
+
+        const char *syntax = dcm_filehandle_get_transfer_syntax_uid(filehandle);
+        if (dcm_is_encapsulated_transfer_syntax(syntax)) {
+            // read the bot if available, otherwise parse pixeldata to find
+            // offsets
+            if (!dcm_parse_pixeldata_offsets(error,
+                                             filehandle->io,
+                                             filehandle->implicit,
+                                             &filehandle->first_frame_offset,
+                                             filehandle->offset_table,
+                                             filehandle->num_frames)) {
+                return false;
+            }
+        } else {
+            for (uint32_t i = 0; i < filehandle->num_frames; i++) {
+                filehandle->offset_table[i] = i *
+                                              filehandle->desc.rows *
+                                              filehandle->desc.columns *
+                                              filehandle->desc.samples_per_pixel;
+            }
+
+            // Header of Pixel Data Element
+            filehandle->first_frame_offset = 12;
+        }
+    } else {
+        // always position at pixel_data
+        if (!dcm_seekset(error, filehandle, filehandle->pixel_data_offset)) {
+            return false;
+        }
     }
 
     return true;
@@ -1031,9 +1040,7 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
         return NULL;
     }
 
-    // load metadata around pixeldata, if we've not loaded it already
-    if (filehandle->offset_table == NULL &&
-        !dcm_filehandle_read_pixeldata(error, filehandle))  {
+    if (!dcm_filehandle_read_pixeldata(error, filehandle)) {
         return NULL;
     }
 
@@ -1081,8 +1088,7 @@ DcmFrame *dcm_filehandle_read_frame_position(DcmError **error,
     dcm_log_debug("Read frame position (%u, %u)", column, row);
 
     // load metadata around pixeldata, if we've not loaded it already
-    if (filehandle->offset_table == NULL &&
-        !dcm_filehandle_read_pixeldata(error, filehandle))  {
+    if (!dcm_filehandle_read_pixeldata(error, filehandle)) {
         return NULL;
     }
 
