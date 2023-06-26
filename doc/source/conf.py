@@ -14,6 +14,7 @@ from glob import glob
 import os
 import sys
 from hawkmoth.util import readthedocs
+from hawkmoth.util import compiler
 from clang.cindex import Config as clang_config
 
 # -- Project information -----------------------------------------------------
@@ -58,6 +59,8 @@ html_static_path = ['_static']
 
 hawkmoth_root = os.path.abspath('../../include')
 readthedocs.clang_setup()
+hawkmoth_clang = compiler.get_include_args()
+hawkmoth_clang.append(f"-I{os.path.abspath('../../build')}")
 if sys.platform == 'darwin':
     lib_search_dirs = [
         '/usr/lib',

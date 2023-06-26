@@ -207,15 +207,11 @@ other programs, for example, arrays of numeric values.
 
     int *values = pointer to array of integers;
     uint32_t vm = number of ints in array;
-    if( !dcm_element_set_value_numeric_multi(error,
-                                             element,
-                                             values,
-                                             vm,
-                                             true)) {
+    if( !dcm_element_set_value_numeric_multi(error, element, values, vm, true)) {
       handle error;
     }
 
-The final parameter, `steal` sets whether ownership of the pointer to the
+The final parameter, `steal`, sets whether ownership of the pointer to the
 array should be "stolen" by libdicom. If it is true, then libdicom will use
 :c:func:`free()` to free the array when the element is freed. If it is false,
 libdicom will make a copy of the array.
