@@ -1322,40 +1322,17 @@ static bool print_pixeldata_create(DcmError **error,
 
     printf("| %u | ", length);
 
-    switch (size) {
-        default:
-        case 1:
-            for (uint32_t i = 0; i < MIN(length, 17); i++) {
-                printf("%02x ", ((uint8_t *)value)[i]);
-            }
+    uint32_t n = MIN(16, length);
+    for (uint32_t i = 0; i < n; i++) {
+        printf("%02x", value[i]);
 
-            if (length > 17) {
-                printf("...");
-            }
+        if (i % size == size - 1) {
+            printf(" ");
+        }
+    }
 
-            break;
-
-        case 2:
-            for (uint32_t i = 0; i < MIN(length, 10); i++) {
-                printf("%04x ", ((uint16_t *)value)[i]);
-            }
-
-            if (length > 10) {
-                printf("...");
-            }
-
-            break;
-
-        case 4:
-            for (uint32_t i = 0; i < MIN(length, 6); i++) {
-                printf("%08x ", ((uint32_t *)value)[i]);
-            }
-
-            if (length > 6) {
-                printf("...");
-            }
-
-            break;
+    if (length > 16) {
+        printf("...");
     }
 
     printf("\n");

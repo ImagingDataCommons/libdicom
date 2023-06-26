@@ -68,7 +68,7 @@ static const struct _DcmVRTable vr_table[] = {
 
     {DCM_VR_LT, "LT", DCM_CLASS_STRING_SINGLE,      0, DCM_CAPACITY_LT, 2},
 
-    {DCM_VR_OB, "OB", DCM_CLASS_BINARY,             0, 0,               4},
+    {DCM_VR_OB, "OB", DCM_CLASS_BINARY,             1, 0,               4},
 
     {DCM_VR_OD, "OD", DCM_CLASS_BINARY,             8, 0,               4},
     {DCM_VR_OF, "OF", DCM_CLASS_BINARY,             4, 0,               4},

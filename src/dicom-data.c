@@ -925,8 +925,7 @@ bool dcm_element_set_value(DcmError **error,
 {
     size_t size;
 
-    switch (dcm_dict_vr_class(element->vr))
-    {
+    switch (dcm_dict_vr_class(element->vr)) {
         case DCM_CLASS_STRING_SINGLE:
         case DCM_CLASS_STRING_MULTI:
             if (!dcm_element_set_value_string(error, element, value, steal)) {
@@ -1187,12 +1186,14 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
 char *dcm_element_value_to_string(const DcmElement *element)
 {
     DcmVRClass klass = dcm_dict_vr_class(element->vr);
+    size_t size = dcm_dict_vr_size(element->vr);
 
     char *result = NULL;
 
     double d;
     int64_t i;
     const char *str;
+    uint32_t n;
 
     if (element->vm > 1) {
         result = dcm_printf_append(result, "[");
@@ -1233,12 +1234,25 @@ char *dcm_element_value_to_string(const DcmElement *element)
                 break;
 
             case DCM_CLASS_BINARY:
-                result = dcm_printf_append(result,
-                                           "<binary value of %u bytes>",
-                                           dcm_element_get_length(element));
+                (void) dcm_element_get_value_binary(NULL, element, &str);
+                n = MIN(16, dcm_element_get_length(element));
+
+                for (i = 0; i < n; i++) {
+                    result = dcm_printf_append(result, "%02x", str[i]);
+                    if (i % size == size - 1) {
+                        result = dcm_printf_append(result, " ");
+                    }
+                }
+
+                if (dcm_element_get_length(element) > 16) {
+                    result = dcm_printf_append(result, "...");
+                }
                 break;
 
             case DCM_CLASS_SEQUENCE:
+                result = dcm_printf_append(result, "<sequence>");
+                break;
+
             default:
                 dcm_log_warning("Unexpected Value Representation.");
         }
