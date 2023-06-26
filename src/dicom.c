@@ -23,6 +23,11 @@
 #include <dicom/dicom.h>
 #include "pdicom.h"
 
+// we need a namedspaced free for language bindings
+void dcm_free(void *pointer)
+{
+    free(pointer);
+}
 
 void *dcm_calloc(DcmError **error, uint64_t n, uint64_t size)
 {
