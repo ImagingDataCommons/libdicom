@@ -259,6 +259,34 @@ void dcm_error_print(DcmError *error);
 
 
 /**
+ * Free an allocated memory area.
+ *
+ * Any memory allocated by libdicom and returned to the calling program
+ * should be freed with this.
+ *
+ * :param pointer: Memory area to free
+ */
+DCM_EXTERN
+void dcm_free(void *pointer);
+
+/**
+ * Allocate and zero an area of memory.
+ *
+ * Any memory which you pass to libdicom and which you ask libdicom to manage
+ * with a "steal" flag should be allcoatyed with one of the libdicom memory
+ * allocators.
+ *
+ * :param error: Pointer to error object
+ * :param n: Number of items to allocate
+ * :param size: Size of each item in bytes
+ *
+ * :return: Pointer to memory area
+ */
+DCM_EXTERN
+void *dcm_calloc(DcmError **error, uint64_t n, uint64_t size);
+
+
+/**
  * Enumeration of log levels
  */
 typedef enum _DcmLogLevel {

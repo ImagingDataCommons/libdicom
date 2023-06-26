@@ -24,9 +24,9 @@
 #include "pdicom.h"
 
 
-void *dcm_calloc(DcmError **error, size_t n, size_t size)
+void *dcm_calloc(DcmError **error, uint64_t n, uint64_t size)
 {
-    /* malloc(0) behaviour depends on the platform heap implementation. It can 
+    /* malloc(0) behaviour depends on the platform heap implementation. It can
      * return either a valid pointer that can't be dereferenced, or NULL.
      *
      * We need to be able to support dcm_calloc(0), since VM == 0 is allowed,
@@ -34,7 +34,7 @@ void *dcm_calloc(DcmError **error, size_t n, size_t size)
      * out of memory.
      *
      * Instead, force n == 0 to n == 1. This means we will always get a valid
-     * pointer from calloc, a NULL return always means out of memory, and we 
+     * pointer from calloc, a NULL return always means out of memory, and we
      * can always free the result.
      */
     void *result = calloc(n == 0 ? 1 : n, size);
@@ -48,7 +48,7 @@ void *dcm_calloc(DcmError **error, size_t n, size_t size)
 }
 
 
-void *dcm_realloc(DcmError **error, void *ptr, size_t size)
+void *dcm_realloc(DcmError **error, void *ptr, uint64_t size)
 {
     void *result = realloc(ptr, size);
     if (!result) {
@@ -99,7 +99,7 @@ char *dcm_printf_append(char *str, const char *format, ...)
         }
     }
     size_t old_len = strlen(str);
-        
+
     // new space, copy and render
     char *new_str = dcm_realloc(NULL, str, old_len + n + 1);
     if (new_str == NULL) {
@@ -189,7 +189,7 @@ static void dcm_error_free(DcmError *error)
 }
 
 
-static DcmError *dcm_error_newf(DcmErrorCode code, 
+static DcmError *dcm_error_newf(DcmErrorCode code,
     const char *summary, const char *format, va_list ap)
 {
     DcmError *error;
@@ -208,7 +208,7 @@ static DcmError *dcm_error_newf(DcmErrorCode code,
 }
 
 
-void dcm_error_set(DcmError **error, DcmErrorCode code, 
+void dcm_error_set(DcmError **error, DcmErrorCode code,
     const char *summary, const char *format, ...)
 {
     if (error && *error) {
@@ -231,7 +231,7 @@ void dcm_error_set(DcmError **error, DcmErrorCode code,
         DcmError *local_error = dcm_error_newf(code, summary, format, ap);
         va_end(ap);
 
-        dcm_log_debug("%s: %s - %s", 
+        dcm_log_debug("%s: %s - %s",
                       dcm_error_code_str(local_error->code),
                       local_error->summary,
                       local_error->message);
