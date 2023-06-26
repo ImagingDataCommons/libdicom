@@ -146,9 +146,9 @@ Error handling
 Library functions which can return an error take a double pointer to a
 :c:type:`DcmError` struct as a first argument. If an error is detected,
 this pointer will be updated to refer to an error object. You can extract
-a :c:type:`DcmErrorCode` with :c:func:`dcm_error_code()`, an error summary
-with :c:func:`dcm_error_summary()`, and a detailed error message with
-:c:func:`dcm_error_message()`. After presenting the error to the user,
+a :c:type:`DcmErrorCode` with :c:func:`dcm_error_get_code()`, an error summary
+with :c:func:`dcm_error_get_summary()`, and a detailed error message with
+:c:func:`dcm_error_get_message()`. After presenting the error to the user,
 call :c:func:`dcm_error_clear()` to clear the error pointer and free any
 allocated memory.
 
@@ -164,14 +164,14 @@ For example:
     #include <dicom/dicom.h>
 
     int main() {
-        const char *file_path = "does not exist";
+        const char *file_path = "bad-file";
         DcmError *error = NULL;
 
         DcmFilehandle *filehandle = dcm_filehandle_create_from_file(&error, file_path);
         if (filehandle == NULL) {
-            printf("error detected: %s\n", dcm_error_code_str(dcm_error_code(error)));
-            printf("summary: %s\n", dcm_error_summary(error));
-            printf("message: %s\n", dcm_error_message(error));
+            printf("error detected: %s\n", dcm_error_code_str(dcm_error_get_code(error)));
+            printf("summary: %s\n", dcm_error_get_summary(error));
+            printf("message: %s\n", dcm_error_get_message(error));
             dcm_error_clear(&error);
             return 1;
         }
@@ -218,7 +218,7 @@ other programs, for example, arrays of numeric values.
 The final parameter, `steal` sets whether ownership of the pointer to the
 array should be "stolen" by libdicom. If it is true, then libdicom will use
 :c:func:`free()` to free the array when the element is freed. If it is false,
-libdiom will take a copy of the array.
+libdicom will make a copy of the array.
 
 Getting started
 +++++++++++++++
@@ -252,9 +252,9 @@ printing an element to standard output:
 
         const char *num_frames;
         uint32_t tag = dcm_dict_tag_from_keyword("NumberOfFrames");
-        DcmElement *element = dcm_dataset_get(error, metadata, tag);
+        DcmElement *element = dcm_dataset_get(&error, metadata, tag);
         if (element == NULL ||
-            !dcm_element_get_value_string(error, element, 0, &num_frames)) {
+            !dcm_element_get_value_string(&error, element, 0, &num_frames)) {
             dcm_error_log(error);
             dcm_error_clear(&error);
             dcm_filehandle_destroy(filehandle);

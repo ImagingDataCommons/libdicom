@@ -915,7 +915,6 @@ bool dcm_element_get_value_sequence(DcmError **error,
                                     const DcmElement *element,
                                     DcmSequence **value);
 
-
 /**
  * Set the value of a Data Element to a Sequence.
  *
@@ -1102,7 +1101,8 @@ uint32_t dcm_dataset_count(const DcmDataSet *dataset);
  * the copy operation fails.
  */
 DCM_EXTERN
-void dcm_dataset_copy_tags(const DcmDataSet *dataset, uint32_t *tags,
+void dcm_dataset_copy_tags(const DcmDataSet *dataset,
+                           uint32_t *tags,
                            uint32_t n);
 
 /**
@@ -1474,16 +1474,10 @@ struct _DcmIOMethods {
     void (*close)(DcmIO *io);
 
     /** Read from an IO object, semantics as POSIX read() */
-    int64_t (*read)(DcmError **error,
-                    DcmIO *io,
-                    char *buffer,
-                    int64_t length);
+    int64_t (*read)(DcmError **error, DcmIO *io, char *buffer, int64_t length);
 
     /** Seek an IO object, semantics as POSIX seek() */
-    int64_t (*seek)(DcmError **error,
-                    DcmIO *io,
-                    int64_t offset,
-                    int whence);
+    int64_t (*seek)(DcmError **error, DcmIO *io, int64_t offset, int whence);
 };
 
 /**
@@ -1509,8 +1503,7 @@ DcmIO *dcm_io_create(DcmError **error,
  * :return: IO object
  */
 DCM_EXTERN
-DcmIO *dcm_io_create_from_file(DcmError **error,
-                               const char *filename);
+DcmIO *dcm_io_create_from_file(DcmError **error, const char *filename);
 
 /**
  * Open an area of memory for IO.
@@ -1522,8 +1515,7 @@ DcmIO *dcm_io_create_from_file(DcmError **error,
  * :return: IO object
  */
 DCM_EXTERN
-DcmIO *dcm_io_create_from_memory(DcmError **error,
-                                 const char *buffer,
+DcmIO *dcm_io_create_from_memory(DcmError **error, const char *buffer,
                                  int64_t length);
 
 /**
@@ -1548,10 +1540,7 @@ void dcm_io_close(DcmIO *io);
  * :return: Number of bytes read
  */
 DCM_EXTERN
-int64_t dcm_io_read(DcmError **error,
-                    DcmIO *io,
-                    char *buffer,
-                    int64_t length);
+int64_t dcm_io_read(DcmError **error, DcmIO *io, char *buffer, int64_t length);
 
 /**
  * Seek an IO object.
@@ -1570,13 +1559,10 @@ int64_t dcm_io_read(DcmError **error,
  * :return: New read position
  */
 DCM_EXTERN
-int64_t dcm_io_seek(DcmError **error,
-                    DcmIO *io,
-                    int64_t offset,
-                    int whence);
+int64_t dcm_io_seek(DcmError **error, DcmIO *io, int64_t offset, int whence);
 
 /**
- * Create a representatiopn of a DICOM File using an IO object.
+ * Create a representation of a DICOM File using an IO object.
  *
  * The File object tracks information like the transfer syntax and the byte
  * ordering.
@@ -1614,7 +1600,7 @@ DcmFilehandle *dcm_filehandle_create_from_file(DcmError **error,
 DCM_EXTERN
 DcmFilehandle *dcm_filehandle_create_from_memory(DcmError **error,
                                                  const char *buffer,
-						 int64_t length);
+                                                 int64_t length);
 
 /**
  * Destroy a Filehandle.
@@ -1627,12 +1613,10 @@ void dcm_filehandle_destroy(DcmFilehandle *filehandle);
 /**
  * Get File Meta Information from a File.
  *
- * Reads the File Meta Information and saves it in the File handle. A pointer
- * to libdicom's copy of the File Meta Information is returned. The File Meta
- * Information is used to set the Transfer Syntax and enable or disable
- * implicit mode.
+ * Reads the File Meta Information and saves it in the File handle. Returns a
+ * reference to this internal copy of the File Meta Information.
  *
- * The resturn result must not be destroyed. Make a clone of it with
+ * The return result must not be destroyed. Make a clone of it with
  * :c:func:`dcm_dataset_clone()` if you need it to remain valid after
  * closing the File handle.
  *
@@ -1671,7 +1655,7 @@ const char *dcm_filehandle_get_transfer_syntax_uid(const DcmFilehandle *filehand
  *
  * After calling this function, the filehandle read point is always
  * positioned at the tag that stopped the read. You can call this function
- * with a different stop set to read more of the metadata.
+ * again with a different stop set to read more of the metadata.
  *
  * :param error: Pointer to error object
  * :param filehandle: File
@@ -1687,9 +1671,8 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
 /**
  * Get metadata from a File.
  *
- * Gets the File's metadata and saves it in the File handle. A pointer
- * to libdicom's copy of the File metadata is returned. The metadata is used
- * to set various internal fields.
+ * Gets the File's metadata and saves it in the File handle. Returns a
+ * reference to this internal copy of the File metadata.
  *
  * The return result must not be destroyed. Make a clone of it with
  * :c:func:`dcm_dataset_clone()` if you need it to remain valid after
@@ -1754,9 +1737,9 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
 /**
  * Read the frame at a position in a File.
  *
- * Read a tile from a File at a specified (column, row), numbered from zero.
+ * Read a frame from a File at a specified (column, row), numbered from zero.
  * This takes account of any frame positioning given in
- * PerFrameFunctionalGroupSequence, if necessary.
+ * PerFrameFunctionalGroupSequence.
  *
  * :param error: Pointer to error object
  * :param filehandle: File

@@ -505,8 +505,7 @@ START_TEST(test_element_US_multivalue)
     uint32_t vm = sizeof(value) / sizeof(value[0]);
 
     DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_US);
-    (void) dcm_element_set_value_numeric_multi(NULL,
-        element, (int*) value, vm, false);
+    (void) dcm_element_set_value_numeric_multi(NULL, element, value, vm, false);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
     ck_assert_int_eq(dcm_element_get_vr(element), DCM_VR_US);
@@ -533,8 +532,7 @@ START_TEST(test_element_US_multivalue_empty)
     uint32_t vm = sizeof(value) / sizeof(value[0]);
 
     DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_US);
-    (void) dcm_element_set_value_numeric_multi(NULL,
-        element, (int*) &value, vm, false);
+    (void) dcm_element_set_value_numeric_multi(NULL, element, &value, vm, false);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
     ck_assert_int_eq(dcm_element_get_vr(element), DCM_VR_US);
