@@ -1289,7 +1289,7 @@ static bool print_element_create(DcmError **error,
         char *str;
         if (dcm_element_set_value(NULL, element, value, length, false) &&
             (str = dcm_element_value_to_string(element))) {
-            printf("| %s\n", str);
+            printf("| %u | %s\n", dcm_element_get_vm(element), str);
             free(str);
         }
 

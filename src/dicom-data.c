@@ -1322,7 +1322,7 @@ void dcm_element_print(const DcmElement *element, int indentation)
                num_indent,
                "                                   ");
     } else {
-        printf(" | %u | ", element->length);
+        printf(" | %u | %u | ", element->length, element->vm);
         char *str = dcm_element_value_to_string(element);
         if (str != NULL) {
             printf("%s\n", str);
