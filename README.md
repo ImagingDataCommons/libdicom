@@ -32,9 +32,9 @@ dcm-getframe -o tile.raw data/test_files/sm_image.dcm 12
 
 ### From Python
 
-There's a sample Python binding using cffi here:
+There's a sample Python binding here:
 
-https://github.com/jcupitt/pywsidicom
+https://github.com/ImagingDataCommons/pywsidicom
 
 ## Documentation
 
