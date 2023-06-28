@@ -30,15 +30,22 @@ dcm-dump data/test_files/sm_image.dcm
 dcm-getframe -o tile.raw data/test_files/sm_image.dcm 12
 ```
 
+### From Python
+
+There's a sample Python binding using cffi here:
+
+https://github.com/jcupitt/pywsidicom
+
 ## Documentation
 
 User and developer guides as well as API documentation can be found at
 [libdicom.readthedocs.io](https://libdicom.readthedocs.io/en/latest/).
 
-## Thanks
+# Thanks
 
-Development of this library was supported by NCI Imaging Data Commons
-(https://imaging.datacommons.cancer.gov/), and has been funded in whole or
-in part with Federal funds from the National Cancer Institute, National
-Institutes of Health, under Task Order No. HHSN26110071 and under Contract
-No. HHSN261201500003l.
+Development of this library was supported by [NCI Imaging Data
+Commons](https://imaging.datacommons.cancer.gov/), and has been funded in
+whole or in part with Federal funds from the National Cancer Institute,
+National Institutes of Health, under Task Order No. HHSN26110071 under
+Contract No. HHSN261201500003l.
+
