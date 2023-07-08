@@ -884,14 +884,13 @@ bool dcm_element_set_value_decimal(DcmError **error,
 DCM_EXTERN
 bool dcm_element_get_value_binary(DcmError **error,
                                   const DcmElement *element,
-                                  const char **value);
+                                  const void **value);
 
 /**
  * Set the value of a Data Element to binary data.
  *
- * The Data Element must have a Tag that allows for a
- * binary Value Representation.
- * If that is not the case, the function will fail.
+ * The Data Element must have a Tag that allows for a binary Value
+ * Representation. If that is not the case, the function will fail.
  *
  * On success, if `steal` is true, ownership of `value` passes to
  * `element`, i.e. it will be freed when `element` is destroyed. If `steal` is
@@ -908,7 +907,7 @@ bool dcm_element_get_value_binary(DcmError **error,
 DCM_EXTERN
 bool dcm_element_set_value_binary(DcmError **error,
                                   DcmElement *element,
-                                  char *value,
+                                  void *value,
                                   uint32_t length,
                                   bool steal);
 

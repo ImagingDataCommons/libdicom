@@ -861,7 +861,7 @@ static bool element_check_binary(DcmError **error,
 
 bool dcm_element_get_value_binary(DcmError **error,
                                   const DcmElement *element,
-                                  const char **value)
+                                  const void **value)
 {
     if (!element_check_assigned(error, element) ||
         !element_check_binary(error, element)) {
@@ -876,7 +876,7 @@ bool dcm_element_get_value_binary(DcmError **error,
 
 bool dcm_element_set_value_binary(DcmError **error,
                                   DcmElement *element,
-                                  char *value,
+                                  void *value,
                                   uint32_t length,
                                   bool steal)
 {
@@ -888,7 +888,7 @@ bool dcm_element_set_value_binary(DcmError **error,
     if (steal) {
         element->value.single.bytes = value;
     } else {
-        char *value_copy = DCM_NEW_ARRAY(error, length, char);
+        void *value_copy = DCM_NEW_ARRAY(error, length, char);
         if (value_copy == NULL) {
             return false;
         }
@@ -1193,6 +1193,7 @@ char *dcm_element_value_to_string(const DcmElement *element)
     double d;
     int64_t i;
     const char *str;
+    const void *val;
     uint32_t n;
 
     if (element->vm > 1) {
@@ -1234,11 +1235,12 @@ char *dcm_element_value_to_string(const DcmElement *element)
                 break;
 
             case DCM_CLASS_BINARY:
-                (void) dcm_element_get_value_binary(NULL, element, &str);
+                (void) dcm_element_get_value_binary(NULL, element, &val);
                 n = MIN(16, dcm_element_get_length(element));
 
                 for (i = 0; i < n; i++) {
-                    result = dcm_printf_append(result, "%02x", str[i]);
+                    result = dcm_printf_append(result, "%02x",
+                                               ((unsigned char *) val)[i]);
                     if (i % size == size - 1) {
                         result = dcm_printf_append(result, " ");
                     }
