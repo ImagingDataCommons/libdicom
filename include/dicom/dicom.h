@@ -96,6 +96,11 @@
 #define DCM_CAPACITY_TM 14
 
 /**
+ * Maximum number of characters in values with Value Representation UC.
+ */
+#define DCM_CAPACITY_UC 4294967294
+
+/**
  * Maximum number of characters in values with Value Representation UI.
  */
 #define DCM_CAPACITY_UI 64
