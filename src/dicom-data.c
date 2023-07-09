@@ -645,6 +645,9 @@ static bool element_check_numeric(DcmError **error,
 static bool element_check_integer(DcmError **error,
                                   const DcmElement *element)
 {
+    if (!element_check_numeric(error, element)) {
+      return false;
+    }
     if (element->vr == DCM_VR_FL || element->vr == DCM_VR_FD) {
       dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                     "Data Element is not integer",
@@ -663,7 +666,6 @@ bool dcm_element_get_value_integer(DcmError **error,
                                    int64_t *value)
 {
     if (!element_check_assigned(error, element) ||
-        !element_check_numeric(error, element) ||
         !element_check_integer(error, element) ||
         !element_check_index(error, element, index)) {
         return false;
@@ -688,7 +690,6 @@ bool dcm_element_set_value_integer(DcmError **error,
                                    int64_t value)
 {
     if (!element_check_not_assigned(error, element) ||
-        !element_check_numeric(error, element) ||
         !element_check_integer(error, element)) {
         return false;
     }
