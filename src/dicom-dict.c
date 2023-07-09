@@ -26,7 +26,7 @@
 struct _DcmVRTable {
     DcmVR vr;
     char *str;
-    DcmVRClass klass;
+    DcmVRClass vr_class;
     size_t size;
     uint32_t capacity;
     int header_length;
@@ -37,7 +37,7 @@ struct _DcmVRTable_hash_entry {
      */
     DcmVR vr;
     char *str;
-    DcmVRClass klass;
+    DcmVRClass vr_class;
     size_t size;
     uint32_t capacity;
     int header_length;
@@ -5209,7 +5209,7 @@ const char *dcm_dict_str_from_vr(DcmVR vr)
 DcmVRClass dcm_dict_vr_class(DcmVR vr)
 {
     if (vr >= 0 && vr < DCM_VR_LAST) {
-        return vr_table[(int)vr].klass;
+        return vr_table[(int)vr].vr_class;
     }
 
     return DCM_CLASS_ERROR;

@@ -271,8 +271,9 @@ static bool element_check_index(DcmError **error,
 static bool element_check_string(DcmError **error,
                                  const DcmElement *element)
 {
-    DcmVRClass klass = dcm_dict_vr_class(element->vr);
-    if (klass != DCM_CLASS_STRING_MULTI && klass != DCM_CLASS_STRING_SINGLE) {
+    DcmVRClass vr_class = dcm_dict_vr_class(element->vr);
+    if (vr_class != DCM_CLASS_STRING_MULTI &&
+        vr_class != DCM_CLASS_STRING_SINGLE) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                       "Data Element is not string",
                       "Element tag %08x has VR %s with no string value",
@@ -372,7 +373,7 @@ static bool element_check_capacity(DcmError **error,
 
 static bool dcm_element_validate(DcmError **error, DcmElement *element)
 {
-    DcmVRClass klass = dcm_dict_vr_class(element->vr);
+    DcmVRClass vr_class = dcm_dict_vr_class(element->vr);
 
     if (!element_check_not_assigned(error, element)) {
         return false;
@@ -387,8 +388,8 @@ static bool dcm_element_validate(DcmError **error, DcmElement *element)
         return false;
     }
 
-    if (klass == DCM_CLASS_NUMERIC_DECIMAL ||
-        klass == DCM_CLASS_NUMERIC_INTEGER) {
+    if (vr_class == DCM_CLASS_NUMERIC_DECIMAL ||
+        vr_class == DCM_CLASS_NUMERIC_INTEGER) {
         if (element->length != element->vm * dcm_dict_vr_size(element->vr)) {
             dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                           "Data Element validation failed",
@@ -398,7 +399,8 @@ static bool dcm_element_validate(DcmError **error, DcmElement *element)
         }
     }
 
-    if (klass == DCM_CLASS_STRING_MULTI || klass == DCM_CLASS_STRING_SINGLE) {
+    if (vr_class == DCM_CLASS_STRING_MULTI ||
+        vr_class == DCM_CLASS_STRING_SINGLE) {
         uint32_t capacity = dcm_dict_vr_capacity(element->vr);
         if (!element_check_capacity(error, element, capacity)) {
             return false;
@@ -445,8 +447,8 @@ bool dcm_element_set_value_string_multi(DcmError **error,
             element->value_pointer = value_copy;
         }
     } else {
-        DcmVRClass klass = dcm_dict_vr_class(element->vr);
-        if (klass != DCM_CLASS_STRING_MULTI) {
+        DcmVRClass vr_class = dcm_dict_vr_class(element->vr);
+        if (vr_class != DCM_CLASS_STRING_MULTI) {
             dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                           "Data Element is not multi-valued string",
                           "Element tag %08x has VR %s with only a string value",
@@ -547,8 +549,8 @@ bool dcm_element_set_value_string(DcmError **error,
         return false;
     }
 
-    DcmVRClass klass = dcm_dict_vr_class(element->vr);
-    if (klass == DCM_CLASS_STRING_MULTI) {
+    DcmVRClass vr_class = dcm_dict_vr_class(element->vr);
+    if (vr_class == DCM_CLASS_STRING_MULTI) {
         uint32_t vm;
         char **values = dcm_parse_character_string(error, value, &vm);
         if (values == NULL) {
@@ -626,9 +628,9 @@ static void value_to_value(DcmVR vr, int *result, int *value)
 static bool element_check_numeric(DcmError **error,
                                   const DcmElement *element)
 {
-    DcmVRClass klass = dcm_dict_vr_class(element->vr);
-    if (klass != DCM_CLASS_NUMERIC_DECIMAL &&
-        klass != DCM_CLASS_NUMERIC_INTEGER) {
+    DcmVRClass vr_class = dcm_dict_vr_class(element->vr);
+    if (vr_class != DCM_CLASS_NUMERIC_DECIMAL &&
+        vr_class != DCM_CLASS_NUMERIC_INTEGER) {
       dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                     "Data Element is not numeric",
                     "Element tag %08x is not numeric",
@@ -846,8 +848,8 @@ bool dcm_element_set_value_decimal(DcmError **error,
 static bool element_check_binary(DcmError **error,
                                  const DcmElement *element)
 {
-    DcmVRClass klass = dcm_dict_vr_class(element->vr);
-    if (klass != DCM_CLASS_BINARY) {
+    DcmVRClass vr_class = dcm_dict_vr_class(element->vr);
+    if (vr_class != DCM_CLASS_BINARY) {
       dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                     "Data Element is not binary",
                     "Element tag %08x does not have a binary value",
@@ -979,8 +981,8 @@ bool dcm_element_set_value(DcmError **error,
 static bool element_check_sequence(DcmError **error,
                                    const DcmElement *element)
 {
-    DcmVRClass klass = dcm_dict_vr_class(element->vr);
-    if (klass != DCM_CLASS_SEQUENCE) {
+    DcmVRClass vr_class = dcm_dict_vr_class(element->vr);
+    if (vr_class != DCM_CLASS_SEQUENCE) {
       dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                     "Data Element is not seeuence",
                     "Element tag %08x does not have a seeuence value",
@@ -1058,8 +1060,8 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
     }
     clone->length = element->length;
 
-    DcmVRClass klass = dcm_dict_vr_class(element->vr);
-    switch (klass) {
+    DcmVRClass vr_class = dcm_dict_vr_class(element->vr);
+    switch (vr_class) {
         case DCM_CLASS_SEQUENCE:
             if (!dcm_element_get_value_sequence(error, element, &from_seq)) {
                 dcm_element_destroy(clone);
@@ -1185,7 +1187,7 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
 
 char *dcm_element_value_to_string(const DcmElement *element)
 {
-    DcmVRClass klass = dcm_dict_vr_class(element->vr);
+    DcmVRClass vr_class = dcm_dict_vr_class(element->vr);
     size_t size = dcm_dict_vr_size(element->vr);
 
     char *result = NULL;
@@ -1201,7 +1203,7 @@ char *dcm_element_value_to_string(const DcmElement *element)
     }
 
     for (uint32_t index = 0; index < element->vm; index++) {
-        switch (klass) {
+        switch (vr_class) {
             case DCM_CLASS_NUMERIC_DECIMAL:
                 (void) dcm_element_get_value_decimal(NULL,
                                                      element,

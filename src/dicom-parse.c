@@ -562,7 +562,7 @@ static bool parse_element_body(DcmParseState *state,
                                uint32_t length,
                                int64_t *position)
 {
-    DcmVRClass klass = dcm_dict_vr_class(vr);
+    DcmVRClass vr_class = dcm_dict_vr_class(vr);
     size_t size = dcm_dict_vr_size(vr);
     char *value;
 
@@ -580,14 +580,14 @@ static bool parse_element_body(DcmParseState *state,
 
     dcm_log_debug("Read Data Element body '%08x'", tag);
 
-    switch (klass) {
+    switch (vr_class) {
         case DCM_CLASS_STRING_SINGLE:
         case DCM_CLASS_STRING_MULTI:
         case DCM_CLASS_NUMERIC_DECIMAL:
         case DCM_CLASS_NUMERIC_INTEGER:
         case DCM_CLASS_BINARY:
-            if (klass == DCM_CLASS_NUMERIC_DECIMAL ||
-                klass == DCM_CLASS_NUMERIC_INTEGER) {
+            if (vr_class == DCM_CLASS_NUMERIC_DECIMAL ||
+                vr_class == DCM_CLASS_NUMERIC_INTEGER) {
                 // all numeric classes have a size
                 if (length % size != 0) {
                     dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
@@ -625,8 +625,8 @@ static bool parse_element_body(DcmParseState *state,
                 }
             }
 
-            if (klass == DCM_CLASS_NUMERIC_DECIMAL ||
-                klass == DCM_CLASS_NUMERIC_INTEGER) {
+            if (vr_class == DCM_CLASS_NUMERIC_DECIMAL ||
+                vr_class == DCM_CLASS_NUMERIC_INTEGER) {
                 if (state->big_endian) {
                     byteswap(value, length, size);
                 }
