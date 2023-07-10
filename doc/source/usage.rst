@@ -189,7 +189,7 @@ sequence as the value of an element like this:
         handle error;
     }
 
-If this function succeeeds, ownership of the sequence object passes to the
+If this function succeeds, ownership of the sequence object passes to the
 element, i.e., when the element is destroyed, the sequence will also be
 destroyed.
 
