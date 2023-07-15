@@ -20,12 +20,12 @@ decoding the values of frame items.
 Design goals
 ++++++++++++
 
-The library inspires to
+The library aims to:
 
 * Provide a stable application binary interface (ABI)
 
-* Be highly portable and run on Linux, macOS, and Windows operating systems
-  with different architectures
+* Be highly portable and run on Linux, Unix, macOS, and Windows operating
+  systems with different architectures
 
 * Be dead simple and free of surprises
 
