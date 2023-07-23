@@ -190,12 +190,14 @@ executable(
   'tools/dcm-dump.c',
   dependencies : [libdicom_dep],
   install : true,
+  install_tag : 'bin',
 )
 executable(
   'dcm-getframe',
   'tools/dcm-getframe.c',
   dependencies : [libdicom_dep],
   install : true,
+  install_tag : 'bin',
 )
 
 dcm_dump_man = configure_file(
