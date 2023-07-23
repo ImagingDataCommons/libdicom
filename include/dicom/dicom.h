@@ -461,7 +461,7 @@ typedef enum _DcmVR {
  * DCM_CLASS_BINARY -- an uninterpreted array of bytes, length in the
  * element header
  *
- * DCM_CLASS_SEQUENCE -- Value Representation is a seqeunce
+ * DCM_CLASS_SEQUENCE -- Value Representation is a sequence
  */
 typedef enum _DcmVRClass {
     DCM_CLASS_ERROR,
