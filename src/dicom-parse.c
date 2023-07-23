@@ -263,7 +263,7 @@ static bool parse_element_header(DcmParseState *state,
     }
 
     if (state->implicit) {
-        // this can be an ambiguious VR, eg. pixeldata is allowed in implicit
+        // this can be an ambiguous VR, eg. pixeldata is allowed in implicit
         // mode and has to be disambiguated later from other tags
         *vr = dcm_vr_from_tag(*tag);
         if (*vr == DCM_VR_ERROR) {
