@@ -36,9 +36,9 @@ A `Data Element
 
 Every data element has a tag indicating its purpose. Tags are 32-bit
 unsigned ints with the top 16 bits indicating the group and the bottom 16
-the element. They are usually written in hexadecimal, perhaps 0x00400554,
-meaning element 0x554 of group 0x40, or as keywords, in this case
-`SpecimenUID`. You can get the tag from its corresponding keyword with
+the element. They are usually written in hexadecimal, perhaps ``0x00400554``,
+meaning element ``0x554`` of group ``0x40``, or as keywords, in this case
+``"SpecimenUID"``. You can get the tag from its corresponding keyword with
 :c:func:`dcm_dict_tag_from_keyword()`, or find the keyword from a tag with
 :c:func:`dcm_dict_keyword_from_tag()`.
 
