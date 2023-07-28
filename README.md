@@ -34,7 +34,7 @@ dcm-getframe -o tile.raw data/test_files/sm_image.dcm 12
 
 There's a sample Python binding here:
 
-https://github.com/ImagingDataCommons/pywsidicom
+https://github.com/ImagingDataCommons/pylibdicom
 
 ## Documentation
 

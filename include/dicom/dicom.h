@@ -446,31 +446,31 @@ typedef enum _DcmVR {
 /**
  * The general class of the value associated with a Value Representation.
  *
- * DCM_CLASS_STRING_MULTI -- one or more null-terminated strings, cannot
+ * DCM_VR_CLASS_STRING_MULTI -- one or more null-terminated strings, cannot
  * contain backslash
  *
- * DCM_CLASS_STRING_SINGLE -- a single null-terminated string, backslash
+ * DCM_VR_CLASS_STRING_SINGLE -- a single null-terminated string, backslash
  * allowed
  *
- * DCM_CLASS_NUMERIC_DECIMAL -- one or more binary floating point numeric
+ * DCM_VR_CLASS_NUMERIC_DECIMAL -- one or more binary floating point numeric
  * values, other fields give sizeof(type)
  *
- * DCM_CLASS_NUMERIC_INTEGER -- one or more binary integer numeric
+ * DCM_VR_CLASS_NUMERIC_INTEGER -- one or more binary integer numeric
  * values, other fields give sizeof(type)
  *
- * DCM_CLASS_BINARY -- an uninterpreted array of bytes, length in the
+ * DCM_VR_CLASS_BINARY -- an uninterpreted array of bytes, length in the
  * element header
  *
- * DCM_CLASS_SEQUENCE -- Value Representation is a sequence
+ * DCM_VR_CLASS_SEQUENCE -- Value Representation is a sequence
  */
 typedef enum _DcmVRClass {
-    DCM_CLASS_ERROR,
-    DCM_CLASS_STRING_MULTI,
-    DCM_CLASS_STRING_SINGLE,
-    DCM_CLASS_NUMERIC_DECIMAL,
-    DCM_CLASS_NUMERIC_INTEGER,
-    DCM_CLASS_BINARY,
-    DCM_CLASS_SEQUENCE
+    DCM_VR_CLASS_ERROR,
+    DCM_VR_CLASS_STRING_MULTI,
+    DCM_VR_CLASS_STRING_SINGLE,
+    DCM_VR_CLASS_NUMERIC_DECIMAL,
+    DCM_VR_CLASS_NUMERIC_INTEGER,
+    DCM_VR_CLASS_BINARY,
+    DCM_VR_CLASS_SEQUENCE
 } DcmVRClass;
 
 /**

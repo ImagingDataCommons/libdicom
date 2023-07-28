@@ -52,60 +52,60 @@ struct _DcmVRTable_hash_entry {
  *   enum       name  class                        size capacity  header_length
  */
 static const struct _DcmVRTable vr_table[] = {
-    {DCM_VR_AE, "AE", DCM_CLASS_STRING_MULTI,       0, DCM_CAPACITY_AE, 2},
-    {DCM_VR_AS, "AS", DCM_CLASS_STRING_SINGLE,      0, DCM_CAPACITY_AS, 2},
-    {DCM_VR_AT, "AT", DCM_CLASS_STRING_MULTI,       0, DCM_CAPACITY_AT, 2},
-    {DCM_VR_CS, "CS", DCM_CLASS_STRING_MULTI,       0, DCM_CAPACITY_CS, 2},
-    {DCM_VR_DA, "DA", DCM_CLASS_STRING_SINGLE,      0, DCM_CAPACITY_DA, 2},
-    {DCM_VR_DS, "DS", DCM_CLASS_STRING_MULTI,       0, DCM_CAPACITY_DS, 2},
-    {DCM_VR_DT, "DT", DCM_CLASS_STRING_MULTI,       0, DCM_CAPACITY_DT, 2},
+    {DCM_VR_AE, "AE", DCM_VR_CLASS_STRING_MULTI,       0, DCM_CAPACITY_AE, 2},
+    {DCM_VR_AS, "AS", DCM_VR_CLASS_STRING_SINGLE,      0, DCM_CAPACITY_AS, 2},
+    {DCM_VR_AT, "AT", DCM_VR_CLASS_STRING_MULTI,       0, DCM_CAPACITY_AT, 2},
+    {DCM_VR_CS, "CS", DCM_VR_CLASS_STRING_MULTI,       0, DCM_CAPACITY_CS, 2},
+    {DCM_VR_DA, "DA", DCM_VR_CLASS_STRING_SINGLE,      0, DCM_CAPACITY_DA, 2},
+    {DCM_VR_DS, "DS", DCM_VR_CLASS_STRING_MULTI,       0, DCM_CAPACITY_DS, 2},
+    {DCM_VR_DT, "DT", DCM_VR_CLASS_STRING_MULTI,       0, DCM_CAPACITY_DT, 2},
 
-    {DCM_VR_FL, "FL", DCM_CLASS_NUMERIC_DECIMAL,    4, 0,               2},
-    {DCM_VR_FD, "FD", DCM_CLASS_NUMERIC_DECIMAL,    8, 0,               2},
+    {DCM_VR_FL, "FL", DCM_VR_CLASS_NUMERIC_DECIMAL,    4, 0,               2},
+    {DCM_VR_FD, "FD", DCM_VR_CLASS_NUMERIC_DECIMAL,    8, 0,               2},
 
-    {DCM_VR_IS, "IS", DCM_CLASS_STRING_SINGLE,      0, DCM_CAPACITY_IS, 2},
-    {DCM_VR_LO, "LO", DCM_CLASS_STRING_SINGLE,      0, DCM_CAPACITY_LO, 2},
+    {DCM_VR_IS, "IS", DCM_VR_CLASS_STRING_SINGLE,      0, DCM_CAPACITY_IS, 2},
+    {DCM_VR_LO, "LO", DCM_VR_CLASS_STRING_SINGLE,      0, DCM_CAPACITY_LO, 2},
 
-    {DCM_VR_LT, "LT", DCM_CLASS_STRING_SINGLE,      0, DCM_CAPACITY_LT, 2},
+    {DCM_VR_LT, "LT", DCM_VR_CLASS_STRING_SINGLE,      0, DCM_CAPACITY_LT, 2},
 
-    {DCM_VR_OB, "OB", DCM_CLASS_BINARY,             1, 0,               4},
+    {DCM_VR_OB, "OB", DCM_VR_CLASS_BINARY,             1, 0,               4},
 
-    {DCM_VR_OD, "OD", DCM_CLASS_BINARY,             8, 0,               4},
-    {DCM_VR_OF, "OF", DCM_CLASS_BINARY,             4, 0,               4},
+    {DCM_VR_OD, "OD", DCM_VR_CLASS_BINARY,             8, 0,               4},
+    {DCM_VR_OF, "OF", DCM_VR_CLASS_BINARY,             4, 0,               4},
 
-    {DCM_VR_OW, "OW", DCM_CLASS_BINARY,             2, 0,               4},
+    {DCM_VR_OW, "OW", DCM_VR_CLASS_BINARY,             2, 0,               4},
 
-    {DCM_VR_PN, "PN", DCM_CLASS_STRING_MULTI,       0, DCM_CAPACITY_PN, 2},
-    {DCM_VR_SH, "SH", DCM_CLASS_STRING_MULTI,       0, DCM_CAPACITY_SH, 2},
+    {DCM_VR_PN, "PN", DCM_VR_CLASS_STRING_MULTI,       0, DCM_CAPACITY_PN, 2},
+    {DCM_VR_SH, "SH", DCM_VR_CLASS_STRING_MULTI,       0, DCM_CAPACITY_SH, 2},
 
-    {DCM_VR_SL, "SL", DCM_CLASS_NUMERIC_INTEGER,    4, 0,               2},
+    {DCM_VR_SL, "SL", DCM_VR_CLASS_NUMERIC_INTEGER,    4, 0,               2},
 
-    {DCM_VR_SQ, "SQ", DCM_CLASS_SEQUENCE,           0, 0,               4},
+    {DCM_VR_SQ, "SQ", DCM_VR_CLASS_SEQUENCE,           0, 0,               4},
 
-    {DCM_VR_SS, "SS", DCM_CLASS_NUMERIC_INTEGER,    2, 0,               2},
+    {DCM_VR_SS, "SS", DCM_VR_CLASS_NUMERIC_INTEGER,    2, 0,               2},
 
-    {DCM_VR_ST, "ST", DCM_CLASS_STRING_SINGLE,      0, DCM_CAPACITY_ST, 2},
+    {DCM_VR_ST, "ST", DCM_VR_CLASS_STRING_SINGLE,      0, DCM_CAPACITY_ST, 2},
 
-    {DCM_VR_TM, "TM", DCM_CLASS_STRING_MULTI,       0, DCM_CAPACITY_TM, 2},
+    {DCM_VR_TM, "TM", DCM_VR_CLASS_STRING_MULTI,       0, DCM_CAPACITY_TM, 2},
 
-    {DCM_VR_UI, "UI", DCM_CLASS_STRING_MULTI,       0, DCM_CAPACITY_UI, 2},
+    {DCM_VR_UI, "UI", DCM_VR_CLASS_STRING_MULTI,       0, DCM_CAPACITY_UI, 2},
 
-    {DCM_VR_UL, "UL", DCM_CLASS_NUMERIC_INTEGER,    4, 0,               2},
+    {DCM_VR_UL, "UL", DCM_VR_CLASS_NUMERIC_INTEGER,    4, 0,               2},
 
-    {DCM_VR_UN, "UN", DCM_CLASS_BINARY,             0, 0,               4},
+    {DCM_VR_UN, "UN", DCM_VR_CLASS_BINARY,             0, 0,               4},
 
-    {DCM_VR_US, "US", DCM_CLASS_NUMERIC_INTEGER,    2, 0,               2},
+    {DCM_VR_US, "US", DCM_VR_CLASS_NUMERIC_INTEGER,    2, 0,               2},
 
-    {DCM_VR_UT, "UT", DCM_CLASS_STRING_SINGLE,      0, DCM_CAPACITY_UT, 4},
-    {DCM_VR_UR, "UR", DCM_CLASS_STRING_SINGLE,      0, DCM_CAPACITY_UR, 4},
+    {DCM_VR_UT, "UT", DCM_VR_CLASS_STRING_SINGLE,      0, DCM_CAPACITY_UT, 4},
+    {DCM_VR_UR, "UR", DCM_VR_CLASS_STRING_SINGLE,      0, DCM_CAPACITY_UR, 4},
 
-    {DCM_VR_UC, "UC", DCM_CLASS_STRING_MULTI,       0, DCM_CAPACITY_UC, 4},
+    {DCM_VR_UC, "UC", DCM_VR_CLASS_STRING_MULTI,       0, DCM_CAPACITY_UC, 4},
 
-    {DCM_VR_OL, "OL", DCM_CLASS_BINARY,             0, 0,               4},
-    {DCM_VR_OV, "OV", DCM_CLASS_BINARY,             0, 0,               4},
+    {DCM_VR_OL, "OL", DCM_VR_CLASS_BINARY,             0, 0,               4},
+    {DCM_VR_OV, "OV", DCM_VR_CLASS_BINARY,             0, 0,               4},
 
-    {DCM_VR_SV, "SV", DCM_CLASS_NUMERIC_INTEGER,    8, 0,               4},
-    {DCM_VR_UV, "UV", DCM_CLASS_NUMERIC_INTEGER,    8, 0,               4},
+    {DCM_VR_SV, "SV", DCM_VR_CLASS_NUMERIC_INTEGER,    8, 0,               4},
+    {DCM_VR_UV, "UV", DCM_VR_CLASS_NUMERIC_INTEGER,    8, 0,               4},
 };
 
 static const int n_vrs = sizeof(vr_table) / sizeof(struct _DcmVRTable);
@@ -5212,7 +5212,7 @@ DcmVRClass dcm_dict_vr_class(DcmVR vr)
         return vr_table[(int)vr].vr_class;
     }
 
-    return DCM_CLASS_ERROR;
+    return DCM_VR_CLASS_ERROR;
 }
 
 

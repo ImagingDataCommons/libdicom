@@ -581,13 +581,13 @@ static bool parse_element_body(DcmParseState *state,
     dcm_log_debug("Read Data Element body '%08x'", tag);
 
     switch (vr_class) {
-        case DCM_CLASS_STRING_SINGLE:
-        case DCM_CLASS_STRING_MULTI:
-        case DCM_CLASS_NUMERIC_DECIMAL:
-        case DCM_CLASS_NUMERIC_INTEGER:
-        case DCM_CLASS_BINARY:
-            if (vr_class == DCM_CLASS_NUMERIC_DECIMAL ||
-                vr_class == DCM_CLASS_NUMERIC_INTEGER) {
+        case DCM_VR_CLASS_STRING_SINGLE:
+        case DCM_VR_CLASS_STRING_MULTI:
+        case DCM_VR_CLASS_NUMERIC_DECIMAL:
+        case DCM_VR_CLASS_NUMERIC_INTEGER:
+        case DCM_VR_CLASS_BINARY:
+            if (vr_class == DCM_VR_CLASS_NUMERIC_DECIMAL ||
+                vr_class == DCM_VR_CLASS_NUMERIC_INTEGER) {
                 // all numeric classes have a size
                 if (length % size != 0) {
                     dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
@@ -625,8 +625,8 @@ static bool parse_element_body(DcmParseState *state,
                 }
             }
 
-            if (vr_class == DCM_CLASS_NUMERIC_DECIMAL ||
-                vr_class == DCM_CLASS_NUMERIC_INTEGER) {
+            if (vr_class == DCM_VR_CLASS_NUMERIC_DECIMAL ||
+                vr_class == DCM_VR_CLASS_NUMERIC_INTEGER) {
                 if (state->big_endian) {
                     byteswap(value, length, size);
                 }
@@ -651,7 +651,7 @@ static bool parse_element_body(DcmParseState *state,
 
             break;
 
-        case DCM_CLASS_SEQUENCE:
+        case DCM_VR_CLASS_SEQUENCE:
             if (length == 0xFFFFFFFF) {
                 dcm_log_debug("Sequence of Data Element '%08x' "
                               "has undefined length.",
