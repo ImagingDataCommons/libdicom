@@ -679,7 +679,8 @@ START_TEST(test_file_sm_image_metadata)
     free(file_path);
     ck_assert_ptr_nonnull(filehandle);
 
-    const DcmDataSet *metadata = dcm_filehandle_get_metadata(NULL, filehandle);
+    const DcmDataSet *metadata =
+        dcm_filehandle_get_metadata_subset(NULL, filehandle);
     ck_assert_ptr_nonnull(metadata);
 
     // SOP Class UID
@@ -705,10 +706,11 @@ START_TEST(test_file_sm_image_frame)
     free(file_path);
     ck_assert_ptr_nonnull(filehandle);
 
-    const DcmDataSet *metadata = dcm_filehandle_get_metadata(NULL, filehandle);
+    const DcmDataSet *metadata =
+        dcm_filehandle_get_metadata_subset(NULL, filehandle);
     ck_assert_ptr_nonnull(metadata);
 
-    ck_assert_int_ne(dcm_filehandle_read_pixeldata(NULL, filehandle), 0);
+    ck_assert_int_ne(dcm_filehandle_prepare_read_frame(NULL, filehandle), 0);
 
     DcmFrame *frame = dcm_filehandle_read_frame(NULL,
                                                 filehandle,

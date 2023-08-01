@@ -757,8 +757,8 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
 }
 
 
-const DcmDataSet *dcm_filehandle_get_metadata(DcmError **error,
-                                              DcmFilehandle *filehandle)
+const DcmDataSet *dcm_filehandle_get_metadata_subset(DcmError **error,
+                                                     DcmFilehandle *filehandle)
 {
     // we stop on any of the tags that start a huge group that
     // would take a long time to parse
@@ -939,12 +939,12 @@ static bool read_skip_to_index(DcmError **error,
 }
 
 
-bool dcm_filehandle_read_pixeldata(DcmError **error,
-                                   DcmFilehandle *filehandle)
+bool dcm_filehandle_prepare_read_frame(DcmError **error,
+                                       DcmFilehandle *filehandle)
 {
     if (filehandle->offset_table == NULL) {
         // move to the first of our stop tags
-        if (dcm_filehandle_get_metadata(error, filehandle) == NULL) {
+        if (dcm_filehandle_get_metadata_subset(error, filehandle) == NULL) {
             return false;
         }
 
@@ -1030,7 +1030,7 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
 {
     dcm_log_debug("Read frame number #%u.", frame_number);
 
-    if (!dcm_filehandle_read_pixeldata(error, filehandle)) {
+    if (!dcm_filehandle_prepare_read_frame(error, filehandle)) {
         return NULL;
     }
 
@@ -1091,7 +1091,7 @@ DcmFrame *dcm_filehandle_read_frame_position(DcmError **error,
 {
     dcm_log_debug("Read frame position (%u, %u)", column, row);
 
-    if (!dcm_filehandle_read_pixeldata(error, filehandle)) {
+    if (!dcm_filehandle_prepare_read_frame(error, filehandle)) {
         return NULL;
     }
 

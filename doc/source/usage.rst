@@ -19,8 +19,8 @@ The `File Meta Information
 can be accessed via :c:func:`dcm_filehandle_get_file_meta()`.
 
 The principal metadata of the Data Set can be accessed via
-:c:func:`dcm_filehandle_get_metadata()`. This function will stop read on tags
-which are likely to take a long time to process.
+:c:func:`dcm_filehandle_get_metadata_subset()`. This function will stop
+read on tags which are likely to take a long time to process.
 
 You can read all metadata and control read stop using a sequence of calls to
 :c:func:`dcm_filehandle_read_metadata()`.
@@ -238,7 +238,8 @@ printing an element to standard output:
             return 1;
         }
 
-        const DcmDataSet *metadata = dcm_filehandle_get_metadata(&error, filehandle);
+        const DcmDataSet *metadata =
+            dcm_filehandle_get_metadata_subset(&error, filehandle);
         if (metadata == NULL) {
             dcm_error_log(error);
             dcm_error_clear(&error);

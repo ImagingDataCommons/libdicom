@@ -1701,10 +1701,14 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
                                          const uint32_t *stop_tags);
 
 /**
- * Get metadata from a File.
+ * Get a fast subset of metadata from a File.
  *
- * Gets the File's metadata and saves it in the File handle. Returns a
- * reference to this internal copy of the File metadata.
+ * Gets a subset of the File's metadata and saves it in the File handle.
+ * Returns a reference to this internal copy of the File metadata.
+ *
+ * The subset is the part of the DICOM metadata that can be read quickly. It
+ * is missing tags such as PerFrameFunctionalGroupSequence. Use
+ * dcm_filehandle_read_metadata() if you need all file metadata.
  *
  * The return result must not be destroyed. Make a clone of it with
  * :c:func:`dcm_dataset_clone()` if you need it to remain valid after
@@ -1721,8 +1725,8 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
  * :return: metadata
  */
 DCM_EXTERN
-const DcmDataSet *dcm_filehandle_get_metadata(DcmError **error,
-                                              DcmFilehandle *filehandle);
+const DcmDataSet *dcm_filehandle_get_metadata_subset(DcmError **error,
+                                                     DcmFilehandle *filehandle);
 
 /**
  * Read everything necessary to fetch frames from the file.
@@ -1747,8 +1751,8 @@ const DcmDataSet *dcm_filehandle_get_metadata(DcmError **error,
  * :return: true on success
  */
 DCM_EXTERN
-bool dcm_filehandle_read_pixeldata(DcmError **error,
-                                   DcmFilehandle *filehandle);
+bool dcm_filehandle_prepare_read_frame(DcmError **error,
+                                       DcmFilehandle *filehandle);
 
 /**
  * Read an individual Frame from a File.
