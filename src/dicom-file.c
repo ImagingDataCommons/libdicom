@@ -1275,7 +1275,7 @@ static bool print_element_create(DcmError **error,
            filehandle->indent * 2,
            "                                   ",
            (tag & 0xffff0000) >> 16,
-           tag >> 16);
+           tag & 0xffff);
 
     if (dcm_is_public_tag(tag)) {
         printf("%s ", dcm_dict_keyword_from_tag(tag));

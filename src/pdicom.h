@@ -67,6 +67,7 @@ int dcm_dict_vr_header_length(DcmVR vr);
 
 #define DCM_SWITCH_NUMERIC(VR, OPERATION) \
     switch (VR) { \
+        case DCM_VR_AT: OPERATION(uint16_t); break; \
         case DCM_VR_FL: OPERATION(float); break; \
         case DCM_VR_FD: OPERATION(double); break; \
         case DCM_VR_SL: OPERATION(int32_t); break; \

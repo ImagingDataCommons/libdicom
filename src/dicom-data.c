@@ -1223,6 +1223,11 @@ char *dcm_element_value_to_string(const DcmElement *element)
                     result = dcm_printf_append(result,
                                                "%"PRIu64,
                                                (uint64_t)i);
+                } else if (element->vr == DCM_VR_AT) {
+                    // a ushort with half of a tag
+                    result = dcm_printf_append(result,
+                                               "%04x",
+                                               i);
                 } else {
                     result = dcm_printf_append(result, "%"PRId64, i);
                 }
@@ -1268,6 +1273,23 @@ char *dcm_element_value_to_string(const DcmElement *element)
             } else {
                 result = dcm_printf_append(result, ", ");
             }
+        }
+    }
+
+    // AT is a two-element ushort array holding a DICOM tag ... print the tag
+    // name if we can
+    if (element->vr == DCM_VR_AT && element->vm == 2) {
+        int64_t grp;
+        int64_t ele;
+        (void) dcm_element_get_value_integer(NULL, element, 0, &grp);
+        (void) dcm_element_get_value_integer(NULL, element, 1, &ele);
+
+        uint32_t tag = grp << 16 | ele;
+
+        const char *keyword = dcm_dict_keyword_from_tag(tag);
+
+        if (keyword) {
+            result = dcm_printf_append(result, " (%s)", keyword);
         }
     }
 
