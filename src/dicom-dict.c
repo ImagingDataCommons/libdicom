@@ -304,6 +304,7 @@ static const struct _DcmAttribute attribute_table[] = {
     {0X00041512, DCM_VR_TAG_UI, "ReferencedTransferSyntaxUIDInFile"},
     {0X0004151A, DCM_VR_TAG_UI, "ReferencedRelatedGeneralSOPClassUIDInFile"},
     {0X00041600, DCM_VR_TAG_UL, "NumberOfReferences"},
+    {0X00080000, DCM_VR_TAG_UL, "GenericGroupLength"},
     {0X00080001, DCM_VR_TAG_UL, "LengthToEnd"},
     {0X00080005, DCM_VR_TAG_CS, "SpecificCharacterSet"},
     {0X00080006, DCM_VR_TAG_SQ, "LanguageCodeSequence"},
@@ -523,6 +524,7 @@ static const struct _DcmAttribute attribute_table[] = {
     {0X00089458, DCM_VR_TAG_SQ, "FrameDisplaySequence"},
     {0X00089459, DCM_VR_TAG_FL, "RecommendedDisplayFrameRateInFloat"},
     {0X00089460, DCM_VR_TAG_CS, "SkipFrameRangeFlag"},
+    {0X00090010, DCM_VR_TAG_LO, "PrivateCreator"},
     {0X00100010, DCM_VR_TAG_PN, "PatientName"},
     {0X00100020, DCM_VR_TAG_LO, "PatientID"},
     {0X00100021, DCM_VR_TAG_LO, "IssuerOfPatientID"},
@@ -5280,12 +5282,20 @@ static const struct _DcmAttribute *attribute_from_tag(uint32_t tag)
 
     dcm_init();
 
+    // tags with element number 0 are generic group length tags ... map all of
+    // these (except 0000,0000) to tag 0008,0000 (GenericGroupLength)
+    if (tag != 0 &&
+        (tag & 0xffff) == 0) {
+        tag = 0x00080000;
+    }
+
     HASH_FIND_INT(attribute_from_tag_dict, &tag, entry);
 
     return (const struct _DcmAttribute *)entry;
 }
 
 
+// this will also fail for unknown or retired public tags
 bool dcm_is_public_tag(uint32_t tag)
 {
     return attribute_from_tag(tag) != NULL;
@@ -5311,25 +5321,32 @@ DcmVR dcm_vr_from_tag(uint32_t tag)
 {
     const struct _DcmAttribute *attribute;
 
-    if ((attribute = attribute_from_tag(tag)) &&
-        dcm_dict_str_from_vr((DcmVR) attribute->vr_tag)) {
-        return (DcmVR) attribute->vr_tag;
+    if (!(attribute = attribute_from_tag(tag))) {
+        return DCM_VR_ERROR;
     }
 
-    return DCM_VR_ERROR;
+    return (DcmVR) attribute->vr_tag;
 }
 
 
 bool dcm_is_valid_vr_for_tag(DcmVR vr, uint32_t tag)
 {
-    const struct _DcmAttribute *attribute = attribute_from_tag(tag);
+    // always fail for illegal VRs
+    if (vr < 0 || vr >= DCM_VR_LAST) {
+        return false;
+    }
 
+    // private tags are unknown to us and can have any legal VR
+    if (dcm_is_private_tag(tag)) {
+        return true;
+    }
+
+    const struct _DcmAttribute *attribute = attribute_from_tag(tag);
     if (attribute == NULL) {
-        // unknown tag
-        return false;
-    } else if (vr < 0 || vr >= DCM_VR_LAST) {
-        // not a VR
-        return false;
+        // unknown public tag ... we don't include retired tags in our 
+        // dictionary, so we can't check them, but we don't want to fail 
+        // for them either
+        return true;
     } else if (vr == (DcmVR) attribute->vr_tag) {
         // trivially equal
         return true;

@@ -26,7 +26,18 @@
 
 void *dcm_calloc(DcmError **error, size_t n, size_t size)
 {
-    void *result = calloc(n, size);
+    /* malloc(0) behaviour depends on the platform heap implementation. It can 
+     * return either a valid pointer that can't be dereferenced, or NULL.
+     *
+     * We need to be able to support dcm_calloc(0), since VM == 0 is allowed,
+     * but we can't return NULL in this case, since that's how we detect
+     * out of memory.
+     *
+     * Instead, force n == 0 to n == 1. This means we will always get a valid
+     * pointer from calloc, a NULL return always means out of memory, and we 
+     * can always free the result.
+     */
+    void *result = calloc(n == 0 ? 1 : n, size);
     if (!result) {
         dcm_error_set(error, DCM_ERROR_CODE_NOMEM,
                       "Out of memory",
