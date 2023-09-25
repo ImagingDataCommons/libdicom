@@ -46,7 +46,7 @@ jobs:
 
     - name: Install build and test dependencies (Windows)
       if: startsWith(matrix.os, 'windows')
-      run: pip install meson
+      run: pip install meson ninja
 
     - name: Build and install library
       shell: bash
