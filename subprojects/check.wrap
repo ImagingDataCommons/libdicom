@@ -3,10 +3,11 @@ directory = check-0.15.2
 source_url = https://github.com/libcheck/check/archive/0.15.2.tar.gz
 source_filename = check-0.15.2.tar.gz
 source_hash = 998d355294bb94072f40584272cf4424571c396c631620ce463f6ea97aa67d2e
-patch_filename = check_0.15.2-3_patch.zip
-patch_url = https://wrapdb.mesonbuild.com/v2/check_0.15.2-3/get_patch
-patch_hash = 35bfaa759358ebf2cd030a9faa4d36f7d04e5c8d6f57563f6da12ccc1e1b5e3b
-wrapdb_version = 0.15.2-3
+patch_filename = check_0.15.2-4_patch.zip
+patch_url = https://wrapdb.mesonbuild.com/v2/check_0.15.2-4/get_patch
+patch_hash = 3e998eb0c475613e890c9e006420fb6da5dcee27aa2ba3f331f9253648691743
+source_fallback_url = https://github.com/mesonbuild/wrapdb/releases/download/check_0.15.2-4/check-0.15.2.tar.gz
+wrapdb_version = 0.15.2-4
 
 [provide]
 check = check_dep
