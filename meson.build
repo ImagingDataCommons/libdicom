@@ -7,8 +7,7 @@ project(
     'warning_level=2',
   ],
   license : 'MIT',
-  # "check" needs 0.54.1
-  meson_version : '>=0.54.1',
+  meson_version : '>=0.50',
   version : '1.0.0'
 )
 if not meson.is_subproject()
