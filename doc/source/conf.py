@@ -14,6 +14,7 @@ from glob import glob
 import os
 import sys
 from hawkmoth.util import readthedocs
+from hawkmoth.util import compiler
 from clang.cindex import Config as clang_config
 
 # -- Project information -----------------------------------------------------
@@ -21,7 +22,6 @@ from clang.cindex import Config as clang_config
 project = 'libdicom'
 copyright = '2021, Markus D. Herrmann'
 author = 'Markus D. Herrmann'
-
 
 # -- General configuration ---------------------------------------------------
 
@@ -57,8 +57,11 @@ html_static_path = ['_static']
 
 # -- Hawkmoth extension ------------------------------------------------------
 
-cautodoc_root = os.path.abspath('../../include')
+hawkmoth_root = os.path.abspath('../../include')
 readthedocs.clang_setup()
+hawkmoth_clang = compiler.get_include_args()
+# we need build to get version.h
+hawkmoth_clang.append(f"-I{os.path.abspath('../../build')}")
 if sys.platform == 'darwin':
     lib_search_dirs = [
         '/usr/lib',

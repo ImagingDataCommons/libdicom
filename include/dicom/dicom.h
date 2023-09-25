@@ -7,11 +7,6 @@
 #ifndef DCM_INCLUDED
 #define DCM_INCLUDED
 
-#if defined(_WIN32) && !defined(__GNUC__)
-#include <BaseTsd.h>
-typedef SSIZE_T ssize_t;
-#endif
-
 #ifdef _WIN32
 #if DCM_STATIC
 #define DCM_EXTERN extern
@@ -101,6 +96,11 @@ typedef SSIZE_T ssize_t;
 #define DCM_CAPACITY_TM 14
 
 /**
+ * Maximum number of characters in values with Value Representation UC.
+ */
+#define DCM_CAPACITY_UC 4294967294
+
+/**
  * Maximum number of characters in values with Value Representation UI.
  */
 #define DCM_CAPACITY_UI 64
@@ -115,35 +115,9 @@ typedef SSIZE_T ssize_t;
  */
 #define DCM_CAPACITY_UT 4294967294
 
-/**
- * Part10 file
- */
-typedef struct _DcmFilehandle DcmFilehandle;
-
-/**
- * Data Element
- */
-typedef struct _DcmElement DcmElement;
-
-/**
- * Data Set
- */
-typedef struct _DcmDataSet DcmDataSet;
-
-/**
- * Sequence of Data Set Items
+/* We need forward references for these types.
  */
 typedef struct _DcmSequence DcmSequence;
-
-/**
- * Frame Item of Pixel Data Element
- */
-typedef struct _DcmFrame DcmFrame;
-
-/**
- * Basic Offset Table (BOT) Item of Pixel Data Element
- */
-typedef struct _DcmBOT DcmBOT;
 
 /**
  * Start up libdicom.
@@ -161,10 +135,25 @@ DCM_EXTERN
 DCM_CONSTRUCTOR
 void dcm_init(void);
 
+/* Our copy of getopt, since non-glibc platforms are missing this.
+ * Used by our tools.
+ */
+DCM_EXTERN
+char *dcm_optarg;
+DCM_EXTERN
+int dcm_optind, dcm_opterr, dcm_optopt, dcm_optreset;
+DCM_EXTERN
+int dcm_getopt(int nargc, char * const nargv[], const char *ostr);
+
+/**
+ * Error return object.
+ */
+typedef struct _DcmError DcmError;
+
 /**
  * Enumeration of error codes.
  */
-enum _DcmErrorCode {
+typedef enum _DcmErrorCode {
     /** Out of memory */
     DCM_ERROR_CODE_NOMEM = 1,
     /** Invalid parameter */
@@ -173,66 +162,7 @@ enum _DcmErrorCode {
     DCM_ERROR_CODE_PARSE = 3,
     /** IO error */
     DCM_ERROR_CODE_IO = 4,
-};
-
-/**
- * Error codes
- */
-typedef enum _DcmErrorCode DcmErrorCode;
-
-/**
- * An enum of Value Representations. 
- *
- * Value Representations which are not known to libdicom will be coded as
- * DCM_VR_ERROR (unknown Value Representation).
- *
- * Note to maintainers: this enum must match the table in dicom-dict.c, and
- * the DcmVRTag enum. As the DICOM standard evolves, numbering must be
- * maintained for ABI compatibility.
- */
-typedef enum _DcmVR {
-    // error value, returned for eg. unknown SR strings
-    DCM_VR_ERROR = -1,
-
-    // allowed VRs for DcmElement
-    DCM_VR_AE = 0,
-    DCM_VR_AS,
-    DCM_VR_AT,
-    DCM_VR_CS,
-    DCM_VR_DA,
-    DCM_VR_DS,
-    DCM_VR_DT,
-    DCM_VR_FL,
-    DCM_VR_FD,
-    DCM_VR_IS,
-    DCM_VR_LO,
-    DCM_VR_LT,
-    DCM_VR_OB,
-    DCM_VR_OD,
-    DCM_VR_OF,
-    DCM_VR_OW,
-    DCM_VR_PN,
-    DCM_VR_SH,
-    DCM_VR_SL,
-    DCM_VR_SQ,
-    DCM_VR_SS,
-    DCM_VR_ST,
-    DCM_VR_TM,
-    DCM_VR_UI,
-    DCM_VR_UL,
-    DCM_VR_UN,
-    DCM_VR_US,
-    DCM_VR_UT,
-    DCM_VR_UR,
-    DCM_VR_UC,
-    DCM_VR_OL,
-    DCM_VR_OV,
-    DCM_VR_SV,
-    DCM_VR_UV,
-
-    // used to check enums for range errors, add new VRs before this
-    DCM_VR_LAST
-} DcmVR;
+} DcmErrorCode;
 
 /**
  * Convert an error code to a human-readable string.
@@ -253,11 +183,6 @@ const char *dcm_error_code_str(DcmErrorCode code);
  */
 DCM_EXTERN
 const char *dcm_error_code_name(DcmErrorCode code);
-
-/**
- * Error return object.
- */
-typedef struct _DcmError DcmError;
 
 /**
  * Set an error.
@@ -286,7 +211,7 @@ DCM_EXTERN
 void dcm_error_clear(DcmError **error);
 
 /**
-* Get a summary of the error.
+ * Get a summary of the error.
  *
  * Do not free this result. The pointer will be valid as long as error is
  * valid.
@@ -330,9 +255,46 @@ DCM_EXTERN
 void dcm_error_log(DcmError *error);
 
 /**
+ * Print an error message to stderr.
+ *
+ * :param error: Error object
+ */
+DCM_EXTERN
+void dcm_error_print(DcmError *error);
+
+
+/**
+ * Free an allocated memory area.
+ *
+ * Any memory allocated by libdicom and returned to the calling program
+ * should be freed with this.
+ *
+ * :param pointer: Memory area to free
+ */
+DCM_EXTERN
+void dcm_free(void *pointer);
+
+/**
+ * Allocate and zero an area of memory.
+ *
+ * Any memory which you pass to libdicom and which you ask libdicom to manage
+ * with a "steal" flag should be allcoatyed with one of the libdicom memory
+ * allocators.
+ *
+ * :param error: Pointer to error object
+ * :param n: Number of items to allocate
+ * :param size: Size of each item in bytes
+ *
+ * :return: Pointer to memory area
+ */
+DCM_EXTERN
+void *dcm_calloc(DcmError **error, uint64_t n, uint64_t size);
+
+
+/**
  * Enumeration of log levels
  */
-enum _DcmLogLevel {
+typedef enum _DcmLogLevel {
     /** Critical */
     DCM_LOG_CRITICAL = 50,
     /** Error */
@@ -345,18 +307,34 @@ enum _DcmLogLevel {
     DCM_LOG_DEBUG = 10,
     /** Not set (no logging) */
     DCM_LOG_NOTSET = 0,
-};
+} DcmLogLevel;
 
 /**
- * Log level
- */
-typedef enum _DcmLogLevel DcmLogLevel;
-
-/**
- * Global variable to set log level.
+ * Set the log level.
+ *
+ * :param log_level: New log level.
+ * :return: previous log level
  */
 DCM_EXTERN
-DcmLogLevel dcm_log_level;
+DcmLogLevel dcm_log_set_level(DcmLogLevel log_level);
+
+/**
+ * Log function. See dcm_log_set_logf().
+ */
+typedef void (*DcmLogf)(const char *level, const char *format, va_list args);
+
+/**
+ * Set the log function.
+ *
+ * This function will be used to log any error or warning messages from the
+ * library. The default DcmLogf function prints messages to stderr. Set to
+ * NULL to disable all logging.
+ *
+ * :param logf: New log function.
+ * :return: previous log function
+ */
+DCM_EXTERN
+DcmLogf dcm_log_set_logf(DcmLogf logf);
 
 /**
  * Write critical log message to stderr stream.
@@ -412,6 +390,100 @@ DCM_EXTERN
 const char *dcm_get_version(void);
 
 /**
+ * An enum of Value Representations.
+ *
+ * Value Representations which are not known to libdicom will be coded as
+ * DCM_VR_ERROR (unknown Value Representation).
+ *
+ * Note to maintainers: this enum must match the table in dicom-dict.c, and
+ * the DcmVRTag enum. As the DICOM standard evolves, numbering must be
+ * maintained for ABI compatibility.
+ */
+typedef enum _DcmVR {
+    // error value, returned for eg. unknown SR strings
+    DCM_VR_ERROR = -1,
+
+    // allowed VRs for DcmElement
+    DCM_VR_AE = 0,
+    DCM_VR_AS,
+    DCM_VR_AT,
+    DCM_VR_CS,
+    DCM_VR_DA,
+    DCM_VR_DS,
+    DCM_VR_DT,
+    DCM_VR_FL,
+    DCM_VR_FD,
+    DCM_VR_IS,
+    DCM_VR_LO,
+    DCM_VR_LT,
+    DCM_VR_OB,
+    DCM_VR_OD,
+    DCM_VR_OF,
+    DCM_VR_OW,
+    DCM_VR_PN,
+    DCM_VR_SH,
+    DCM_VR_SL,
+    DCM_VR_SQ,
+    DCM_VR_SS,
+    DCM_VR_ST,
+    DCM_VR_TM,
+    DCM_VR_UI,
+    DCM_VR_UL,
+    DCM_VR_UN,
+    DCM_VR_US,
+    DCM_VR_UT,
+    DCM_VR_UR,
+    DCM_VR_UC,
+    DCM_VR_OL,
+    DCM_VR_OV,
+    DCM_VR_SV,
+    DCM_VR_UV,
+
+    // used to check enums for range errors, add new VRs before this
+    DCM_VR_LAST
+} DcmVR;
+
+/**
+ * The general class of the value associated with a Value Representation.
+ *
+ * DCM_VR_CLASS_STRING_MULTI -- one or more null-terminated strings, cannot
+ * contain backslash
+ *
+ * DCM_VR_CLASS_STRING_SINGLE -- a single null-terminated string, backslash
+ * allowed
+ *
+ * DCM_VR_CLASS_NUMERIC_DECIMAL -- one or more binary floating point numeric
+ * values, other fields give sizeof(type)
+ *
+ * DCM_VR_CLASS_NUMERIC_INTEGER -- one or more binary integer numeric
+ * values, other fields give sizeof(type)
+ *
+ * DCM_VR_CLASS_BINARY -- an uninterpreted array of bytes, length in the
+ * element header
+ *
+ * DCM_VR_CLASS_SEQUENCE -- Value Representation is a sequence
+ */
+typedef enum _DcmVRClass {
+    DCM_VR_CLASS_ERROR,
+    DCM_VR_CLASS_STRING_MULTI,
+    DCM_VR_CLASS_STRING_SINGLE,
+    DCM_VR_CLASS_NUMERIC_DECIMAL,
+    DCM_VR_CLASS_NUMERIC_INTEGER,
+    DCM_VR_CLASS_BINARY,
+    DCM_VR_CLASS_SEQUENCE
+} DcmVRClass;
+
+/**
+ * Find the general class for a particular Value Representation.
+ *
+ * :param vr: The Value Representation
+ *
+ * :return: The general class of that Value Representation
+ */
+DCM_EXTERN
+DcmVRClass dcm_dict_vr_class(DcmVR vr);
+
+/**
  * Turn a string Value Representation into an enum value.
  *
  * :param vr: The Value Representation as a two character string.
@@ -433,7 +505,7 @@ const char *dcm_dict_str_from_vr(DcmVR vr);
 
 /**
  * Look up the Keyword of an Attribute in the Dictionary.
- * 
+ *
  * Returns NULL if the tag is not recognised.
  *
  * :param tag: Attribute Tag
@@ -456,9 +528,9 @@ DCM_EXTERN
 uint32_t dcm_dict_tag_from_keyword(const char *keyword);
 
 /**
- * Find the Value Representation for a tag. 
+ * Find the Value Representation for a tag.
  *
- * This will return DCM_VR_ERROR if the tag is unknown, or does not have a 
+ * This will return DCM_VR_ERROR if the tag is unknown, or does not have a
  * unique Value Representation.
  *
  * :param tag: Attribute Tag
@@ -532,8 +604,9 @@ bool dcm_is_encapsulated_transfer_syntax(const char *transfer_syntax_uid);
 
 
 /**
- * Data Element
+ * Data Element.
  */
+typedef struct _DcmElement DcmElement;
 
 /**
  * Create a Data Element for a tag.
@@ -638,7 +711,7 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element);
  * :param error: Pointer to error object
  * :param element: Pointer to Data Element
  * :param index: Zero-based index of value within the Data Element
- * :param value: Pointer to return location for value 
+ * :param value: Pointer to return location for value
  *
  * :return: true on success
  */
@@ -673,7 +746,7 @@ bool dcm_element_set_value_string(DcmError **error,
                                   bool steal);
 
 /**
-* Set the value of a Data Element to an array of character strings.
+ * Set the value of a Data Element to an array of character strings.
  *
  * The Data Element must have a Tag that allows for a
  * character string Value Representation and for a
@@ -707,7 +780,7 @@ bool dcm_element_set_value_string_multi(DcmError **error,
  * :param error: Pointer to error object
  * :param element: Pointer to Data Element
  * :param index: Zero-based index of value within the Data Element
- * :param value: Pointer to return location for value 
+ * :param value: Pointer to return location for value
  *
  * :return: true on success
  */
@@ -719,7 +792,7 @@ bool dcm_element_get_value_integer(DcmError **error,
 
 /**
  * Set the value of a Data Element to an integer.
- * 
+ *
  * The Data Element must have a Tag that allows for a
  * integer Value Representation.
  * If that is not the case, the function will fail.
@@ -737,7 +810,7 @@ bool dcm_element_set_value_integer(DcmError **error,
 
 /**
  * Set the value of a Data Element to a number.
- * 
+ *
  * The Data Element must have a Tag that allows for a
  * numeric Value Representation.
  * If that is not the case, the function will fail.
@@ -768,25 +841,25 @@ bool dcm_element_set_value_numeric_multi(DcmError **error,
 /**
  * Get a floating-point value from a Data Element.
  *
- * The Data Element Value Reepresentation may be either single- or 
+ * The Data Element Value Reepresentation may be either single- or
  * double-precision floating point.
  *
  * :param error: Pointer to error object
  * :param element: Pointer to Data Element
  * :param index: Zero-based index of value within the Data Element
- * :param value: Pointer to return location for value 
+ * :param value: Pointer to return location for value
  *
  * :return: true on success
  */
 DCM_EXTERN
-bool dcm_element_get_value_floatingpoint(DcmError **error,
-                                         const DcmElement *element,
-                                         uint32_t index,
-                                         double *value);
+bool dcm_element_get_value_decimal(DcmError **error,
+                                   const DcmElement *element,
+                                   uint32_t index,
+                                   double *value);
 
 /**
  * Set the value of a Data Element to a floating-point.
- * 
+ *
  * The Data Element must have a Tag that allows for a
  * floating-point Value Representation.
  * If that is not the case, the function will fail.
@@ -798,9 +871,9 @@ bool dcm_element_get_value_floatingpoint(DcmError **error,
  * :return: true on success
  */
 DCM_EXTERN
-bool dcm_element_set_value_floatingpoint(DcmError **error,
-                                         DcmElement *element,
-                                         double value);
+bool dcm_element_set_value_decimal(DcmError **error,
+                                   DcmElement *element,
+                                   double value);
 
 /**
  * Get a binary value from a Data Element.
@@ -809,21 +882,20 @@ bool dcm_element_set_value_floatingpoint(DcmError **error,
  *
  * :param error: Pointer to error object
  * :param element: Pointer to Data Element
- * :param value: Pointer to return location for value 
+ * :param value: Pointer to return location for value
  *
  * :return: true on success
  */
 DCM_EXTERN
 bool dcm_element_get_value_binary(DcmError **error,
                                   const DcmElement *element,
-                                  const char **value);
+                                  const void **value);
 
 /**
  * Set the value of a Data Element to binary data.
- * 
- * The Data Element must have a Tag that allows for a
- * binary Value Representation.
- * If that is not the case, the function will fail.
+ *
+ * The Data Element must have a Tag that allows for a binary Value
+ * Representation. If that is not the case, the function will fail.
  *
  * On success, if `steal` is true, ownership of `value` passes to
  * `element`, i.e. it will be freed when `element` is destroyed. If `steal` is
@@ -840,16 +912,33 @@ bool dcm_element_get_value_binary(DcmError **error,
 DCM_EXTERN
 bool dcm_element_set_value_binary(DcmError **error,
                                   DcmElement *element,
-                                  char *value,
+                                  void *value,
                                   uint32_t length,
                                   bool steal);
+
+/* Set a value for an Element from a generic byte buffer. The byte buffer must
+ * have been correctly formatted for the VR of this Element.
+ *
+ * :param error: Pointer to error object
+ * :param element: Pointer to Data Element
+ * :param value: Pointer to value
+ * :param length: Length in bytes of the value
+ * :param steal: if true, ownership of the value passes to element
+ *
+ * :return: true on success
+ */
+bool dcm_element_set_value(DcmError **error,
+                           DcmElement *element,
+                           char *value,
+                           uint32_t length,
+                           bool steal);
 
 /**
  * Get a sequence value from a Data Element.
  *
  * :param error: Pointer to error object
  * :param element: Pointer to Data Element
- * :param value: Pointer to return location for value 
+ * :param value: Pointer to return location for value
  *
  * :return: true on success
  */
@@ -858,10 +947,9 @@ bool dcm_element_get_value_sequence(DcmError **error,
                                     const DcmElement *element,
                                     DcmSequence **value);
 
-
 /**
  * Set the value of a Data Element to a Sequence.
- * 
+ *
  * The Data Element must have a Tag that allows for
  * Value Representation ``"SQ"``.
  * If that is not the case, the function will fail.
@@ -878,6 +966,16 @@ DCM_EXTERN
 bool dcm_element_set_value_sequence(DcmError **error,
                                     DcmElement *element,
                                     DcmSequence *value);
+
+/**
+ * Make a string suitable for display to a user from the value of an element.
+ *
+ * The return result must be freed with free(). The result may be NULL.
+ *
+ * :return: string to display
+ */
+DCM_EXTERN
+char *dcm_element_value_to_string(const DcmElement *element);
 
 /**
  * Print a Data Element.
@@ -900,6 +998,7 @@ void dcm_element_destroy(DcmElement *element);
 /**
  * Data Set
  */
+typedef struct _DcmDataSet DcmDataSet;
 
 /**
  * Create an empty Data Set.
@@ -977,15 +1076,24 @@ DcmElement *dcm_dataset_get_clone(DcmError **error,
 /**
  * Iterate over Data Elements in a Data Set.
  *
- * Does not sort Data Elements, but iterates over them in the order in which
- * they were originally inserted into the Data Set.
+ * The user function should return true to continue looping, or false to
+ * terminate the loop early.
  *
- * :param dataset: Pointer to Data Set
+ * The result is true if the whole Data Set returned true, or false if one
+ * call requested early termination.
+ *
+ * The function must not modify the Data Set.
+ *
+ * :param seq: Pointer to Data Set
  * :param fn: Pointer to function that should be called for each Data Element
+ * :param client: Client data for function
+ *
+ * :return: true if all functions return true
  */
 DCM_EXTERN
-void dcm_dataset_foreach(const DcmDataSet *dataset,
-                         void (*fn)(const DcmElement *element));
+bool dcm_dataset_foreach(const DcmDataSet *dataset,
+                         bool (*fn)(const DcmElement *element, void *client),
+                         void *client);
 
 /**
  * Fetch a Data Element from a Data Set, or NULL if not present.
@@ -1025,7 +1133,8 @@ uint32_t dcm_dataset_count(const DcmDataSet *dataset);
  * the copy operation fails.
  */
 DCM_EXTERN
-void dcm_dataset_copy_tags(const DcmDataSet *dataset, uint32_t *tags,
+void dcm_dataset_copy_tags(const DcmDataSet *dataset,
+                           uint32_t *tags,
                            uint32_t n);
 
 /**
@@ -1070,8 +1179,8 @@ void dcm_dataset_destroy(DcmDataSet *dataset);
  */
 
 /**
- * Create a Sequence, i.e., a collection of Data Set items that represent the
- * value of a Data Element with Value Representation SQ (Sequence).
+ * Create a Sequence, i.e., an ordered list of Data Set items that represent
+ * the value of a Data Element with Value Representation SQ (Sequence).
  *
  * Note that created object represents the value of a Data Element rather
  * than a Data Element itself.
@@ -1112,14 +1221,27 @@ DcmDataSet *dcm_sequence_get(DcmError **error,
                              const DcmSequence *seq, uint32_t index);
 
 /**
- * Iterate over Data Set items in a Sequence.
+ * Iterate over Data Sets in a Sequence.
+ *
+ * The user function should return true to continue looping, or false to
+ * terminate the loop early.
+ *
+ * The result is true if the whole sequence returned true, or false if one
+ * call requested early termination.
+ *
+ * The function must not modify the seqeucence.
  *
  * :param seq: Pointer to Sequence
- * :param fn: Pointer to function that should be called for each Data Set item
+ * :param fn: Pointer to function that should be called for each Data Set
+ * :param client: Client data for function
+ *
+ * :return: Pointer to Data Set item
  */
 DCM_EXTERN
-void dcm_sequence_foreach(const DcmSequence *seq,
-                          void (*fn)(const DcmDataSet *item));
+bool dcm_sequence_foreach(const DcmSequence *seq,
+                          bool (*fn)(const DcmDataSet *dataset,
+                              uint32_t index, void *client),
+                          void *client);
 
 /**
  * Remove a Data Set item from a Sequence.
@@ -1171,11 +1293,12 @@ void dcm_sequence_destroy(DcmSequence *seq);
 
 
 /**
- * Frame
+ * Frame Item of Pixel Data Element
  *
  * Encoded pixels of an individual pixel matrix and associated
  * descriptive metadata.
  */
+typedef struct _DcmFrame DcmFrame;
 
 /**
  * Create a Frame.
@@ -1358,104 +1481,136 @@ void dcm_frame_destroy(DcmFrame *frame);
 
 
 /**
- * Basic Offset Table (BOT).
- */
-
-/**
- * Create a Basic Offset Table.
- *
- * :param error: Pointer to error object
- * :param offsets: Offset of each Frame in the Pixel Data Element
- *                 (measured from the first byte of the first Frame).
- * :param num_frames: Number of Frames in the Pixel Data Element
- * :first_frame_offset: Offset from pixel_data_offset to the first byte of the
- *                      first frame
- *
- * The created object takes over ownership of the memory referenced by `offsets`
- * and frees it when the object is destroyed or if the creation fails.
- *
- * :return: Basic Offset Table
- */
-DCM_EXTERN
-DcmBOT *dcm_bot_create(DcmError **error,
-                       ssize_t *offsets,
-		       uint32_t num_frames,
-                       ssize_t first_frame_offset);
-
-/**
- * Get number of Frame offsets in the Basic Offset Table.
- *
- * :param bot: Basic Offset Table
- *
- * :return: number of frames
- */
-DCM_EXTERN
-uint32_t dcm_bot_get_num_frames(const DcmBOT *bot);
-
-/**
- * Get Frame offset in the Basic Offset Table.
- *
- * :param bot: Basic Offset Table
- * :param index: One-based index of Frame in the Pixel Data Element
- *
- * :return: offset from pixel_data_offset
- */
-DCM_EXTERN
-ssize_t dcm_bot_get_frame_offset(const DcmBOT *bot, uint32_t index);
-
-/**
- * Print a Basic Offset Table.
- *
- * :param bot: Basic Offset Table
- */
-DCM_EXTERN
-void dcm_bot_print(const DcmBOT *bot);
-
-/**
- * Destroy a Basic Offset Table.
- *
- * :param bot: Basic Offset Table
- */
-DCM_EXTERN
-void dcm_bot_destroy(DcmBOT *bot);
-
-
-/**
  * Part 10 File
  */
+typedef struct _DcmFilehandle DcmFilehandle;
+
+typedef struct _DcmIOMethods DcmIOMethods;
 
 /**
- * A set of IO functions, see dcm_filehandle_create().
+ * An object we can read from.
  */
 typedef struct _DcmIO {
-    /** Open an IO object */
-    void *(*open)(DcmError **error, void *client);
-    /** Close an IO object */
-    int (*close)(DcmError **error, void *data);
-    /** Read from an IO object, semantics as POSIX read() */
-    int64_t (*read)(DcmError **error, void *data, char *buffer, int64_t length);
-    /** Seek an IO object, semantics as POSIX seek() */
-    int64_t (*seek)(DcmError **error, void *data, int64_t offset, int whence);
+        const DcmIOMethods *methods;
+        // more private fields follow
 } DcmIO;
 
 /**
- * Create a filehandle that reads using a set of DcmIO functions.
+ * A set of IO methods, see dcm_io_create().
+ */
+struct _DcmIOMethods {
+    /** Open an IO object */
+    DcmIO *(*open)(DcmError **error, void *client);
+
+    /** Close an IO object */
+    void (*close)(DcmIO *io);
+
+    /** Read from an IO object, semantics as POSIX read() */
+    int64_t (*read)(DcmError **error, DcmIO *io, char *buffer, int64_t length);
+
+    /** Seek an IO object, semantics as POSIX seek() */
+    int64_t (*seek)(DcmError **error, DcmIO *io, int64_t offset, int whence);
+};
+
+/**
+ * Create an IO object using a set of IO methods.
+ *
+ * :param error: Error structure pointer
+ * :param io: Set of read methods
+ * :param client: Client data for read methods
+ *
+ * :return: IO object
+ */
+DCM_EXTERN
+DcmIO *dcm_io_create(DcmError **error,
+                     const DcmIOMethods *methods,
+                     void *client);
+
+/**
+ * Open a file on disk for IO.
+ *
+ * :param error: Error structure pointer
+ * :param filename: Path to the file on disk
+ *
+ * :return: IO object
+ */
+DCM_EXTERN
+DcmIO *dcm_io_create_from_file(DcmError **error, const char *filename);
+
+/**
+ * Open an area of memory for IO.
+ *
+ * :param error: Error structure pointer
+ * :param buffer: Pointer to memory area
+ * :param length: Length of memory area in bytes
+ *
+ * :return: IO object
+ */
+DCM_EXTERN
+DcmIO *dcm_io_create_from_memory(DcmError **error, const char *buffer,
+                                 int64_t length);
+
+/**
+ * Close an IO object.
+ *
+ * :param io: Pointer to IO object
+ */
+DCM_EXTERN
+void dcm_io_close(DcmIO *io);
+
+/**
+ * Read from an IO object.
+ *
+ * Read up to length bytes from the IO object. Returns the number of bytes
+ * read, or -1 for an error. A return of 0 indicates end of file.
  *
  * :param error: Pointer to error object
- * :param io: Set of read functions for this DcmFilehandle
- * :param client: Client data for read functions
+ * :param io: Pointer to IO object
+ * :param buffer: Memory area to read to
+ * :param length: Size of memory area
+ *
+ * :return: Number of bytes read
+ */
+DCM_EXTERN
+int64_t dcm_io_read(DcmError **error, DcmIO *io, char *buffer, int64_t length);
+
+/**
+ * Seek an IO object.
+ *
+ * Set whence to `SEEK_CUR` to seek relative to the current file position,
+ * `SEEK_END` to seek relative to the end of the file, or `SEEK_SET` to seek
+ * relative to the start.
+ *
+ * Returns the new absolute read position, or -1 for IO error.
+ *
+ * :param error: Error structure pointer
+ * :param io: Pointer to IO object
+ * :param offset: Seek offset
+ * :param whence: Seek mode
+ *
+ * :return: New read position
+ */
+DCM_EXTERN
+int64_t dcm_io_seek(DcmError **error, DcmIO *io, int64_t offset, int whence);
+
+/**
+ * Create a representation of a DICOM File using an IO object.
+ *
+ * The File object tracks information like the transfer syntax and the byte
+ * ordering.
+ *
+ * :param error: Error structure pointer
+ * :param io: IO object to read from
  *
  * :return: filehandle
  */
 DCM_EXTERN
-DcmFilehandle *dcm_filehandle_create(DcmError **error,
-				     const DcmIO *io,
-				     void *client);
+DcmFilehandle *dcm_filehandle_create(DcmError **error, DcmIO *io);
 
 /**
  * Open a file on disk as a DcmFilehandle.
  *
- * :param error: Pointer to error object
+ * :param error: Error structure pointer
  * :param filepath: Path to the file on disk
  *
  * :return: filehandle
@@ -1464,10 +1619,11 @@ DCM_EXTERN
 DcmFilehandle *dcm_filehandle_create_from_file(DcmError **error,
                                                const char *filepath);
 
+
 /**
  * Open an area of memory as a DcmFilehandle.
  *
- * :param error: Pointer to error object
+ * :param error: Error structure pointer
  * :param buffer: Pointer to memory area
  * :param length: Length of memory area in bytes
  *
@@ -1479,11 +1635,27 @@ DcmFilehandle *dcm_filehandle_create_from_memory(DcmError **error,
                                                  int64_t length);
 
 /**
- * Read File Meta Information from a File.
+ * Destroy a Filehandle.
  *
- * Keeps track of the offset of the Data Set relative to the beginning of the
- * filehandle to speed up subsequent access, and determines the Transfer
- * Syntax in which the contained Data Set is encoded.
+ * :param filehandle: File
+ */
+DCM_EXTERN
+void dcm_filehandle_destroy(DcmFilehandle *filehandle);
+
+/**
+ * Get File Meta Information from a File.
+ *
+ * Reads the File Meta Information and saves it in the File handle. Returns a
+ * reference to this internal copy of the File Meta Information.
+ *
+ * The return result must not be destroyed. Make a clone of it with
+ * :c:func:`dcm_dataset_clone()` if you need it to remain valid after
+ * closing the File handle.
+ *
+ * After calling this function, the filehandle read point is always
+ * positioned at the start of the File metadata.
+ *
+ * It is safe to call this function many times.
  *
  * :param error: Pointer to error object
  * :param filehandle: Pointer to file handle
@@ -1491,15 +1663,61 @@ DcmFilehandle *dcm_filehandle_create_from_memory(DcmError **error,
  * :return: File Meta Information
  */
 DCM_EXTERN
-DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
-                                          DcmFilehandle *filehandle);
+const DcmDataSet *dcm_filehandle_get_file_meta(DcmError **error,
+                                               DcmFilehandle *filehandle);
+
+/**
+ * Get Transfer Syntax UID for a fileahndle.
+ *
+ * :param filehandle: File
+ *
+ * :return: UID of the transfer syntax for this File.
+ */
+DCM_EXTERN
+const char *dcm_filehandle_get_transfer_syntax_uid(const DcmFilehandle *filehandle);
 
 /**
  * Read metadata from a File.
  *
- * Keeps track of the offset of the Pixel Data Element relative to the
- * beginning of the filehandle to speed up subsequent access to individual
- * Frame items.
+ * Read slide metadata, stopping when one of the tags in the stop list is
+ * seen. If the stop list pointer is NULL, it will stop on any of the pixel
+ * data tags.
+ *
+ * The return result must be destroyed with :c:func:`dcm_dataset_destroy()`.
+ *
+ * After calling this function, the filehandle read point is always
+ * positioned at the tag that stopped the read. You can call this function
+ * again with a different stop set to read more of the metadata.
+ *
+ * :param error: Pointer to error object
+ * :param filehandle: File
+ * :param stop_tags: NULL, or Zero-terminated array of tags to stop on
+ *
+ * :return: metadata
+ */
+DCM_EXTERN
+DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
+                                         DcmFilehandle *filehandle,
+                                         const uint32_t *stop_tags);
+
+/**
+ * Get a fast subset of metadata from a File.
+ *
+ * Gets a subset of the File's metadata and saves it in the File handle.
+ * Returns a reference to this internal copy of the File metadata.
+ *
+ * The subset is the part of the DICOM metadata that can be read quickly. It
+ * is missing tags such as PerFrameFunctionalGroupSequence. Use
+ * dcm_filehandle_read_metadata() if you need all file metadata.
+ *
+ * The return result must not be destroyed. Make a clone of it with
+ * :c:func:`dcm_dataset_clone()` if you need it to remain valid after
+ * closing the File handle.
+ *
+ * After calling this function, the filehandle read point is always
+ * positioned at the tag that stopped the read.
+ *
+ * It is safe to call this function many times.
  *
  * :param error: Pointer to error object
  * :param filehandle: File
@@ -1507,63 +1725,81 @@ DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
  * :return: metadata
  */
 DCM_EXTERN
-DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
-                                         DcmFilehandle *filehandle);
+const DcmDataSet *dcm_filehandle_get_metadata_subset(DcmError **error,
+                                                     DcmFilehandle *filehandle);
 
 /**
- * Read Basic Offset Table from a File.
+ * Read everything necessary to fetch frames from the file.
  *
- * In case the Pixel Data Element does not contain a Basic Offset Table item,
- * but contains an Extended Offset Table element, the value of the Extended
- * Offset Table element will be read instead.
+ * Scans the PixelData sequence and loads the PerFrameFunctionalGroupSequence,
+ * if present.
+ *
+ * This function will be called automatically on the first call to
+ * :c:func:`dcm_filehandle_read_frame_position()` or
+ * :c:func:`dcm_filehandle_read_frame()`. It can take some time to execute,
+ * so it is available as a separate function call in case this delay needs
+ * to be managed.
+ *
+ * After calling this function, the filehandle read point is always
+ * positioned at the PixelData tag.
+ *
+ * It is safe to call this function many times.
  *
  * :param error: Pointer to error object
  * :param filehandle: File
- * :param metadata: Metadata
  *
- * :return: Basic Offset Table
+ * :return: true on success
  */
 DCM_EXTERN
-DcmBOT *dcm_filehandle_read_bot(DcmError **error, DcmFilehandle *filehandle,
-                                DcmDataSet *metadata);
-
-/**
- * Build Basic Offset Table for a File.
- *
- * :param error: Pointer to error object
- * :param filehandle: File
- * :param metadata: Metadata
- *
- * :return: Basic Offset Table
- */
-DCM_EXTERN
-DcmBOT *dcm_filehandle_build_bot(DcmError **error, DcmFilehandle *filehandle,
-                                 DcmDataSet *metadata);
+bool dcm_filehandle_prepare_read_frame(DcmError **error,
+                                       DcmFilehandle *filehandle);
 
 /**
  * Read an individual Frame from a File.
  *
+ * Frames are numbered from 1 in the order they appear in the PixelData element.
+ *
  * :param error: Pointer to error object
  * :param filehandle: File
- * :param metadata: Metadata
- * :param bot: Basic Offset Table
- * :param index: One-based offset of the Frame in the Pixel Data Element
+ * :param index: One-based frame number
  *
  * :return: Frame
  */
 DCM_EXTERN
 DcmFrame *dcm_filehandle_read_frame(DcmError **error,
                                     DcmFilehandle *filehandle,
-                                    DcmDataSet *metadata,
-                                    DcmBOT *bot,
-                                    uint32_t index);
+                                    uint32_t frame_number);
 
 /**
- * Destroy a File.
+ * Read the frame at a position in a File.
  *
+ * Read a frame from a File at a specified (column, row), numbered from zero.
+ * This takes account of any frame positioning given in
+ * PerFrameFunctionalGroupSequence.
+ *
+ * :param error: Pointer to error object
  * :param filehandle: File
+ * :param column: Column number, from 0
+ * :param row: Row number, from 0
+ *
+ * :return: Frame
  */
 DCM_EXTERN
-void dcm_filehandle_destroy(DcmFilehandle *filehandle);
+DcmFrame *dcm_filehandle_read_frame_position(DcmError **error,
+                                             DcmFilehandle *filehandle,
+                                             uint32_t column,
+                                             uint32_t row);
+
+/**
+ * Scan a file and print the entire structure to stdout.
+ *
+ * :param error: Pointer to error object
+ * :param filehandle: File
+ *
+ * :return: true on successful parse, false otherwise.
+ */
+DCM_EXTERN
+bool dcm_filehandle_print(DcmError **error,
+                          DcmFilehandle *filehandle);
 
 #endif

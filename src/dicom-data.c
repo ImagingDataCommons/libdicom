@@ -111,13 +111,6 @@ struct _DcmFrame {
 };
 
 
-struct _DcmBOT {
-    uint32_t num_frames;
-    ssize_t *offsets;
-    ssize_t first_frame_offset;
-};
-
-
 struct SequenceItem {
     DcmDataSet *dataset;
 };
@@ -179,7 +172,7 @@ DcmElement *dcm_element_create(DcmError **error, uint32_t tag, DcmVR vr)
     if (!dcm_is_valid_vr_for_tag(vr, tag)) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                       "Incorrect tag",
-                      "Tag %08X does not allow VR %s",
+                      "Tag %08x does not allow VR %s",
                       tag,
                       dcm_dict_str_from_vr(vr));
         return NULL;
@@ -199,7 +192,7 @@ DcmElement *dcm_element_create(DcmError **error, uint32_t tag, DcmVR vr)
 void dcm_element_destroy(DcmElement *element)
 {
     if (element) {
-        dcm_log_debug("Destroy Data Element '%08X'.", element->tag);
+        dcm_log_debug("Destroy Data Element '%08x'.", element->tag);
         if(element->sequence_pointer) {
             dcm_sequence_destroy(element->sequence_pointer);
         }
@@ -264,7 +257,7 @@ static bool element_check_index(DcmError **error,
     if (index >= element->vm) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                       "Data Element index out of range",
-                      "Element tag %08X has VM of %d, index %d is out of range",
+                      "Element tag %08x has VM of %d, index %d is out of range",
                       element->tag,
                       element->vm,
                       index);
@@ -278,11 +271,12 @@ static bool element_check_index(DcmError **error,
 static bool element_check_string(DcmError **error,
                                  const DcmElement *element)
 {
-    DcmVRClass klass = dcm_dict_vr_class(element->vr);
-    if (klass != DCM_CLASS_STRING_MULTI && klass != DCM_CLASS_STRING_SINGLE) {
+    DcmVRClass vr_class = dcm_dict_vr_class(element->vr);
+    if (vr_class != DCM_VR_CLASS_STRING_MULTI &&
+        vr_class != DCM_VR_CLASS_STRING_SINGLE) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                       "Data Element is not string",
-                      "Element tag %08X has VR %s with no string value",
+                      "Element tag %08x has VR %s with no string value",
                       element->tag,
                       dcm_dict_str_from_vr(element->vr));
         return false;
@@ -298,7 +292,7 @@ static bool element_check_assigned(DcmError **error,
     if (!element->assigned) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                       "Data Element not assigned a value",
-                      "Element tag %08X has not been assigned a value",
+                      "Element tag %08x has not been assigned a value",
                       element->tag);
         return false;
     }
@@ -313,7 +307,7 @@ static bool element_check_not_assigned(DcmError **error,
     if (element->assigned) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                       "Data Element assigned twice",
-                      "Element tag %08X has been previously assigned a value",
+                      "Element tag %08x has been previously assigned a value",
                       element->tag);
         return false;
     }
@@ -363,14 +357,11 @@ static bool element_check_capacity(DcmError **error,
         size_t length = strlen(value);
         if (length > capacity) {
             element->assigned = was_assigned;
-            dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                          "Data Element capacity check failed",
-                          "Value of Data Element '%08X' exceeds "
-                          "maximum length of Value Representation",
-                          "(%d)",
-                          element->tag,
-                          capacity);
-            return false;
+            dcm_log_warning("Data Element capacity check failed -- "
+                            "Value of Data Element '%08x' exceeds "
+                            "maximum length of Value Representation (%d)",
+                            element->tag,
+                            capacity);
         }
     }
 
@@ -382,7 +373,7 @@ static bool element_check_capacity(DcmError **error,
 
 static bool dcm_element_validate(DcmError **error, DcmElement *element)
 {
-    DcmVRClass klass = dcm_dict_vr_class(element->vr);
+    DcmVRClass vr_class = dcm_dict_vr_class(element->vr);
 
     if (!element_check_not_assigned(error, element)) {
         return false;
@@ -391,23 +382,25 @@ static bool dcm_element_validate(DcmError **error, DcmElement *element)
     if (!dcm_is_valid_vr_for_tag(element->vr, element->tag)) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                       "Data Element validation failed",
-                      "Bad VR for tag %08X, should be %s",
+                      "Bad VR for tag %08x, should be %s",
                       element->tag,
                       dcm_dict_str_from_vr(element->vr));
         return false;
     }
 
-    if (klass == DCM_CLASS_NUMERIC) {
+    if (vr_class == DCM_VR_CLASS_NUMERIC_DECIMAL ||
+        vr_class == DCM_VR_CLASS_NUMERIC_INTEGER) {
         if (element->length != element->vm * dcm_dict_vr_size(element->vr)) {
             dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                           "Data Element validation failed",
-                          "Bad length for numeric tag %08X",
+                          "Bad length for numeric tag %08x",
                           element->tag);
             return false;
         }
     }
 
-    if (klass == DCM_CLASS_STRING_MULTI || klass == DCM_CLASS_STRING_SINGLE) {
+    if (vr_class == DCM_VR_CLASS_STRING_MULTI ||
+        vr_class == DCM_VR_CLASS_STRING_SINGLE) {
         uint32_t capacity = dcm_dict_vr_capacity(element->vr);
         if (!element_check_capacity(error, element, capacity)) {
             return false;
@@ -454,11 +447,11 @@ bool dcm_element_set_value_string_multi(DcmError **error,
             element->value_pointer = value_copy;
         }
     } else {
-        DcmVRClass klass = dcm_dict_vr_class(element->vr);
-        if (klass != DCM_CLASS_STRING_MULTI) {
+        DcmVRClass vr_class = dcm_dict_vr_class(element->vr);
+        if (vr_class != DCM_VR_CLASS_STRING_MULTI) {
             dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                           "Data Element is not multi-valued string",
-                          "Element tag %08X has VR %s with only a string value",
+                          "Element tag %08x has VR %s with only a string value",
                           element->tag,
                           dcm_dict_str_from_vr(element->vr));
             return false;
@@ -507,6 +500,45 @@ bool dcm_element_set_value_string_multi(DcmError **error,
 }
 
 
+static char **dcm_parse_character_string(DcmError **error,
+                                         char *string, uint32_t *vm)
+{
+    int n_segments = 1;
+    for (int i = 0; string[i]; i++) {
+        if (string[i] == '\\') {
+            n_segments += 1;
+        }
+    }
+
+    char **parts = DCM_NEW_ARRAY(error, n_segments, char *);
+    if (parts == NULL) {
+        return NULL;
+    }
+
+    char *p = string;
+    for (int segment = 0; segment < n_segments; segment++) {
+        int i;
+        for (i = 0; p[i] && p[i] != '\\'; i++)
+            ;
+
+        parts[segment] = DCM_MALLOC(error, i + 1);
+        if (parts[segment] == NULL) {
+            dcm_free_string_array(parts, n_segments);
+            return NULL;
+        }
+
+        strncpy(parts[segment], p, i);
+        parts[segment][i] = '\0';
+
+        p += i + 1;
+    }
+
+    *vm = n_segments;
+
+    return parts;
+}
+
+
 bool dcm_element_set_value_string(DcmError **error,
                                   DcmElement *element,
                                   char *value,
@@ -517,8 +549,8 @@ bool dcm_element_set_value_string(DcmError **error,
         return false;
     }
 
-    DcmVRClass klass = dcm_dict_vr_class(element->vr);
-    if (klass == DCM_CLASS_STRING_MULTI) {
+    DcmVRClass vr_class = dcm_dict_vr_class(element->vr);
+    if (vr_class == DCM_VR_CLASS_STRING_MULTI) {
         uint32_t vm;
         char **values = dcm_parse_character_string(error, value, &vm);
         if (values == NULL) {
@@ -596,11 +628,12 @@ static void value_to_value(DcmVR vr, int *result, int *value)
 static bool element_check_numeric(DcmError **error,
                                   const DcmElement *element)
 {
-    DcmVRClass klass = dcm_dict_vr_class(element->vr);
-    if (klass != DCM_CLASS_NUMERIC) {
+    DcmVRClass vr_class = dcm_dict_vr_class(element->vr);
+    if (vr_class != DCM_VR_CLASS_NUMERIC_DECIMAL &&
+        vr_class != DCM_VR_CLASS_NUMERIC_INTEGER) {
       dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                     "Data Element is not numeric",
-                    "Element tag %08X is not numeric",
+                    "Element tag %08x is not numeric",
                     element->tag);
       return false;
     }
@@ -612,10 +645,13 @@ static bool element_check_numeric(DcmError **error,
 static bool element_check_integer(DcmError **error,
                                   const DcmElement *element)
 {
+    if (!element_check_numeric(error, element)) {
+      return false;
+    }
     if (element->vr == DCM_VR_FL || element->vr == DCM_VR_FD) {
       dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                     "Data Element is not integer",
-                    "Element tag %08X is not integer",
+                    "Element tag %08x is not integer",
                     element->tag);
       return false;
     }
@@ -630,7 +666,6 @@ bool dcm_element_get_value_integer(DcmError **error,
                                    int64_t *value)
 {
     if (!element_check_assigned(error, element) ||
-        !element_check_numeric(error, element) ||
         !element_check_integer(error, element) ||
         !element_check_index(error, element, index)) {
         return false;
@@ -655,7 +690,6 @@ bool dcm_element_set_value_integer(DcmError **error,
                                    int64_t value)
 {
     if (!element_check_not_assigned(error, element) ||
-        !element_check_numeric(error, element) ||
         !element_check_integer(error, element)) {
         return false;
     }
@@ -752,7 +786,7 @@ static bool element_check_float(DcmError **error,
     if (element->vr != DCM_VR_FL && element->vr != DCM_VR_FD) {
       dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                     "Data Element is not float",
-                    "Element tag %08X is not one of the float types",
+                    "Element tag %08x is not one of the float types",
                     element->tag);
       return false;
     }
@@ -761,10 +795,10 @@ static bool element_check_float(DcmError **error,
 }
 
 
-bool dcm_element_get_value_floatingpoint(DcmError **error,
-                                         const DcmElement *element,
-                                         uint32_t index,
-                                         double *value)
+bool dcm_element_get_value_decimal(DcmError **error,
+                                   const DcmElement *element,
+                                   uint32_t index,
+                                   double *value)
 {
     if (!element_check_assigned(error, element) ||
         !element_check_numeric(error, element) ||
@@ -787,9 +821,9 @@ bool dcm_element_get_value_floatingpoint(DcmError **error,
 }
 
 
-bool dcm_element_set_value_floatingpoint(DcmError **error,
-                                         DcmElement *element,
-                                         double value)
+bool dcm_element_set_value_decimal(DcmError **error,
+                                   DcmElement *element,
+                                   double value)
 {
     if (!element_check_not_assigned(error, element) ||
         !element_check_numeric(error, element) ||
@@ -815,11 +849,11 @@ bool dcm_element_set_value_floatingpoint(DcmError **error,
 static bool element_check_binary(DcmError **error,
                                  const DcmElement *element)
 {
-    DcmVRClass klass = dcm_dict_vr_class(element->vr);
-    if (klass != DCM_CLASS_BINARY) {
+    DcmVRClass vr_class = dcm_dict_vr_class(element->vr);
+    if (vr_class != DCM_VR_CLASS_BINARY) {
       dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                     "Data Element is not binary",
-                    "Element tag %08X does not have a binary value",
+                    "Element tag %08x does not have a binary value",
                     element->tag);
       return false;
     }
@@ -830,7 +864,7 @@ static bool element_check_binary(DcmError **error,
 
 bool dcm_element_get_value_binary(DcmError **error,
                                   const DcmElement *element,
-                                  const char **value)
+                                  const void **value)
 {
     if (!element_check_assigned(error, element) ||
         !element_check_binary(error, element)) {
@@ -845,7 +879,7 @@ bool dcm_element_get_value_binary(DcmError **error,
 
 bool dcm_element_set_value_binary(DcmError **error,
                                   DcmElement *element,
-                                  char *value,
+                                  void *value,
                                   uint32_t length,
                                   bool steal)
 {
@@ -857,7 +891,7 @@ bool dcm_element_set_value_binary(DcmError **error,
     if (steal) {
         element->value.single.bytes = value;
     } else {
-        char *value_copy = DCM_NEW_ARRAY(error, length, char);
+        void *value_copy = DCM_NEW_ARRAY(error, length, char);
         if (value_copy == NULL) {
             return false;
         }
@@ -883,16 +917,76 @@ bool dcm_element_set_value_binary(DcmError **error,
 }
 
 
+/* Set a value from a generic byte buffer. The byte buffer must have been
+ * correctly formatted.
+ */
+bool dcm_element_set_value(DcmError **error,
+                           DcmElement *element,
+                           char *value,
+                           uint32_t length,
+                           bool steal)
+{
+    size_t size;
+
+    switch (dcm_dict_vr_class(element->vr)) {
+        case DCM_VR_CLASS_STRING_SINGLE:
+        case DCM_VR_CLASS_STRING_MULTI:
+            if (!dcm_element_set_value_string(error, element, value, steal)) {
+                return false;
+            }
+            break;
+
+        case DCM_VR_CLASS_NUMERIC_DECIMAL:
+        case DCM_VR_CLASS_NUMERIC_INTEGER:
+            size = dcm_dict_vr_size(element->vr);
+            if (length % size != 0) {
+                dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                              "Reading of Data Element failed",
+                              "Bad byte length for numeric type");
+                return false;
+            }
+            if (!dcm_element_set_value_numeric_multi(error,
+                                                     element,
+                                                     (int *) value,
+                                                     length / size,
+                                                     steal)) {
+                return false;
+            }
+            break;
+
+        case DCM_VR_CLASS_BINARY:
+            if (!dcm_element_set_value_binary(error,
+                                              element,
+                                              value,
+                                              length,
+                                              steal)) {
+                return false;
+            }
+
+            break;
+
+        case DCM_VR_CLASS_SEQUENCE:
+        default:
+            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                          "Reading of Data Element failed",
+                          "Data Element '%08x' has unexpected "
+                          "Value Representation", element->tag);
+            return false;
+    }
+
+    return true;
+}
+
 // Sequence Data Element
 
 static bool element_check_sequence(DcmError **error,
                                    const DcmElement *element)
 {
-    DcmVRClass klass = dcm_dict_vr_class(element->vr);
-    if (klass != DCM_CLASS_SEQUENCE) {
+    DcmVRClass vr_class = dcm_dict_vr_class(element->vr);
+    if (vr_class != DCM_VR_CLASS_SEQUENCE) {
       dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                     "Data Element is not seeuence",
-                    "Element tag %08X does not have a seeuence value",
+                    "Element tag %08x does not have a seeuence value",
                     element->tag);
       return false;
     }
@@ -959,7 +1053,7 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
     uint32_t i;
     DcmSequence *from_seq;
 
-    dcm_log_debug("Clone Data Element '%08X'.", element->tag);
+    dcm_log_debug("Clone Data Element '%08x'.", element->tag);
 
     DcmElement *clone = dcm_element_create(error, element->tag, element->vr);
     if (clone == NULL) {
@@ -967,9 +1061,9 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
     }
     clone->length = element->length;
 
-    DcmVRClass klass = dcm_dict_vr_class(element->vr);
-    switch (klass) {
-        case DCM_CLASS_SEQUENCE:
+    DcmVRClass vr_class = dcm_dict_vr_class(element->vr);
+    switch (vr_class) {
+        case DCM_VR_CLASS_SEQUENCE:
             if (!dcm_element_get_value_sequence(error, element, &from_seq)) {
                 dcm_element_destroy(clone);
                 return NULL;
@@ -1005,8 +1099,8 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
 
             break;
 
-        case DCM_CLASS_STRING_MULTI:
-        case DCM_CLASS_STRING_SINGLE:
+        case DCM_VR_CLASS_STRING_MULTI:
+        case DCM_VR_CLASS_STRING_SINGLE:
             // all the string types
             if (element->vm == 1 && element->value.single.str) {
                 clone->value.single.str = dcm_strdup(error,
@@ -1040,7 +1134,7 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
 
             break;
 
-        case DCM_CLASS_BINARY:
+        case DCM_VR_CLASS_BINARY:
             if (element->value.single.bytes) {
                 clone->value.single.bytes = DCM_MALLOC(error, element->length);
                 if (clone->value.single.bytes == NULL) {
@@ -1055,7 +1149,8 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
             }
             break;
 
-        case DCM_CLASS_NUMERIC:
+        case DCM_VR_CLASS_NUMERIC_DECIMAL:
+        case DCM_VR_CLASS_NUMERIC_INTEGER:
             if (element->vm == 1) {
                 clone->value = element->value;
                 clone->vm = 1;
@@ -1091,40 +1186,119 @@ DcmElement *dcm_element_clone(DcmError **error, const DcmElement *element)
 
 // printing elements
 
-static void element_print_integer(const DcmElement *element,
-                                  uint32_t index)
+char *dcm_element_value_to_string(const DcmElement *element)
 {
-    int64_t value;
-    (void) dcm_element_get_value_integer(NULL, element, index, &value);
-    if (element->vr == DCM_VR_UV) {
-        printf("%" PRIu64, (uint64_t)value);
-    } else {
-        printf("%" PRId64, value);
+    DcmVRClass vr_class = dcm_dict_vr_class(element->vr);
+    size_t size = dcm_dict_vr_size(element->vr);
+
+    char *result = NULL;
+
+    double d;
+    int64_t i;
+    const char *str;
+    const void *val;
+    uint32_t n;
+
+    if (element->vm > 1) {
+        result = dcm_printf_append(result, "[");
     }
-}
 
+    for (uint32_t index = 0; index < element->vm; index++) {
+        switch (vr_class) {
+            case DCM_VR_CLASS_NUMERIC_DECIMAL:
+                (void) dcm_element_get_value_decimal(NULL,
+                                                     element,
+                                                     index,
+                                                     &d);
+                result = dcm_printf_append(result, "%g", d);
+                break;
 
-static void element_print_float(const DcmElement *element,
-                                uint32_t index)
-{
-    double value;
-    (void) dcm_element_get_value_floatingpoint(NULL, element, index, &value);
-    printf("%g", value);
-}
+            case DCM_VR_CLASS_NUMERIC_INTEGER:
+                (void) dcm_element_get_value_integer(NULL,
+                                                     element,
+                                                     index,
+                                                     &i);
 
+                if (element->vr == DCM_VR_UV) {
+                    result = dcm_printf_append(result,
+                                               "%"PRIu64,
+                                               (uint64_t)i);
+                } else if (element->vr == DCM_VR_AT) {
+                    // a ushort with half of a tag
+                    result = dcm_printf_append(result,
+                                               "%04x",
+                                               i);
+                } else {
+                    result = dcm_printf_append(result, "%"PRId64, i);
+                }
+                break;
 
-static void element_print_string(const DcmElement *element,
-                                 uint32_t index)
-{
-    const char *value;
-    (void) dcm_element_get_value_string(NULL, element, index, &value);
-    printf("%s", value);
+            case DCM_VR_CLASS_STRING_SINGLE:
+            case DCM_VR_CLASS_STRING_MULTI:
+                (void) dcm_element_get_value_string(NULL,
+                                                    element,
+                                                    index,
+                                                    &str);
+                result = dcm_printf_append(result, "%s", str);
+                break;
+
+            case DCM_VR_CLASS_BINARY:
+                (void) dcm_element_get_value_binary(NULL, element, &val);
+                n = MIN(16, dcm_element_get_length(element));
+
+                for (i = 0; i < n; i++) {
+                    result = dcm_printf_append(result, "%02x",
+                                               ((unsigned char *) val)[i]);
+                    if (i % size == size - 1) {
+                        result = dcm_printf_append(result, " ");
+                    }
+                }
+
+                if (dcm_element_get_length(element) > 16) {
+                    result = dcm_printf_append(result, "...");
+                }
+                break;
+
+            case DCM_VR_CLASS_SEQUENCE:
+                result = dcm_printf_append(result, "<sequence>");
+                break;
+
+            default:
+                dcm_log_warning("Unexpected Value Representation.");
+        }
+
+        if (element->vm > 1) {
+            if (index == element->vm - 1) {
+                result = dcm_printf_append(result, "]");
+            } else {
+                result = dcm_printf_append(result, ", ");
+            }
+        }
+    }
+
+    // AT is a two-element ushort array holding a DICOM tag ... print the tag
+    // name if we can
+    if (element->vr == DCM_VR_AT && element->vm == 2) {
+        int64_t grp;
+        int64_t ele;
+        (void) dcm_element_get_value_integer(NULL, element, 0, &grp);
+        (void) dcm_element_get_value_integer(NULL, element, 1, &ele);
+
+        uint32_t tag = grp << 16 | ele;
+
+        const char *keyword = dcm_dict_keyword_from_tag(tag);
+
+        if (keyword) {
+            result = dcm_printf_append(result, " (%s)", keyword);
+        }
+    }
+
+    return result;
 }
 
 
 void dcm_element_print(const DcmElement *element, int indentation)
 {
-    DcmVRClass klass = dcm_dict_vr_class(element->vr);
     const int num_indent = indentation * 2;
     const int num_indent_next = (indentation + 1) * 2;
 
@@ -1132,7 +1306,7 @@ void dcm_element_print(const DcmElement *element, int indentation)
 
     if (dcm_is_public_tag(element->tag)) {
         const char *keyword = dcm_dict_keyword_from_tag(element->tag);
-        printf("%*.*s(%04X,%04X) %s | %s",
+        printf("%*.*s(%04x,%04x) %s | %s",
                num_indent,
                num_indent,
                "                                   ",
@@ -1142,8 +1316,8 @@ void dcm_element_print(const DcmElement *element, int indentation)
                dcm_dict_str_from_vr(element->vr));
     } else {
         // private tag, or unknown public tag
-	// in any case, we can't display the keyword
-        printf("%*.*s (%04X,%04X) | %s",
+        // in any case, we can't display the keyword
+        printf("%*.*s (%04x,%04x) | %s",
                num_indent,
                num_indent,
                "                                   ",
@@ -1175,43 +1349,12 @@ void dcm_element_print(const DcmElement *element, int indentation)
                num_indent,
                "                                   ");
     } else {
-        printf(" | %u | ", element->length);
-
-        if (element->vm > 1) {
-            printf("[");
+        printf(" | %u | %u | ", element->length, element->vm);
+        char *str = dcm_element_value_to_string(element);
+        if (str != NULL) {
+            printf("%s\n", str);
+            free(str);
         }
-        for (i = 0; i < element->vm; i++) {
-            switch (klass) {
-                case DCM_CLASS_NUMERIC:
-                    if (element->vr == DCM_VR_FL || element->vr == DCM_VR_FD) {
-                        element_print_float(element, i);
-                    } else {
-                        element_print_integer(element, i);
-                    }
-                    break;
-
-                case DCM_CLASS_STRING_SINGLE:
-                case DCM_CLASS_STRING_MULTI:
-                    element_print_string(element, i);
-                    break;
-
-                case DCM_CLASS_BINARY:
-                    break;
-
-                case DCM_CLASS_SEQUENCE:
-                default:
-                    dcm_log_warning("Unexpected Value Representation.");
-            }
-
-            if (element->vm > 1) {
-                if (i == (element->vm - 1)) {
-                    printf("]");
-                } else {
-                    printf(", ");
-                }
-            }
-        }
-        printf("\n");
     }
 }
 
@@ -1290,7 +1433,7 @@ bool dcm_dataset_insert(DcmError **error,
     if (matched_element) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                       "Element already exists",
-                      "Inserting Data Element '%08X' into Data Set failed",
+                      "Inserting Data Element '%08x' into Data Set failed",
                       element->tag);
         dcm_element_destroy(element);
         return false;
@@ -1305,13 +1448,13 @@ bool dcm_dataset_insert(DcmError **error,
 DcmElement *dcm_dataset_get(DcmError **error,
                             const DcmDataSet *dataset, uint32_t tag)
 {
-    dcm_log_debug("Get Data Element '%08X' from Data Set.", tag);
+    dcm_log_debug("Get Data Element '%08x' from Data Set.", tag);
 
     DcmElement *element = dcm_dataset_contains(dataset, tag);
     if (element == NULL) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                       "Could not find Data Element",
-                      "Getting Data Element '%08X' from Data Set failed",
+                      "Getting Data Element '%08x' from Data Set failed",
                       tag);
     }
 
@@ -1322,7 +1465,7 @@ DcmElement *dcm_dataset_get(DcmError **error,
 DcmElement *dcm_dataset_get_clone(DcmError **error,
                                   const DcmDataSet *dataset, uint32_t tag)
 {
-    dcm_log_debug("Copy Data Element '%08X' from Data Set.", tag);
+    dcm_log_debug("Copy Data Element '%08x' from Data Set.", tag);
 
     DcmElement *element = dcm_dataset_get(error, dataset, tag);
     if (element == NULL) {
@@ -1351,14 +1494,19 @@ bool dcm_dataset_remove(DcmError **error, DcmDataSet *dataset, uint32_t tag)
 }
 
 
-void dcm_dataset_foreach(const DcmDataSet *dataset,
-                         void (*fn)(const DcmElement *element))
+bool dcm_dataset_foreach(const DcmDataSet *dataset,
+                         bool (*fn)(const DcmElement *element, void *client),
+                         void *client)
 {
     DcmElement *element;
 
     for(element = dataset->elements; element; element = element->hh.next) {
-        fn(element);
+        if (!fn(element, client)) {
+            return false;
+        }
     }
+
+    return true;
 }
 
 
@@ -1542,17 +1690,43 @@ DcmDataSet *dcm_sequence_get(DcmError **error,
 }
 
 
-void dcm_sequence_foreach(const DcmSequence *seq,
-                          void (*fn)(const DcmDataSet *item))
+DcmDataSet *dcm_sequence_steal(DcmError **error,
+                               const DcmSequence *seq, uint32_t index)
 {
-    uint32_t i;
-
-    uint32_t length = utarray_len(seq->items);
-    for (i = 0; i < length; i++) {
-        struct SequenceItem *seq_item = utarray_eltptr(seq->items, i);
-        dcm_dataset_lock(seq_item->dataset);
-        fn(seq_item->dataset);
+    if (!sequence_check_index(error, seq, index)) {
+        return NULL;
     }
+
+    struct SequenceItem *seq_item = utarray_eltptr(seq->items, index);
+    DcmDataSet *result = seq_item->dataset;
+    //dcm_dataset_lock(result);
+    seq_item->dataset = NULL;
+    // this will free the SequenceItem
+    utarray_erase(seq->items, index, 1);
+
+    return result;
+}
+
+
+bool dcm_sequence_foreach(const DcmSequence *seq,
+                          bool (*fn)(const DcmDataSet *item,
+                                     uint32_t index,
+                                     void *client),
+                          void *client)
+{
+    uint32_t length = utarray_len(seq->items);
+    for (uint32_t index = 0; index < length; index++) {
+        struct SequenceItem *seq_item = utarray_eltptr(seq->items, index);
+        DcmDataSet *dataset = seq_item->dataset;
+
+        dcm_dataset_lock(dataset);
+
+        if (!fn(dataset, index, client)) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 
@@ -1780,84 +1954,6 @@ void dcm_frame_destroy(DcmFrame *frame)
         }
         free(frame);
         frame = NULL;
-    }
-}
-
-
-// Basic Offset Table
-
-DcmBOT *dcm_bot_create(DcmError **error,
-                       ssize_t *offsets, uint32_t num_frames,
-                       ssize_t first_frame_offset)
-{
-    if (num_frames == 0) {
-        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Constructing Basic Offset Table failed",
-                      "Expected offsets of %ld Frame Items",
-                      num_frames);
-        free(offsets);
-        return NULL;
-    }
-
-    if (offsets == NULL) {
-        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "Constructing Basic Offset Table failed",
-                      "No offsets were provided");
-        return NULL;
-    }
-    DcmBOT *bot = DCM_NEW(error, DcmBOT);
-    if (bot == NULL) {
-        free(offsets);
-        return NULL;
-    }
-    bot->num_frames = num_frames;
-    bot->offsets = offsets;
-    bot->first_frame_offset = first_frame_offset;
-    return bot;
-}
-
-
-void dcm_bot_print(const DcmBOT *bot)
-{
-    assert(bot);
-    uint32_t i;
-
-    printf("[");
-    for(i = 0; i < bot->num_frames; i++) {
-        printf("%zd", bot->offsets[i] + bot->first_frame_offset);
-        if (i == (bot->num_frames - 1)) {
-            printf("]\n");
-        } else {
-            printf(",");
-        }
-    }
-}
-
-
-uint32_t dcm_bot_get_num_frames(const DcmBOT *bot)
-{
-    assert(bot);
-    return bot->num_frames;
-}
-
-
-ssize_t dcm_bot_get_frame_offset(const DcmBOT *bot, uint32_t number)
-{
-    assert(bot);
-    assert(number > 0 && number < bot->num_frames + 1);
-    uint32_t index = number - 1;
-    return bot->offsets[index] + bot->first_frame_offset;
-}
-
-
-void dcm_bot_destroy(DcmBOT *bot)
-{
-    if (bot) {
-        if (bot->offsets) {
-            free(bot->offsets);
-        }
-        free(bot);
-        bot = NULL;
     }
 }
 

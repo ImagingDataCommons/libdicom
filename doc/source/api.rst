@@ -1,4 +1,4 @@
 API documentation
 -----------------
 
-.. c:autodoc:: dicom.h
+.. c:autodoc:: dicom/dicom.h

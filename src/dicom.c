@@ -23,10 +23,15 @@
 #include <dicom/dicom.h>
 #include "pdicom.h"
 
-
-void *dcm_calloc(DcmError **error, size_t n, size_t size)
+// we need a namedspaced free for language bindings
+void dcm_free(void *pointer)
 {
-    /* malloc(0) behaviour depends on the platform heap implementation. It can 
+    free(pointer);
+}
+
+void *dcm_calloc(DcmError **error, uint64_t n, uint64_t size)
+{
+    /* malloc(0) behaviour depends on the platform heap implementation. It can
      * return either a valid pointer that can't be dereferenced, or NULL.
      *
      * We need to be able to support dcm_calloc(0), since VM == 0 is allowed,
@@ -34,7 +39,7 @@ void *dcm_calloc(DcmError **error, size_t n, size_t size)
      * out of memory.
      *
      * Instead, force n == 0 to n == 1. This means we will always get a valid
-     * pointer from calloc, a NULL return always means out of memory, and we 
+     * pointer from calloc, a NULL return always means out of memory, and we
      * can always free the result.
      */
     void *result = calloc(n == 0 ? 1 : n, size);
@@ -42,6 +47,19 @@ void *dcm_calloc(DcmError **error, size_t n, size_t size)
         dcm_error_set(error, DCM_ERROR_CODE_NOMEM,
                       "Out of memory",
                       "Failed to allocate %zd bytes", n * size);
+        return NULL;
+    }
+    return result;
+}
+
+
+void *dcm_realloc(DcmError **error, void *ptr, uint64_t size)
+{
+    void *result = realloc(ptr, size);
+    if (!result) {
+        dcm_error_set(error, DCM_ERROR_CODE_NOMEM,
+                      "Out of memory",
+                      "Failed to allocate %zd bytes", size);
         return NULL;
     }
     return result;
@@ -60,6 +78,42 @@ char *dcm_strdup(DcmError **error, const char *str)
         return NULL;
     }
     memmove(new_str, str, length + 1);
+
+    return new_str;
+}
+
+
+char *dcm_printf_append(char *str, const char *format, ...)
+{
+    va_list(args);
+
+    // find size required for new text
+    va_start(args, format);
+    ssize_t n = vsnprintf(NULL, 0, format, args);
+    if (n < 0) {
+        // some very old libcs will return -1 for truncation
+        return NULL;
+    }
+    va_end(args);
+
+    // size of old text
+    if (str == NULL) {
+        str = dcm_strdup(NULL, "");
+        if (str == NULL) {
+            return NULL;
+        }
+    }
+    size_t old_len = strlen(str);
+
+    // new space, copy and render
+    char *new_str = dcm_realloc(NULL, str, old_len + n + 1);
+    if (new_str == NULL) {
+        free(str);
+        return NULL;
+    }
+    va_start(args, format);
+    vsnprintf(new_str + old_len, n + 1, format, args);
+    va_end(args);
 
     return new_str;
 }
@@ -140,7 +194,7 @@ static void dcm_error_free(DcmError *error)
 }
 
 
-static DcmError *dcm_error_newf(DcmErrorCode code, 
+static DcmError *dcm_error_newf(DcmErrorCode code,
     const char *summary, const char *format, va_list ap)
 {
     DcmError *error;
@@ -159,7 +213,7 @@ static DcmError *dcm_error_newf(DcmErrorCode code,
 }
 
 
-void dcm_error_set(DcmError **error, DcmErrorCode code, 
+void dcm_error_set(DcmError **error, DcmErrorCode code,
     const char *summary, const char *format, ...)
 {
     if (error && *error) {
@@ -182,7 +236,7 @@ void dcm_error_set(DcmError **error, DcmErrorCode code,
         DcmError *local_error = dcm_error_newf(code, summary, format, ap);
         va_end(ap);
 
-        dcm_log_debug("%s: %s - %s", 
+        dcm_log_debug("%s: %s - %s",
                       dcm_error_code_str(local_error->code),
                       local_error->summary,
                       local_error->message);
@@ -230,7 +284,32 @@ void dcm_error_log(DcmError *error)
 }
 
 
-DcmLogLevel dcm_log_level = DCM_LOG_NOTSET;
+void dcm_error_print(DcmError *error)
+{
+    if (error) {
+        fprintf(stderr, "%s: %s - %s\n",
+                      dcm_error_code_str(error->code),
+                      error->summary,
+                      error->message);
+    }
+}
+
+
+static DcmLogLevel dcm_log_level = DCM_LOG_NOTSET;
+
+DcmLogLevel dcm_log_set_level(DcmLogLevel log_level)
+{
+    DcmLogLevel previous_log_level;
+
+    previous_log_level = dcm_log_level;
+
+    if ((dcm_log_level >= DCM_LOG_NOTSET) &&
+        (dcm_log_level <= DCM_LOG_CRITICAL)) {
+        dcm_log_level = log_level;
+    }
+
+    return previous_log_level;
+}
 
 
 #ifndef _WIN32
@@ -243,7 +322,8 @@ static int ctime_s(char *buf, size_t size, const time_t *time)
 }
 #endif
 
-static void dcm_logf(const char *level, const char *format, va_list args)
+static void dcm_default_logf(const char *level, const char *format,
+    va_list args)
 {
     time_t now;
     time(&now);
@@ -253,6 +333,27 @@ static void dcm_logf(const char *level, const char *format, va_list args)
     fprintf(stderr, "%s [%s] - ", level, datetime);
     vfprintf(stderr, format, args);
     fprintf(stderr, "\n");
+}
+
+
+static DcmLogf dcm_current_logf = dcm_default_logf;
+
+DcmLogf dcm_log_set_logf(DcmLogf logf)
+{
+    DcmLogf previous_logf;
+
+    previous_logf = dcm_current_logf;
+    dcm_current_logf = logf;
+
+    return previous_logf;
+}
+
+
+static void dcm_logf(const char *level, const char *format, va_list args)
+{
+    if (dcm_current_logf) {
+        dcm_current_logf(level, format, args);
+    }
 }
 
 

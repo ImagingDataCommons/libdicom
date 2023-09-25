@@ -7,8 +7,9 @@ project(
     'warning_level=2',
   ],
   license : 'MIT',
-  meson_version : '>=0.50',
-  version : '0.3.0'
+  # "check" needs 0.54.1
+  meson_version : '>=0.54.1',
+  version : '1.0.0'
 )
 if not meson.is_subproject()
   meson.add_dist_script(
@@ -33,8 +34,8 @@ endif
 #   1. Backward-incompatible ABI change: bump major, reset minor and patch
 #   2. Backward-compatible ABI change: bump minor, reset patch
 #   3. Other, eg. bugfix: bump patch
-abi_version_major = 0
-abi_version_minor = 2
+abi_version_major = 1
+abi_version_minor = 0
 abi_version_patch = 0
 
 abi_version = '@0@.@1@.@2@'.format(
@@ -148,11 +149,13 @@ install_headers(
 library_includes = include_directories('include')
 library_options = ['-DBUILDING_LIBDICOM']
 library_sources = [
+  'src/getopt.c',
   'src/dicom.c',
   'src/dicom-io.c',
   'src/dicom-data.c',
   'src/dicom-dict.c',
   'src/dicom-file.c',
+  'src/dicom-parse.c',
 ]
 libdicom = library(
   'dicom',
@@ -188,12 +191,14 @@ executable(
   'tools/dcm-dump.c',
   dependencies : [libdicom_dep],
   install : true,
+  install_tag : 'bin',
 )
 executable(
   'dcm-getframe',
   'tools/dcm-getframe.c',
   dependencies : [libdicom_dep],
   install : true,
+  install_tag : 'bin',
 )
 
 dcm_dump_man = configure_file(
