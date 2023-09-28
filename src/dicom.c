@@ -149,6 +149,9 @@ const char *dcm_error_code_str(DcmErrorCode code)
         case DCM_ERROR_CODE_IO:
             return "IO error";
 
+        case DCM_ERROR_CODE_MISSING_FRAME:
+            return "Missing frame";
+
         default:
             return "Unknown error code";
     }
@@ -169,6 +172,9 @@ const char *dcm_error_code_name(DcmErrorCode code)
 
         case DCM_ERROR_CODE_IO:
             return "IO";
+
+        case DCM_ERROR_CODE_MISSING_FRAME:
+            return "MISSING_FRAME";
 
         default:
             return "UNKNOWN";

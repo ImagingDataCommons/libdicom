@@ -49,7 +49,9 @@ struct _DcmFilehandle {
     DcmDataSet *meta;
 
     // image properties we need to track
-    uint32_t tiles_across;
+    uint32_t frame_width;
+    uint32_t frame_height;
+    uint32_t frames_across;
     uint32_t num_frames;
     struct PixelDescription desc;
     DcmLayout layout;
@@ -63,6 +65,8 @@ struct _DcmFilehandle {
 
     // used to count frames as we scan perframefunctionalgroup
     uint32_t frame_number;
+    int32_t column_position;
+    int32_t row_position;
 
     // indent for file print
     int indent;
@@ -296,23 +300,44 @@ static bool get_num_frames(DcmError **error,
 }
 
 
-static bool get_tiles_across(DcmError **error,
-                             const DcmDataSet *metadata,
-                             uint32_t *tiles_across)
+static bool get_frame_size(DcmError **error,
+                           const DcmDataSet *metadata,
+                           uint32_t *frame_width,
+                           uint32_t *frame_height)
 {
     int64_t width;
-    int64_t tile_width;
+    int64_t height;
 
-    if (!get_tag_int(error, metadata, "Columns", &tile_width)) {
+    if (!get_tag_int(error, metadata, "Columns", &width) ||
+        !get_tag_int(error, metadata, "Rows", &height)) {
+        return false;
+    }
+
+    *frame_width = width;
+    *frame_height = height;
+
+    return true;
+}
+
+
+static bool get_frames_across(DcmError **error,
+                              const DcmDataSet *metadata,
+                              uint32_t *frames_across)
+{
+    int64_t width;
+    uint32_t frame_width;
+    uint32_t frame_height;
+
+    if (!get_frame_size(error, metadata, &frame_width, &frame_height)) {
         return false;
     }
 
     // TotalPixelMatrixColumns is optional and defaults to Columns, ie. one
-    // tile across
-    width = tile_width;
+    // frame across
+    width = frame_width;
     (void) get_tag_int(NULL, metadata, "TotalPixelMatrixColumns", &width);
 
-    *tiles_across = width / tile_width + !!(width % tile_width);
+    *frames_across = width / frame_width + !!(width % frame_width);
 
     return true;
 }
@@ -790,15 +815,22 @@ const DcmDataSet *dcm_filehandle_get_metadata_subset(DcmError **error,
         }
 
         // useful values for later
-        if (!get_tiles_across(error, meta, &filehandle->tiles_across) ||
+        if (!get_frame_size(error,
+                           meta,
+                           &filehandle->frame_width,
+                           &filehandle->frame_height) ||
+            !get_frames_across(error, meta, &filehandle->frames_across) ||
             !get_num_frames(error, meta, &filehandle->num_frames) ||
             !set_pixel_description(error, meta, &filehandle->desc)) {
             dcm_dataset_destroy(meta);
             return false;
         }
 
-        // we support sparse and full tile layout, defaulting to full if no type
-        // is specified
+        // we support sparse and full frame layout, defaulting to full if
+        // no type is specified
+        //
+        // we flip to SPARSE if there's a PerFrameFunctionalGroupsSequence
+        // containing frame positions, see below
         const char *type;
         if (get_tag_str(NULL, meta, "DimensionOrganizationType", &type)) {
             if (strcmp(type, "TILED_SPARSE") == 0 || strcmp(type, "3D") == 0) {
@@ -822,6 +854,73 @@ const DcmDataSet *dcm_filehandle_get_metadata_subset(DcmError **error,
 }
 
 
+static bool parse_frame_index_sequence_begin(DcmError **error,
+                                             void *client,
+                                             uint32_t tag,
+                                             DcmVR vr,
+                                             uint32_t length)
+{
+    USED(error);
+    USED(vr);
+    USED(length);
+
+    DcmFilehandle *filehandle = (DcmFilehandle *) client;
+
+    if (tag == TAG_PLANE_POSITION_SLIDE_SEQUENCE) {
+        filehandle->column_position = -1;
+        filehandle->row_position = -1;
+    }
+
+    return true;
+}
+
+
+static bool parse_frame_index_sequence_end(DcmError **error,
+                                           void *client,
+                                           uint32_t tag,
+                                           DcmVR vr,
+                                           uint32_t length)
+{
+    USED(vr);
+    USED(length);
+
+    DcmFilehandle *filehandle = (DcmFilehandle *) client;
+
+    // have we seen a valid pair of frame positions
+    if (tag == TAG_PLANE_POSITION_SLIDE_SEQUENCE &&
+        filehandle->column_position != -1 &&
+        filehandle->row_position != -1) {
+        // we don't support fractional frame positioning ... they must be
+        // exactly aligned on frame boundaries
+        if ((filehandle->column_position - 1) % filehandle->frame_width != 0 ||
+            (filehandle->row_position - 1) % filehandle->frame_height != 0) {
+            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                          "Reading PerFrameFunctionalGroupsSequence failed",
+                          "Unsupported frame alignment.");
+            return false;
+        }
+
+        // map the position of the frame to the frame number
+        int col = (filehandle->column_position - 1) / filehandle->frame_width;
+        int row = (filehandle->row_position - 1) / filehandle->frame_height;
+        uint32_t index = col + row * filehandle->frames_across;
+        if (index < filehandle->num_frames) {
+            filehandle->frame_index[index] = filehandle->frame_number;
+
+            // we have something meaningful in PerFrameFunctionalGroupsSequence,
+            // so we must display in SPARSE mode
+            filehandle->layout = DCM_LAYOUT_SPARSE;
+        }
+
+        // end of TAG_PLANE_POSITION_SLIDE_SEQUENCE, so we're on to the next
+        // frame
+        filehandle->frame_number += 1;
+    }
+
+    return true;
+}
+
+
 static bool parse_frame_index_element_create(DcmError **error,
                                              void *client,
                                              uint32_t tag,
@@ -833,17 +932,25 @@ static bool parse_frame_index_element_create(DcmError **error,
 
     DcmFilehandle *filehandle = (DcmFilehandle *) client;
 
-    if (vr == DCM_VR_UL && length == 8 && tag == TAG_DIMENSION_INDEX_VALUES) {
-        // it will have already been byteswapped for us, if necessary
-        uint32_t *ul = (uint32_t *) value;
-        uint32_t col = ul[0];
-        uint32_t row = ul[1];
-        uint32_t index = (col - 1) + (row - 1) * filehandle->tiles_across;
+    switch (tag) {
+    case TAG_COLUMN_POSITION_IN_TOTAL_IMAGE_PIXEL_MATRIX:
+        if (vr == DCM_VR_SL && length == 4) {
+            int32_t *sl = (int32_t *) value;
 
-        if (index < filehandle->num_frames) {
-            filehandle->frame_index[index] = filehandle->frame_number;
-            filehandle->frame_number += 1;
+            filehandle->column_position = sl[0];
         }
+        break;
+
+    case TAG_ROW_POSITION_IN_TOTAL_IMAGE_PIXEL_MATRIX:
+        if (vr == DCM_VR_SL && length == 4) {
+            int32_t *sl = (int32_t *) value;
+
+            filehandle->row_position = sl[0];
+        }
+        break;
+
+    default:
+        break;
     }
 
     return true;
@@ -870,6 +977,8 @@ static bool read_frame_index(DcmError **error,
                              DcmFilehandle *filehandle)
 {
     static DcmParse parse = {
+        .sequence_begin = parse_frame_index_sequence_begin,
+        .sequence_end = parse_frame_index_sequence_end,
         .element_create = parse_frame_index_element_create,
         .stop = parse_frame_index_stop,
     };
@@ -1095,29 +1204,29 @@ DcmFrame *dcm_filehandle_read_frame_position(DcmError **error,
         return NULL;
     }
 
-    if (column >= filehandle->tiles_across) {
+    if (column >= filehandle->frames_across) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                       "Reading Frame position failed",
                       "Column must be less than %u",
-                      filehandle->tiles_across);
+                      filehandle->frames_across);
         return NULL;
     }
 
-    uint32_t index = column + row * filehandle->tiles_across;
+    uint32_t index = column + row * filehandle->frames_across;
 
     if (index >= filehandle->num_frames) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                       "Reading Frame position failed",
                       "Row must be less than %u",
-                      filehandle->num_frames / filehandle->tiles_across);
+                      filehandle->num_frames / filehandle->frames_across);
         return NULL;
     }
 
     if (filehandle->layout == DCM_LAYOUT_SPARSE) {
         index = filehandle->frame_index[index];
         if (index == 0xffffffff) {
-            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                          "Reading Frame position failed",
+            dcm_error_set(error, DCM_ERROR_CODE_MISSING_FRAME,
+                          "No frame",
                           "No Frame at position (%u, %u)", column, row);
             return NULL;
         }
