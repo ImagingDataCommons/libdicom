@@ -162,6 +162,8 @@ typedef enum _DcmErrorCode {
     DCM_ERROR_CODE_PARSE = 3,
     /** IO error */
     DCM_ERROR_CODE_IO = 4,
+    /** Missing frame */
+    DCM_ERROR_CODE_MISSING_FRAME = 5,
 } DcmErrorCode;
 
 /**
@@ -1776,6 +1778,11 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
  * Read a frame from a File at a specified (column, row), numbered from zero.
  * This takes account of any frame positioning given in
  * PerFrameFunctionalGroupSequence.
+ *
+ * If the frame is missing, perhaps because this is a sparse file, this
+ * function returns NULL and sets the error
+ * :c:enum:`DCM_ERROR_CODE_MISSING_FRAME`. Applications can detect
+ * this and render a background image.
  *
  * :param error: Pointer to error object
  * :param filehandle: File

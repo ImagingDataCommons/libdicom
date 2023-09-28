@@ -27,8 +27,10 @@ You can read all metadata and control read stop using a sequence of calls to
 
 In case the Data Set contained in a Part10 file represents an Image instance,
 individual frames may be read out with :c:func:`dcm_filehandle_read_frame()`.
+
 Use :c:func:`dcm_filehandle_read_frame_position()` to read the frame at a
-certain (column, row) position.
+certain (column, row) position. This will return NULL and set the error code
+`DCM_ERROR_CODE_MISSING_FRAME` if there is no frame at that position.
 
 A `Data Element
 <http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_3.html#glossentry_DataElement>`_
