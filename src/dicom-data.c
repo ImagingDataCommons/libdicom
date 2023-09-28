@@ -1646,8 +1646,16 @@ bool dcm_sequence_append(DcmError **error, DcmSequence *seq, DcmDataSet *item)
 }
 
 
-static bool sequence_check_index(DcmError **error,
-                                 const DcmSequence *seq, uint32_t index)
+static struct SequenceItem *sequence_get_index(const DcmSequence *seq,
+                                               uint32_t index)
+{
+    return (struct SequenceItem*)utarray_eltptr(seq->items, index);
+}
+
+
+static struct SequenceItem *sequence_check_index(DcmError **error,
+                                                 const DcmSequence *seq,
+                                                 uint32_t index)
 {
     uint32_t length = utarray_len(seq->items);
     if (index >= length) {
@@ -1655,15 +1663,15 @@ static bool sequence_check_index(DcmError **error,
                       "Item of Sequence invalid",
                       "Index %i exceeds length of sequence %i",
                       index, length);
-        return false;
+        return NULL;
     }
 
-    struct SequenceItem *seq_item = utarray_eltptr(seq->items, index);
+    struct SequenceItem *seq_item = sequence_get_index(seq, index);
     if (seq_item == NULL) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                       "Item of Sequence invalid",
                       "Getting item #%i of Sequence failed", index);
-        return false;
+        return NULL;
     }
     if (seq_item->dataset == NULL) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
@@ -1672,18 +1680,18 @@ static bool sequence_check_index(DcmError **error,
         return NULL;
     }
 
-    return true;
+    return seq_item;
 }
 
 
 DcmDataSet *dcm_sequence_get(DcmError **error,
                              const DcmSequence *seq, uint32_t index)
 {
-    if (!sequence_check_index(error, seq, index)) {
+    struct SequenceItem *seq_item = sequence_check_index(error, seq, index);
+    if (seq_item == NULL) {
         return NULL;
     }
 
-    struct SequenceItem *seq_item = utarray_eltptr(seq->items, index);
     dcm_dataset_lock(seq_item->dataset);
 
     return seq_item->dataset;
@@ -1693,11 +1701,11 @@ DcmDataSet *dcm_sequence_get(DcmError **error,
 DcmDataSet *dcm_sequence_steal(DcmError **error,
                                const DcmSequence *seq, uint32_t index)
 {
-    if (!sequence_check_index(error, seq, index)) {
+    struct SequenceItem *seq_item = sequence_check_index(error, seq, index);
+    if (seq_item == NULL) {
         return NULL;
     }
 
-    struct SequenceItem *seq_item = utarray_eltptr(seq->items, index);
     DcmDataSet *result = seq_item->dataset;
     //dcm_dataset_lock(result);
     seq_item->dataset = NULL;
@@ -1716,7 +1724,7 @@ bool dcm_sequence_foreach(const DcmSequence *seq,
 {
     uint32_t length = utarray_len(seq->items);
     for (uint32_t index = 0; index < length; index++) {
-        struct SequenceItem *seq_item = utarray_eltptr(seq->items, index);
+        struct SequenceItem *seq_item = sequence_get_index(seq, index);
         DcmDataSet *dataset = seq_item->dataset;
 
         dcm_dataset_lock(dataset);
@@ -1733,7 +1741,7 @@ bool dcm_sequence_foreach(const DcmSequence *seq,
 bool dcm_sequence_remove(DcmError **error, DcmSequence *seq, uint32_t index)
 {
     if (!sequence_check_not_locked(error, seq) ||
-        !sequence_check_index(error, seq, index)) {
+        sequence_check_index(error, seq, index) == NULL) {
         return false;
     }
 
