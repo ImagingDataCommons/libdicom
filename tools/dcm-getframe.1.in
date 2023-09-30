@@ -1,4 +1,4 @@
-.TH DCM-GETFRAME 1 2023-01-14 "dcm @DCM_SUFFIXED_VERSION@" "User Commands"
+.TH DCM-GETFRAME 1 2023-09-30 "libdicom @DCM_SUFFIXED_VERSION@" "User Commands"
 
 .SH NAME
 dcm-getframe \- print a frame from a DICOM PS3.10 file to standard output
