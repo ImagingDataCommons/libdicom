@@ -1,4 +1,4 @@
-.TH DCM-DUMP 1 2020-07-18 "dcm @DCM_SUFFIXED_VERSION@" "User Commands"
+.TH DCM-DUMP 1 2023-09-30 "libdicom @DCM_SUFFIXED_VERSION@" "User Commands"
 
 .SH NAME
 dcm-dump \- print metadata content of DICOM PS3.10 file to standard output
