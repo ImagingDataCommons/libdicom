@@ -19,12 +19,6 @@
 #define DCM_EXTERN __attribute__((visibility("default"))) extern
 #endif
 
-#ifdef HAS_CONSTRUCTOR
-#define DCM_CONSTRUCTOR __attribute__ ((constructor))
-#else
-#define DCM_CONSTRUCTOR __attribute__ ((constructor))
-#endif
-
 /**
  * Maximum number of characters in values with Value Representation AE.
  */
@@ -132,7 +126,6 @@ typedef struct _DcmSequence DcmSequence;
  * This function can be called many times.
  */
 DCM_EXTERN
-DCM_CONSTRUCTOR
 void dcm_init(void);
 
 /* Our copy of getopt, since non-glibc platforms are missing this.

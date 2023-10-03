@@ -106,13 +106,7 @@ if cc.has_header('unistd.h')
     cfg.set('HAVE_UNISTD_H', '1')
 endif
 # we use a constructor attr for dcm_init()
-code = '''#include<stdio.h>
-__attribute__ ((constructor)) void func() { printf("constructor\n"); }
-'''
-cfg.set(
-  'HAS_CONSTRUCTOR',
-  cc.compiles(code, name : 'has constructor attribute')
-)
+cfg.set('HAS_CONSTRUCTOR', cc.has_function_attribute('constructor'))
 
 configure_file(
   output : 'config.h',
