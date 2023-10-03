@@ -5134,7 +5134,7 @@ void dcm_init(void)
             struct _DcmAttribute_hash_entry *entry;
 
             // The "" keyword appears several times and is used for retired
-            // tags ... we can't map this to tags unambigiously, so we skip it
+            // tags ... we can't map this to tags unambiguously, so we skip it
             // in the table
             if (strcmp(attribute_table[i].keyword, "") == 0) {
                 continue;
