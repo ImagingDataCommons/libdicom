@@ -5083,6 +5083,9 @@ static struct _DcmAttribute_hash_entry *attribute_from_tag_dict = NULL;
 static struct _DcmAttribute_hash_entry *attribute_from_keyword_dict = NULL;
 
 
+#ifdef HAS_CONSTRUCTOR
+__attribute__ ((constructor))
+#endif
 void dcm_init(void)
 {
     if (!vrtable_from_str_dict) {
