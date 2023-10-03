@@ -302,7 +302,8 @@ START_TEST(test_element_CS_multivalue_empty)
     uint32_t tag = 0x00080008;
     uint32_t vm = 0;
 
-    char **values = malloc(vm * sizeof(char *));
+    // since malloc(0) can be NULL on some platforms
+    char **values = malloc(1);
 
     DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_CS);
     (void) dcm_element_set_value_string_multi(NULL, element, values, vm, true);
@@ -528,7 +529,7 @@ END_TEST
 START_TEST(test_element_US_multivalue_empty)
 {
     uint32_t tag = 0x00280010;
-    uint16_t value[];
+    uint16_t value[0];
 
     DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_US);
     (void) dcm_element_set_value_numeric_multi(NULL, element, &value, 0, false);
