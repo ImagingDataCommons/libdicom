@@ -20,6 +20,8 @@ jobs:
             cc: clang
           - os: windows-latest
             cc: clang
+          - os: windows-latest
+            cc: cl
     steps:
     - uses: actions/checkout@v4
 
@@ -58,13 +60,21 @@ jobs:
             sudo=sudo
             ;;
         windows*)
-            # Ignore unused parameter warnings from check.h
-            export CFLAGS=-Wno-unused-parameter
-            # https://github.com/mesonbuild/meson/issues/10022
-            export CC_LD=lld-link
+            case "${{ matrix.cc }}" in
+            cl)
+                # ignore CK_DIAGNOSTIC_POP warnings in check
+                setup_args="--vsenv -Dcheck:werror=false"
+                ;;
+            clang)
+                # Ignore unused parameter warnings from check.h
+                export CFLAGS=-Wno-unused-parameter
+                # https://github.com/mesonbuild/meson/issues/10022
+                export CC_LD=lld-link
+                ;;
+            esac
             ;;
         esac
-        meson setup builddir --werror
+        meson setup builddir --werror $setup_args
         meson compile -C builddir
         $sudo meson install -C builddir
 
