@@ -664,28 +664,28 @@ static bool set_pixel_description(DcmError **error,
         !dcm_element_get_value_integer(error, element, 0, &value)) {
         return false;
     }
-    desc->rows = (uint64_t) value;
+    desc->rows = (uint16_t) value;
 
     element = dcm_dataset_get(error, metadata, 0x00280011);
     if (element == NULL ||
         !dcm_element_get_value_integer(error, element, 0, &value)) {
         return false;
     }
-    desc->columns = (uint64_t) value;
+    desc->columns = (uint16_t) value;
 
     element = dcm_dataset_get(error, metadata, 0x00280002);
     if (element == NULL ||
         !dcm_element_get_value_integer(error, element, 0, &value)) {
         return false;
     }
-    desc->samples_per_pixel = (uint64_t) value;
+    desc->samples_per_pixel = (uint16_t) value;
 
     element = dcm_dataset_get(error, metadata, 0x00280100);
     if (element == NULL ||
         !dcm_element_get_value_integer(error, element, 0, &value)) {
         return false;
     }
-    desc->bits_allocated = (uint64_t) value;
+    desc->bits_allocated = (uint16_t) value;
 
     element = dcm_dataset_get(error, metadata, 0x00280101);
     if (element == NULL ||
@@ -699,14 +699,14 @@ static bool set_pixel_description(DcmError **error,
         !dcm_element_get_value_integer(error, element, 0, &value)) {
         return false;
     }
-    desc->pixel_representation = (uint64_t) value;
+    desc->pixel_representation = (uint16_t) value;
 
     element = dcm_dataset_get(error, metadata, 0x00280006);
     if (element == NULL ||
         !dcm_element_get_value_integer(error, element, 0, &value)) {
         return false;
     }
-    desc->planar_configuration = (uint64_t) value;
+    desc->planar_configuration = (uint16_t) value;
 
     element = dcm_dataset_get(error, metadata, 0x00280004);
     if (element == NULL ||
