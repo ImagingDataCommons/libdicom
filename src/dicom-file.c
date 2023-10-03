@@ -692,7 +692,7 @@ static bool set_pixel_description(DcmError **error,
         !dcm_element_get_value_integer(error, element, 0, &value)) {
         return false;
     }
-    desc->bits_stored = value;
+    desc->bits_stored = (uint16_t) value;
 
     element = dcm_dataset_get(error, metadata, 0x00280103);
     if (element == NULL ||
