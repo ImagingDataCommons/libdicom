@@ -70,7 +70,7 @@ static size_t compute_length_of_string_value_multi(char **values,
 }
 
 
-static char *load_file_to_memory(const char *name, long *length_out)
+static char *load_file_to_memory(const char *name, int64_t *length_out)
 {
     FILE *fp;
 
@@ -82,7 +82,7 @@ static char *load_file_to_memory(const char *name, long *length_out)
     free(full_path);
 
     fseek(fp, 0, SEEK_END);
-    long length = ftell(fp);
+    int64_t length = ftell(fp);
     fseek(fp, 0, SEEK_SET);
 
     if (length < 0) {
@@ -96,12 +96,12 @@ static char *load_file_to_memory(const char *name, long *length_out)
         return NULL;
     }
 
-    long total_read = 0;
+    int64_t total_read = 0;
     while (total_read < length) {
-        size_t bytes_read = fread(result + total_read,
-                                  1,
-                                  length - total_read,
-                                  fp);
+        int64_t bytes_read = fread(result + total_read,
+                                   1,
+                                   length - total_read,
+                                   fp);
         total_read += bytes_read;
     }
 
@@ -302,7 +302,8 @@ START_TEST(test_element_CS_multivalue_empty)
     uint32_t tag = 0x00080008;
     uint32_t vm = 0;
 
-    char **values = malloc(vm * sizeof(char *));
+    // since malloc(0) can be NULL on some platforms
+    char **values = malloc(1);
 
     DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_CS);
     (void) dcm_element_set_value_string_multi(NULL, element, values, vm, true);
@@ -528,15 +529,15 @@ END_TEST
 START_TEST(test_element_US_multivalue_empty)
 {
     uint32_t tag = 0x00280010;
-    uint16_t value[] = {};
-    uint32_t vm = sizeof(value) / sizeof(value[0]);
+    // msvc hates zero length arrays, so use 1
+    uint16_t value[] = {0};
 
     DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_US);
-    (void) dcm_element_set_value_numeric_multi(NULL, element, &value, vm, false);
+    (void) dcm_element_set_value_numeric_multi(NULL, element, &value, 0, false);
 
     ck_assert_int_eq(dcm_element_get_tag(element), tag);
     ck_assert_int_eq(dcm_element_get_vr(element), DCM_VR_US);
-    ck_assert_int_eq(dcm_element_get_length(element), sizeof(value));
+    ck_assert_int_eq(dcm_element_get_length(element), 0);
     ck_assert_int_eq(dcm_element_is_multivalued(element), false);
 
     dcm_element_print(element, 0);
@@ -739,7 +740,7 @@ START_TEST(test_file_sm_image_file_meta_memory)
     DcmElement *element;
     const char *value;
 
-    long length;
+    int64_t length;
     char *memory = load_file_to_memory("data/test_files/sm_image.dcm", &length);
     ck_assert_ptr_nonnull(memory);
 

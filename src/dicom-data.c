@@ -478,9 +478,9 @@ bool dcm_element_set_value_string_multi(DcmError **error,
 
     element->vm = vm;
 
-    size_t length = 0;
+    uint32_t length = 0;
     for (uint32_t i = 0; i < vm; i++) {
-        length += strlen(values[i]);
+        length += (uint32_t) strlen(values[i]);
     }
     if (vm > 1) {
         // add the separator characters
@@ -576,7 +576,7 @@ bool dcm_element_set_value_string(DcmError **error,
         }
 
         element->vm = 1;
-        element_set_length(element, strlen(value));
+        element_set_length(element, (uint32_t) strlen(value));
 
         if (!dcm_element_validate(error, element)) {
             return false;
@@ -598,7 +598,7 @@ static int64_t value_to_int64(DcmVR vr, int *value)
 {
     uint64_t result = 0;
 
-#define PEEK(TYPE) result = *((TYPE *) value)
+#define PEEK(TYPE) result = (uint64_t) *((TYPE *) value)
     DCM_SWITCH_NUMERIC(vr, PEEK);
 #undef PEEK
 
@@ -610,7 +610,7 @@ static int64_t value_to_int64(DcmVR vr, int *value)
 static void int64_to_value(DcmVR vr, int *result, int64_t value)
 {
     *result = 0;
-#define POKE(TYPE) *((TYPE *) result) = value;
+#define POKE(TYPE) *((TYPE *) result) = (TYPE) value;
     DCM_SWITCH_NUMERIC(vr, POKE);
 #undef POKE
 }
@@ -697,7 +697,7 @@ bool dcm_element_set_value_integer(DcmError **error,
     int *element_value = (int *) &element->value.single.sl;
     int64_to_value(element->vr, element_value, value);
     element->vm = 1;
-    element_set_length(element, dcm_dict_vr_size(element->vr));
+    element_set_length(element, (uint32_t) dcm_dict_vr_size(element->vr));
 
     if (!dcm_element_validate(error, element)) {
         return false;
@@ -741,7 +741,7 @@ bool dcm_element_set_value_numeric_multi(DcmError **error,
     }
 
     element->vm = vm;
-    element_set_length(element, size_in_bytes);
+    element_set_length(element, (uint32_t) size_in_bytes);
 
     if (!dcm_element_validate(error, element)) {
         return false;
@@ -762,7 +762,7 @@ static double value_to_double(DcmVR vr, double *value)
 {
     double result = 0.0;
 
-#define PEEK(TYPE) result = *((TYPE *) value)
+#define PEEK(TYPE) result = (double) *((TYPE *) value)
     DCM_SWITCH_NUMERIC(vr, PEEK);
 #undef PEEK
 
@@ -774,7 +774,7 @@ static double value_to_double(DcmVR vr, double *value)
 static void double_to_value(DcmVR vr, double *result, double value)
 {
     *result = 0.0;
-#define POKE(TYPE) *((TYPE *) result) = value;
+#define POKE(TYPE) *((TYPE *) result) = (TYPE) value;
     DCM_SWITCH_NUMERIC(vr, POKE);
 #undef POKE
 }
@@ -834,7 +834,7 @@ bool dcm_element_set_value_decimal(DcmError **error,
     double *element_value = (double *) &element->value.single.fd;
     double_to_value(element->vr, element_value, value);
     element->vm = 1;
-    element_set_length(element, dcm_dict_vr_size(element->vr));
+    element_set_length(element, (uint32_t) dcm_dict_vr_size(element->vr));
 
     if (!dcm_element_validate(error, element)) {
         return false;
@@ -948,7 +948,7 @@ bool dcm_element_set_value(DcmError **error,
             if (!dcm_element_set_value_numeric_multi(error,
                                                      element,
                                                      (int *) value,
-                                                     length / size,
+                                                     length / (uint32_t) size,
                                                      steal)) {
                 return false;
             }
@@ -1284,7 +1284,7 @@ char *dcm_element_value_to_string(const DcmElement *element)
         (void) dcm_element_get_value_integer(NULL, element, 0, &grp);
         (void) dcm_element_get_value_integer(NULL, element, 1, &ele);
 
-        uint32_t tag = grp << 16 | ele;
+        uint32_t tag = (uint32_t) grp << 16 | (uint32_t) ele;
 
         const char *keyword = dcm_dict_keyword_from_tag(tag);
 

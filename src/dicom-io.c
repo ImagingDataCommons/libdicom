@@ -44,8 +44,8 @@ typedef struct _DcmIOFile {
     int fd;
     char *filename;
     char input_buffer[BUFFER_SIZE];
-    int bytes_in_buffer;
-    int read_point;
+    int64_t bytes_in_buffer;
+    int64_t read_point;
 } DcmIOFile;
 
 
@@ -120,7 +120,8 @@ static int64_t read_file(DcmError **error, DcmIOFile *file,
     int64_t bytes_read;
 
 #ifdef _WIN32
-    bytes_read = _read(file->fd, buffer, length);
+    // we'll never read a huge chunk (hopefully)
+    bytes_read = _read(file->fd, buffer, (uint32_t) length);
 #else
     do {
         bytes_read = read(file->fd, buffer, length);
@@ -179,8 +180,8 @@ static int64_t dcm_io_read_file(DcmError **error, DcmIO *io,
 
         /* Read what we can from the buffer.
          */
-        int bytes_available = file->bytes_in_buffer - file->read_point;
-        int bytes_to_copy = MIN(bytes_available, length);
+        int64_t bytes_available = file->bytes_in_buffer - file->read_point;
+        int64_t bytes_to_copy = MIN(bytes_available, length);
 
         memcpy(buffer,
                file->input_buffer + file->read_point,
@@ -309,8 +310,8 @@ static int64_t dcm_io_read_memory(DcmError **error, DcmIO *io,
 
     USED(error);
 
-    int bytes_available = memory->length - memory->read_point;
-    int bytes_to_copy = MIN(bytes_available, length);
+    int64_t bytes_available = memory->length - memory->read_point;
+    int64_t bytes_to_copy = MIN(bytes_available, length);
     memcpy(buffer,
            memory->buffer + memory->read_point,
            bytes_to_copy);
@@ -355,7 +356,7 @@ static int64_t dcm_io_seek_memory(DcmError **error, DcmIO *io,
 
 
 DcmIO *dcm_io_create_from_memory(DcmError **error,
-                                 const char *buffer, 
+                                 const char *buffer,
                                  int64_t length)
 {
     static DcmIOMethods methods = {
@@ -391,9 +392,9 @@ int64_t dcm_io_read(DcmError **error,
 }
 
 
-int64_t dcm_io_seek(DcmError **error, 
-                    DcmIO *io, 
-                    int64_t offset, 
+int64_t dcm_io_seek(DcmError **error,
+                    DcmIO *io,
+                    int64_t offset,
                     int whence)
 {
     return io->methods->seek(error, io, offset, whence);
