@@ -480,7 +480,7 @@ bool dcm_element_set_value_string_multi(DcmError **error,
 
     uint32_t length = 0;
     for (uint32_t i = 0; i < vm; i++) {
-        length += strlen(values[i]);
+        length += (uint32_t) strlen(values[i]);
     }
     if (vm > 1) {
         // add the separator characters
@@ -948,7 +948,7 @@ bool dcm_element_set_value(DcmError **error,
             if (!dcm_element_set_value_numeric_multi(error,
                                                      element,
                                                      (int *) value,
-                                                     length / size,
+                                                     length / (uint32_t) size,
                                                      steal)) {
                 return false;
             }
