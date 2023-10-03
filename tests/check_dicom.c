@@ -529,7 +529,8 @@ END_TEST
 START_TEST(test_element_US_multivalue_empty)
 {
     uint32_t tag = 0x00280010;
-    uint16_t value[0];
+    // msvc hates zero length arrays, so use 1
+    uint16_t value[] = {0};
 
     DcmElement *element = dcm_element_create(NULL, tag, DCM_VR_US);
     (void) dcm_element_set_value_numeric_multi(NULL, element, &value, 0, false);
