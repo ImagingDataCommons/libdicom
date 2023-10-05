@@ -536,7 +536,7 @@ static DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
                          false,
                          &parse,
                          filehandle)) {
-        return false;
+        return NULL;
     }
 
     /* Sanity check. We should have parsed a single dataset into the sequence
@@ -555,8 +555,8 @@ static DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
     }
 
     DcmDataSet *file_meta = dcm_sequence_get(error, sequence, 0);
-    if (file_meta == NULL ) {
-        return false;
+    if (file_meta == NULL) {
+        return NULL;
     }
 
     // steal file_meta to stop it being destroyed
@@ -765,7 +765,7 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
                            filehandle->implicit,
                            &parse,
                            filehandle)) {
-        return false;
+        return NULL;
     }
 
     /* Sanity check. We should have parsed a single dataset into the sequence
@@ -784,8 +784,8 @@ DcmDataSet *dcm_filehandle_read_metadata(DcmError **error,
     }
 
     DcmDataSet *meta = dcm_sequence_get(error, sequence, 0);
-    if (meta == NULL ) {
-        return false;
+    if (meta == NULL) {
+        return NULL;
     }
 
     // steal meta to stop it being destroyed
@@ -821,6 +821,9 @@ const DcmDataSet *dcm_filehandle_get_metadata_subset(DcmError **error,
         DcmDataSet *meta = dcm_filehandle_read_metadata(error,
                                                         filehandle,
                                                         stop_tags);
+        if (meta == NULL) {
+            return NULL;
+        }
 
         // record the position of the tag that stopped the read
         if (!dcm_offset(error, filehandle, &filehandle->after_read_metadata)) {
@@ -838,7 +841,7 @@ const DcmDataSet *dcm_filehandle_get_metadata_subset(DcmError **error,
                 &filehandle->tiles_across, &filehandle->tiles_down) ||
             !set_pixel_description(error, meta, &filehandle->desc)) {
             dcm_dataset_destroy(meta);
-            return false;
+            return NULL;
         }
         filehandle->num_tiles = filehandle->tiles_across *
             filehandle->tiles_down;

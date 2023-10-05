@@ -940,8 +940,10 @@ bool dcm_parse_pixeldata_offsets(DcmError **error,
         *first_frame_offset = position;
 
         // the next thing should be the tag for frame 1
-        if (!read_tag(&state, &tag, &position) ||
-            tag != TAG_ITEM) {
+        if (!read_tag(&state, &tag, &position)) {
+            return false;
+        }
+        if (tag != TAG_ITEM) {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                           "Reading Basic Offset Table failed",
                           "Basic Offset Table too large");
@@ -990,8 +992,10 @@ bool dcm_parse_pixeldata_offsets(DcmError **error,
         }
 
         // the next thing should be the end of sequence tag
-        if (!read_tag(&state, &tag, &position) ||
-            tag != TAG_SQ_DELIM) {
+        if (!read_tag(&state, &tag, &position)) {
+            return false;
+        }
+        if (tag != TAG_SQ_DELIM) {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                           "Reading Basic Offset Table failed",
                           "Too many frames in PixelData");
