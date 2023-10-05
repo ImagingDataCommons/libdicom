@@ -821,6 +821,9 @@ const DcmDataSet *dcm_filehandle_get_metadata_subset(DcmError **error,
         DcmDataSet *meta = dcm_filehandle_read_metadata(error,
                                                         filehandle,
                                                         stop_tags);
+        if (meta == NULL) {
+            return NULL;
+        }
 
         // record the position of the tag that stopped the read
         if (!dcm_offset(error, filehandle, &filehandle->after_read_metadata)) {
