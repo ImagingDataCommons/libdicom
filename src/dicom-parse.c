@@ -155,7 +155,7 @@ static bool is_big_endian(void)
 static void byteswap(char *data, size_t length, size_t size)
 {
     // only swap if the data is "swappable"
-    if (length >= size && length % size == 0) {
+    if (size > 0 && length >= size && length % size == 0) {
         size_t n_elements = length / size;
 
         switch (size) {
@@ -600,14 +600,14 @@ static bool parse_element_body(DcmParseState *state,
 
             // read to a static char buffer, if possible
             if ((int64_t) length + 1 >= INPUT_BUFFER_SIZE) {
-                value = value_free = DCM_MALLOC(state->error, (size_t) length + 1);
+                value = value_free = DCM_MALLOC(state->error,
+                                                (size_t) length + 1);
                 if (value == NULL) {
                     return false;
                 }
             } else {
                 value = input_buffer;
             }
-
 
             if (!dcm_require(state, value, length, position)) {
                 if (value_free != NULL) {
@@ -625,11 +625,8 @@ static bool parse_element_body(DcmParseState *state,
                 }
             }
 
-            if (vr_class == DCM_VR_CLASS_NUMERIC_DECIMAL ||
-                vr_class == DCM_VR_CLASS_NUMERIC_INTEGER) {
-                if (state->big_endian) {
-                    byteswap(value, length, size);
-                }
+            if (size > 0 && state->big_endian) {
+                byteswap(value, length, size);
             }
 
             if (state->parse->element_create &&

@@ -1446,7 +1446,7 @@ static bool print_pixeldata_create(DcmError **error,
 
     uint32_t n = MIN(16, length);
     for (uint32_t i = 0; i < n; i++) {
-        printf("%02x", value[i]);
+        printf("%02x", value[i] & 0xff);
 
         if (i % size == size - 1) {
             printf(" ");

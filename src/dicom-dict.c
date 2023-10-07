@@ -101,8 +101,8 @@ static const struct _DcmVRTable vr_table[] = {
 
     {DCM_VR_UC, "UC", DCM_VR_CLASS_STRING_MULTI,       0, DCM_CAPACITY_UC, 4},
 
-    {DCM_VR_OL, "OL", DCM_VR_CLASS_BINARY,             0, 0,               4},
-    {DCM_VR_OV, "OV", DCM_VR_CLASS_BINARY,             0, 0,               4},
+    {DCM_VR_OL, "OL", DCM_VR_CLASS_BINARY,             4, 0,               4},
+    {DCM_VR_OV, "OV", DCM_VR_CLASS_BINARY,             8, 0,               4},
 
     {DCM_VR_SV, "SV", DCM_VR_CLASS_NUMERIC_INTEGER,    8, 0,               4},
     {DCM_VR_UV, "UV", DCM_VR_CLASS_NUMERIC_INTEGER,    8, 0,               4},

@@ -1,5 +1,10 @@
 ## master
 
+## 1.0.3, 7/10/23
+
+- improve handling of OV and OL [jcupitt]
+- better frame data print [jcupitt]
+
 ## 1.0.2, 5/10/23
 
 - fix a crash and some error pileups [bgilbert]
