@@ -41,7 +41,6 @@ typedef struct _DcmParseState {
     DcmDataSet *meta;
     int64_t offset;
     int64_t pixel_data_offset;
-    uint64_t *extended_offset_table;
 } DcmParseState;
 
 

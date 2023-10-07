@@ -1068,6 +1068,44 @@ static bool read_skip_to_index(DcmError **error,
 }
 
 
+static bool parse_skip_to_pixel_data(void *client,
+                                     uint32_t tag,
+                                     DcmVR vr,
+                                     uint32_t length)
+{
+    DcmFilehandle *filehandle = (DcmFilehandle *) client;
+
+    USED(vr);
+    USED(length);
+
+    filehandle->last_tag = tag;
+
+    return tag == TAG_PIXEL_DATA ||
+           tag == TAG_FLOAT_PIXEL_DATA ||
+           tag == TAG_DOUBLE_PIXEL_DATA;
+}
+
+
+static bool read_skip_to_pixel_data(DcmError **error,
+                                    DcmFilehandle *filehandle)
+
+{
+    static DcmParse parse = {
+        .stop = parse_skip_to_pixel_data,
+    };
+
+    if (!dcm_parse_dataset(error,
+                           filehandle->io,
+                           filehandle->implicit,
+                           &parse,
+                           filehandle)) {
+        return false;
+    }
+
+    return true;
+}
+
+
 bool dcm_filehandle_prepare_read_frame(DcmError **error,
                                        DcmFilehandle *filehandle)
 {
@@ -1093,6 +1131,11 @@ bool dcm_filehandle_prepare_read_frame(DcmError **error,
         // if we're on per frame func, read that in
         if (filehandle->last_tag == TAG_PER_FRAME_FUNCTIONAL_GROUP_SEQUENCE &&
             !read_frame_index(error, filehandle)) {
+            return false;
+        }
+
+        // now skip over things like extended offset table
+        if (!read_skip_to_pixel_data(error, filehandle)) {
             return false;
         }
 

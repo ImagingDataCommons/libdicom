@@ -4,6 +4,7 @@
 
 - improve handling of OV and OL [jcupitt]
 - better frame data print [jcupitt]
+- improve ExtendedOffsetTable handling [jcupitt]
 
 ## 1.0.2, 5/10/23
 
