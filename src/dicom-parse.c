@@ -881,6 +881,8 @@ bool dcm_parse_pixeldata_offsets(DcmError **error,
 
     int64_t position = 0;
 
+    dcm_log_debug("Parsing PixelData.");
+
     uint32_t tag;
     DcmVR vr;
     uint32_t length;
@@ -912,7 +914,7 @@ bool dcm_parse_pixeldata_offsets(DcmError **error,
 
     if (length > 0) {
         // There is a non-zero length BOT, use that
-        dcm_log_info("Read Basic Offset Table value.");
+        dcm_log_info("Reading Basic Offset Table.");
 
         // Read offset values from BOT Item value
         // FIXME .. could do this with a single require to a uint32_t array,
@@ -951,6 +953,8 @@ bool dcm_parse_pixeldata_offsets(DcmError **error,
 
         // we could use our generic parser above ^^ but we have a special loop
         // here as an optimisation (we can skip over the pixel data itself)
+
+        dcm_log_info("Building offset table from pixel data scan.");
 
         // 0 in the BOT is the offset to the start of frame 1, ie. here
         *first_frame_offset = position;
