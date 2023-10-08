@@ -1147,15 +1147,15 @@ bool dcm_filehandle_prepare_read_frame(DcmError **error,
                                        DcmFilehandle *filehandle)
 {
     if (filehandle->offset_table == NULL) {
+        // move to the first of our stop tags
+        if (dcm_filehandle_get_metadata_subset(error, filehandle) == NULL) {
+            return false;
+        }
+
         filehandle->offset_table = DCM_NEW_ARRAY(error,
                                                  filehandle->num_frames,
                                                  int64_t);
         if (filehandle->offset_table == NULL) {
-            return false;
-        }
-
-        // move to the first of our stop tags
-        if (dcm_filehandle_get_metadata_subset(error, filehandle) == NULL) {
             return false;
         }
 
