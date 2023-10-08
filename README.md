@@ -1,14 +1,14 @@
 [![Build
 Status](https://github.com/ImagingDataCommons/libdicom/actions/workflows/run_unit_tests.yml/badge.svg)](https://github.com/ImagingDataCommons/libdicom/actions)
+[![Documentation Status](https://readthedocs.org/projects/libdicom/badge/?version=latest)](https://libdicom.readthedocs.io/en/latest/?badge=latest)
 
 # libdicom
 
 libdicom is a C library and a set of command-line tools
-for reading DICOM WSI files. It is free (MIT licensed),
-fast, cross-platform, uses little memory, has no dependencies, [includes API
-documentation](http://www.rollthepotato.net/~john/libdicom/index.html),
-and is [easy to use from languages like
-Python](https://github.com/jcupitt/pylibdicom).
+for reading DICOM WSI files. It is free (MIT licensed), fast,
+cross-platform, uses little memory, has no dependencies, [includes API
+documentation](https://libdicom.readthedocs.io), and is [easy to use from
+languages like Python](https://github.com/jcupitt/pylibdicom).
 
 ![A DICOM WSI being viewed via OpenSlide 4.0](data/vipsdisp.png)
 
@@ -29,14 +29,12 @@ meson compile -C builddir
 meson install -C builddir
 ```
 See [the installation
-documentation](https:/http://www.rollthepotato.net/~john/libdicom/installation.html)
+documentation](https://libdicom.readthedocs.io/en/latest/installation.html)
 for build dependencies and installation options.
 
 ## Sample code
 
-See [the
-documentation](http://www.rollthepotato.net/~john/libdicom/index.html)
-for full details.
+See [the documentation](https://libdicom.readthedocs.io) for full details.
 
 ```c
 #include <stdlib.h>
