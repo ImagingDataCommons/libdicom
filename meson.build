@@ -5,10 +5,12 @@ project(
     # turn off asserts etc. in release mode
     'b_ndebug=if-release',
     'warning_level=2',
+    # do a release (optimised) build by default
+    'buildtype=debugoptimized',
   ],
   license : 'MIT',
   meson_version : '>=0.50',
-  version : '1.0.3'
+  version : '1.0.4'
 )
 if not meson.is_subproject()
   meson.add_dist_script(
