@@ -5160,10 +5160,7 @@ static const struct _DcmVRTable *vrtable_from_vr(const char *vr)
 
     HASH_FIND_STR(vrtable_from_str_dict, vr, entry);
 
-    if (entry == NULL) {
-        return NULL;
-    }
-    return &entry->table;
+    return (const struct _DcmVRTable *) entry;
 }
 
 
@@ -5256,10 +5253,7 @@ static const struct _DcmAttribute *attribute_from_tag(uint32_t tag)
 
     HASH_FIND_INT(attribute_from_tag_dict, &tag, entry);
 
-    if (entry == NULL) {
-        return NULL;
-    }
-    return &entry->attr;
+    return (const struct _DcmAttribute *) entry;
 }
 
 
@@ -5357,10 +5351,7 @@ static const struct _DcmAttribute *attribute_from_keyword(const char *keyword)
 
     HASH_FIND_STR(attribute_from_keyword_dict, keyword, entry);
 
-    if (entry == NULL) {
-        return NULL;
-    }
-    return &entry->attr;
+    return (const struct _DcmAttribute *) entry;
 }
 
 

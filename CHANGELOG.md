@@ -1,6 +1,10 @@
 ## master
 
-## 1.0.4, 9./10/23
+## 1.0.5, 9/10/23
+
+* fix a strict aliasing issue [bgilbert]
+
+## 1.0.4, 9/10/23
 
 * change default buildtype to debugoptimized [jcupitt]
 * fix readthedocs integration [jcupitt]

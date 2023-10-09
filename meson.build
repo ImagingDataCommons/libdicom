@@ -10,7 +10,7 @@ project(
   ],
   license : 'MIT',
   meson_version : '>=0.50',
-  version : '1.0.4'
+  version : '1.0.5'
 )
 if not meson.is_subproject()
   meson.add_dist_script(
