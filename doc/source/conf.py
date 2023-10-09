@@ -71,9 +71,11 @@ if sys.platform == 'darwin':
 elif sys.platform == 'windows':
     lib_search_dirs = []
 else:
+    # we are nailed to clang-14 by readthedocs, so we must look in llvm-14
+    # for libclang.so
     lib_search_dirs = [
         '/usr/lib',
         '/usr/local/lib',
-    ] + glob('/usr/lib/llvm-*/lib')
+    ] + glob('/usr/lib/llvm-14/lib')
 for lib_dir in lib_search_dirs:
     clang_config.set_library_path(lib_dir)
