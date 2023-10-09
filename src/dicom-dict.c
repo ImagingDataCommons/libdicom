@@ -5169,21 +5169,21 @@ static const struct _DcmVRTable *vrtable_from_vr(const char *vr)
 
 bool dcm_is_valid_vr(const char *str)
 {
-    const struct _DcmVRTable *entry;
+    const struct _DcmVRTable *table;
 
     return str &&
-        (entry = vrtable_from_vr(str)) &&
-        entry->vr != DCM_VR_ERROR;
+        (table = vrtable_from_vr(str)) &&
+        table->vr != DCM_VR_ERROR;
 }
 
 
 DcmVR dcm_dict_vr_from_str(const char *str)
 {
-    const struct _DcmVRTable *entry;
+    const struct _DcmVRTable *table;
 
     if (str &&
-        (entry = vrtable_from_vr(str))) {
-        return entry->vr;
+        (table = vrtable_from_vr(str))) {
+        return table->vr;
     }
 
     return DCM_VR_ERROR;
