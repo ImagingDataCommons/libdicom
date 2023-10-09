@@ -33,15 +33,7 @@ struct _DcmVRTable {
 };
 
 struct _DcmVRTable_hash_entry {
-    /* All of VRTable, plus a hash handle.
-     */
-    DcmVR vr;
-    char *str;
-    DcmVRClass vr_class;
-    size_t size;
-    uint32_t capacity;
-    int header_length;
-
+    struct _DcmVRTable table;
     UT_hash_handle hh;
 };
 
@@ -175,10 +167,7 @@ struct _DcmAttribute {
 };
 
 struct _DcmAttribute_hash_entry {
-    uint32_t tag;
-    DcmVRTag vr_tag;
-    char keyword[63];
-
+    struct _DcmAttribute attr;
     UT_hash_handle hh;
 };
 
@@ -5102,8 +5091,8 @@ void dcm_init(void)
             }
 
             entry = DCM_NEW(NULL, struct _DcmVRTable_hash_entry);
-            *((struct _DcmVRTable *)entry) = vr_table[i];
-            HASH_ADD_STR(vrtable_from_str_dict, str, entry);
+            entry->table = vr_table[i];
+            HASH_ADD_STR(vrtable_from_str_dict, table.str, entry);
         }
     }
 
@@ -5120,13 +5109,13 @@ void dcm_init(void)
                                  "%8X (%s) registered previously as '%s'",
                                  attribute_table[i].tag,
                                  attribute_table[i].keyword,
-                                 entry->keyword);
+                                 entry->attr.keyword);
                 return;
             }
 
             entry = DCM_NEW(NULL, struct _DcmAttribute_hash_entry);
-            *((struct _DcmAttribute *)entry) = attribute_table[i];
-            HASH_ADD_INT(attribute_from_tag_dict, tag, entry);
+            entry->attr = attribute_table[i];
+            HASH_ADD_INT(attribute_from_tag_dict, attr.tag, entry);
         }
     }
 
@@ -5152,8 +5141,8 @@ void dcm_init(void)
             }
 
             entry = DCM_NEW(NULL, struct _DcmAttribute_hash_entry);
-            *((struct _DcmAttribute *)entry) = attribute_table[i];
-            HASH_ADD_STR(attribute_from_keyword_dict, keyword, entry);
+            entry->attr = attribute_table[i];
+            HASH_ADD_STR(attribute_from_keyword_dict, attr.keyword, entry);
         }
     }
 
@@ -5171,27 +5160,30 @@ static const struct _DcmVRTable *vrtable_from_vr(const char *vr)
 
     HASH_FIND_STR(vrtable_from_str_dict, vr, entry);
 
-    return (const struct _DcmVRTable *)entry;
+    if (entry == NULL) {
+        return NULL;
+    }
+    return &entry->table;
 }
 
 
 bool dcm_is_valid_vr(const char *str)
 {
-    const struct _DcmVRTable *entry;
+    const struct _DcmVRTable *table;
 
     return str &&
-        (entry = vrtable_from_vr(str)) &&
-        entry->vr != DCM_VR_ERROR;
+        (table = vrtable_from_vr(str)) &&
+        table->vr != DCM_VR_ERROR;
 }
 
 
 DcmVR dcm_dict_vr_from_str(const char *str)
 {
-    const struct _DcmVRTable *entry;
+    const struct _DcmVRTable *table;
 
     if (str &&
-        (entry = vrtable_from_vr(str))) {
-        return entry->vr;
+        (table = vrtable_from_vr(str))) {
+        return table->vr;
     }
 
     return DCM_VR_ERROR;
@@ -5264,7 +5256,10 @@ static const struct _DcmAttribute *attribute_from_tag(uint32_t tag)
 
     HASH_FIND_INT(attribute_from_tag_dict, &tag, entry);
 
-    return (const struct _DcmAttribute *)entry;
+    if (entry == NULL) {
+        return NULL;
+    }
+    return &entry->attr;
 }
 
 
@@ -5362,7 +5357,10 @@ static const struct _DcmAttribute *attribute_from_keyword(const char *keyword)
 
     HASH_FIND_STR(attribute_from_keyword_dict, keyword, entry);
 
-    return (const struct _DcmAttribute *)entry;
+    if (entry == NULL) {
+        return NULL;
+    }
+    return &entry->attr;
 }
 
 
