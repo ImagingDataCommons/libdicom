@@ -24,16 +24,6 @@
 #include "dicom-dict-lookup.h"
 #include "dicom-dict-tables.h"
 
-#ifdef HAS_CONSTRUCTOR
-__attribute__ ((constructor))
-#endif
-void dcm_init(void)
-{
-    if (getenv("DCM_DEBUG")) {
-        dcm_log_set_level(DCM_LOG_DEBUG);
-    }
-}
-
 #define LOOKUP(table, field, hash, key, key_len, out) do {		\
         unsigned hash_value;						\
         HASH_FUNCTION(key, key_len, hash_value);			\
