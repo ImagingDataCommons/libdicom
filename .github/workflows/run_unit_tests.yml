@@ -75,7 +75,7 @@ jobs:
             ;;
         esac
         meson setup builddir --werror $setup_args
-        meson compile -C builddir
+        DEBUG_DICT=1 meson compile -C builddir
         $sudo meson install -C builddir
 
     - name: Run unit tests

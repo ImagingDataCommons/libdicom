@@ -21,114 +21,44 @@
 
 #include <dicom/dicom.h>
 #include "pdicom.h"
+#include "dicom-dict-lookup.h"
 #include "dicom-dict-tables.h"
-
-struct _DcmVRTable_hash_entry {
-    struct _DcmVRTable table;
-    UT_hash_handle hh;
-};
-
-static struct _DcmVRTable_hash_entry *vrtable_from_str_dict = NULL;
-
-struct _DcmAttribute_hash_entry {
-    struct _DcmAttribute attr;
-    UT_hash_handle hh;
-};
-
-static struct _DcmAttribute_hash_entry *attribute_from_tag_dict = NULL;
-
-static struct _DcmAttribute_hash_entry *attribute_from_keyword_dict = NULL;
-
 
 #ifdef HAS_CONSTRUCTOR
 __attribute__ ((constructor))
 #endif
 void dcm_init(void)
 {
-    if (!vrtable_from_str_dict) {
-        int i;
-
-        for (i = 0; i < dcm_vr_table_len; i++) {
-            struct _DcmVRTable_hash_entry *entry;
-
-            HASH_FIND_STR(vrtable_from_str_dict, dcm_vr_table[i].str, entry);
-            if (entry) {
-                dcm_log_critical("Duplicate VR in VR table %s",
-                                 dcm_vr_table[i].str);
-                return;
-            }
-
-            entry = DCM_NEW(NULL, struct _DcmVRTable_hash_entry);
-            entry->table = dcm_vr_table[i];
-            HASH_ADD_STR(vrtable_from_str_dict, table.str, entry);
-        }
-    }
-
-    if (!attribute_from_tag_dict) {
-        int i;
-
-        for (i = 0; i < dcm_attribute_table_len; i++) {
-            struct _DcmAttribute_hash_entry *entry;
-
-            HASH_FIND_INT(attribute_from_tag_dict,
-                          &dcm_attribute_table[i].tag, entry);
-            if (entry) {
-                dcm_log_critical("Duplicate tag in attribute table -- "
-                                 "%8X (%s) registered previously as '%s'",
-                                 dcm_attribute_table[i].tag,
-                                 dcm_attribute_table[i].keyword,
-                                 entry->attr.keyword);
-                return;
-            }
-
-            entry = DCM_NEW(NULL, struct _DcmAttribute_hash_entry);
-            entry->attr = dcm_attribute_table[i];
-            HASH_ADD_INT(attribute_from_tag_dict, attr.tag, entry);
-        }
-    }
-
-    if (!attribute_from_keyword_dict) {
-        int i;
-
-        for (i = 0; i < dcm_attribute_table_len; i++) {
-            struct _DcmAttribute_hash_entry *entry;
-
-            // The "" keyword appears several times and is used for retired
-            // tags ... we can't map this to tags unambiguously, so we skip it
-            // in the table
-            if (strcmp(dcm_attribute_table[i].keyword, "") == 0) {
-                continue;
-            }
-
-            HASH_FIND_STR(attribute_from_keyword_dict,
-                          dcm_attribute_table[i].keyword, entry);
-            if (entry) {
-                dcm_log_critical("Duplicate keyword in attribute table '%s'",
-                                 dcm_attribute_table[i].keyword);
-                return;
-            }
-
-            entry = DCM_NEW(NULL, struct _DcmAttribute_hash_entry);
-            entry->attr = dcm_attribute_table[i];
-            HASH_ADD_STR(attribute_from_keyword_dict, attr.keyword, entry);
-        }
-    }
-
     if (getenv("DCM_DEBUG")) {
         dcm_log_set_level(DCM_LOG_DEBUG);
     }
 }
 
+#define LOOKUP(table, field, hash, key, key_len, out) do {		\
+        unsigned hash_value;						\
+        HASH_FUNCTION(key, key_len, hash_value);			\
+        for (int probe = 0; true; probe++) {				\
+            int i = hash ## _dict[(hash_value + probe) % hash ## _len];	\
+            if (i == hash ## _empty || probe == LOOKUP_MAX_PROBES) {	\
+                (out) = NULL;						\
+                break;							\
+            } else if (!memcmp(key, &(table)[i].field, key_len)) {	\
+                (out) = &(table)[i];					\
+                break;							\
+            }								\
+        }								\
+    } while (0)
+
 
 static const struct _DcmVRTable *vrtable_from_vr(const char *vr)
 {
-    struct _DcmVRTable_hash_entry *entry;
+    const struct _DcmVRTable *table;
 
-    dcm_init();
+    LOOKUP(dcm_vr_table, str,
+           dcm_vrtable_from_str, vr, strlen(vr),
+           table);
 
-    HASH_FIND_STR(vrtable_from_str_dict, vr, entry);
-
-    return (const struct _DcmVRTable *) entry;
+    return table;
 }
 
 
@@ -208,9 +138,7 @@ int dcm_dict_vr_header_length(DcmVR vr)
 
 static const struct _DcmAttribute *attribute_from_tag(uint32_t tag)
 {
-    struct _DcmAttribute_hash_entry *entry;
-
-    dcm_init();
+    const struct _DcmAttribute *attribute;
 
     // tags with element number 0 are generic group length tags ... map all of
     // these (except 0000,0000) to tag 0008,0000 (GenericGroupLength)
@@ -219,9 +147,11 @@ static const struct _DcmAttribute *attribute_from_tag(uint32_t tag)
         tag = 0x00080000;
     }
 
-    HASH_FIND_INT(attribute_from_tag_dict, &tag, entry);
+    LOOKUP(dcm_attribute_table, tag,
+           dcm_attribute_from_tag, &tag, sizeof(tag),
+           attribute);
 
-    return (const struct _DcmAttribute *) entry;
+    return attribute;
 }
 
 
@@ -313,13 +243,13 @@ const char *dcm_dict_keyword_from_tag(uint32_t tag)
 
 static const struct _DcmAttribute *attribute_from_keyword(const char *keyword)
 {
-    struct _DcmAttribute_hash_entry *entry;
+    const struct _DcmAttribute *attribute;
 
-    dcm_init();
+    LOOKUP(dcm_attribute_table, keyword,
+           dcm_attribute_from_keyword, keyword, strlen(keyword),
+           attribute);
 
-    HASH_FIND_STR(attribute_from_keyword_dict, keyword, entry);
-
-    return (const struct _DcmAttribute *) entry;
+    return attribute;
 }
 
 
