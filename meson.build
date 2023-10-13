@@ -149,6 +149,7 @@ library_sources = [
   'src/dicom-io.c',
   'src/dicom-data.c',
   'src/dicom-dict.c',
+  'src/dicom-dict-tables.c',
   'src/dicom-file.c',
   'src/dicom-parse.c',
 ]
