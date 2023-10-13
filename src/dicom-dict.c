@@ -25,7 +25,7 @@
 
 struct _DcmVRTable {
     DcmVR vr;
-    char *str;
+    char str[3];
     DcmVRClass vr_class;
     size_t size;
     uint32_t capacity;
