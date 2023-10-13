@@ -107,8 +107,6 @@ endif
 if cc.has_header('unistd.h')
     cfg.set('HAVE_UNISTD_H', '1')
 endif
-# we use a constructor attr for dcm_init()
-cfg.set('HAS_CONSTRUCTOR', cc.has_function_attribute('constructor'))
 
 configure_file(
   output : 'config.h',

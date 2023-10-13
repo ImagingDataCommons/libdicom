@@ -304,9 +304,6 @@ void dcm_error_print(DcmError *error)
 static DcmLogLevel dcm_log_level = DCM_LOG_NOTSET;
 static bool dcm_inited;
 
-#ifdef HAS_CONSTRUCTOR
-__attribute__ ((constructor))
-#endif
 void dcm_init(void)
 {
     if (dcm_inited) {
