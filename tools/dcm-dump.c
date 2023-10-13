@@ -14,8 +14,6 @@ int main(int argc, char *argv[])
 {
     int i, c;
 
-    dcm_init();
-
     while ((c = dcm_getopt(argc, argv, "h?Vv")) != -1) {
         switch (c) {
             case 'h':
