@@ -1,5 +1,7 @@
 ## master
 
+* deprecate `dcm_init()` [bgilbert]
+
 ## 1.0.5, 9/10/23
 
 * fix a strict aliasing issue [bgilbert]
