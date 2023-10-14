@@ -1,4 +1,4 @@
-clang <= 14
+libclang
 hawkmoth
 sphinx
 sphinx_rtd_theme
