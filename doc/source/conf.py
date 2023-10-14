@@ -10,9 +10,12 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+from glob import glob
 import os
+import sys
 from hawkmoth.util import readthedocs
 from hawkmoth.util import compiler
+from clang.cindex import Config as clang_config
 
 # -- Project information -----------------------------------------------------
 
@@ -59,3 +62,20 @@ readthedocs.clang_setup()
 hawkmoth_clang = compiler.get_include_args()
 # we need build to get version.h
 hawkmoth_clang.append(f"-I{os.path.abspath('../../build')}")
+if sys.platform == 'darwin':
+    lib_search_dirs = [
+        '/usr/lib',
+        '/usr/local/lib',
+        '/Library/Developer/CommandLineTools/usr/lib',
+    ]
+elif sys.platform == 'windows':
+    lib_search_dirs = []
+else:
+    # we are nailed to clang-14 by readthedocs, so we must look in llvm-14
+    # for libclang.so
+    lib_search_dirs = [
+        '/usr/lib',
+        '/usr/local/lib',
+    ] + glob('/usr/lib/llvm-14/lib')
+for lib_dir in lib_search_dirs:
+    clang_config.set_library_path(lib_dir)
