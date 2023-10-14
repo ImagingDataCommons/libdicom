@@ -1,6 +1,8 @@
-## master
+## main
 
 * deprecate `dcm_init()` [bgilbert]
+* improve memory usage [bgilbert]
+* fix docs build with LLVM != 14 [bgilbert]
 
 ## 1.0.5, 9/10/23
 
