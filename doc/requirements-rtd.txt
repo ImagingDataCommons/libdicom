@@ -1,0 +1,6 @@
+# Read the Docs ignores the libclang package's embedded libclang.so for some
+# reason.  Use the clang package, pinned to a version matching Ubuntu 22.04.
+clang < 15
+hawkmoth
+sphinx
+sphinx_rtd_theme
