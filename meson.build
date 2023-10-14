@@ -107,8 +107,6 @@ endif
 if cc.has_header('unistd.h')
     cfg.set('HAVE_UNISTD_H', '1')
 endif
-# we use a constructor attr for dcm_init()
-cfg.set('HAS_CONSTRUCTOR', cc.has_function_attribute('constructor'))
 
 configure_file(
   output : 'config.h',
@@ -143,12 +141,26 @@ install_headers(
 # src
 library_includes = include_directories('include')
 library_options = ['-DBUILDING_LIBDICOM']
+dict_build = executable(
+  'dicom-dict-build',
+  ['src/dicom-dict-build.c', 'src/dicom-dict-tables.c'],
+  dependencies : [uthash],
+  include_directories : library_includes,
+  native : true,
+)
+dict_lookup = custom_target(
+  'dicom-dict-lookup',
+  command : [dict_build, '@OUTPUT@'],
+  output : ['dicom-dict-lookup.c', 'dicom-dict-lookup.h'],
+)
 library_sources = [
+  dict_lookup,
   'src/getopt.c',
   'src/dicom.c',
   'src/dicom-io.c',
   'src/dicom-data.c',
   'src/dicom-dict.c',
+  'src/dicom-dict-tables.c',
   'src/dicom-file.c',
   'src/dicom-parse.c',
 ]

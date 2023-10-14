@@ -302,10 +302,24 @@ void dcm_error_print(DcmError *error)
 
 
 static DcmLogLevel dcm_log_level = DCM_LOG_NOTSET;
+static bool dcm_inited;
+
+void dcm_init(void)
+{
+    if (dcm_inited) {
+        return;
+    }
+    dcm_inited = true;
+    if (getenv("DCM_DEBUG")) {
+        dcm_log_set_level(DCM_LOG_DEBUG);
+    }
+}
 
 DcmLogLevel dcm_log_set_level(DcmLogLevel log_level)
 {
     DcmLogLevel previous_log_level;
+
+    dcm_init();
 
     previous_log_level = dcm_log_level;
 
@@ -365,6 +379,8 @@ static void dcm_logf(const char *level, const char *format, va_list args)
 
 void dcm_log_critical(const char *format, ...)
 {
+    dcm_init();
+
     if (dcm_log_level <= DCM_LOG_CRITICAL) {
         va_list(args);
         va_start(args, format);
@@ -376,6 +392,8 @@ void dcm_log_critical(const char *format, ...)
 
 void dcm_log_error(const char *format, ...)
 {
+    dcm_init();
+
     if ((dcm_log_level > DCM_LOG_NOTSET) & (dcm_log_level <= DCM_LOG_ERROR)) {
         va_list(args);
         va_start(args, format);
@@ -387,6 +405,8 @@ void dcm_log_error(const char *format, ...)
 
 void dcm_log_warning(const char *format, ...)
 {
+    dcm_init();
+
     if ((dcm_log_level > DCM_LOG_NOTSET) & (dcm_log_level <= DCM_LOG_WARNING)) {
         va_list(args);
         va_start(args, format);
@@ -398,6 +418,8 @@ void dcm_log_warning(const char *format, ...)
 
 void dcm_log_info(const char *format, ...)
 {
+    dcm_init();
+
     if ((dcm_log_level > DCM_LOG_NOTSET) & (dcm_log_level <= DCM_LOG_INFO)) {
         va_list(args);
         va_start(args, format);
@@ -409,6 +431,8 @@ void dcm_log_info(const char *format, ...)
 
 void dcm_log_debug(const char *format, ...)
 {
+    dcm_init();
+
     if ((dcm_log_level > DCM_LOG_NOTSET) & (dcm_log_level <= DCM_LOG_DEBUG)) {
         va_list(args);
         va_start(args, format);

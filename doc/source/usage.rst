@@ -137,11 +137,6 @@ locked to prevent subsequent modification via :c:func:`dcm_sequence_lock()`.
 A Sequence is automatically locked when used as a value in a Data Element
 with Value Representation SQ (Sequence of Items).
 
-Call :c:func:`dcm_init()` from the main thread during program startup for
-libdicom initialisation to be threadsafe. If you do not call this, it will be
-triggered for you on first use, but in this case libdicom initialisation will
-not be threadsafe.
-
 Error handling
 ++++++++++++++
 

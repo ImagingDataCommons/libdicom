@@ -849,8 +849,6 @@ static Suite *create_file_suite(void)
 
 int main(void)
 {
-    dcm_init();
-
     SRunner *runner = srunner_create(create_main_suite());
     srunner_add_suite(runner, create_data_suite());
     srunner_add_suite(runner, create_file_suite());

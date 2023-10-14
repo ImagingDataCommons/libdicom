@@ -116,15 +116,20 @@ typedef struct _DcmSequence DcmSequence;
 /**
  * Start up libdicom.
  *
- * Call this from the main thread during program startup for libdicom to be
- * threadsafe.
- *
- * If you don't do this, libdicom will attempt to call it for you in a safe
- * way, but cannot guarantee this on all platforms and with all compilers, and
- * therefore cannot guarantee thread safety.
+ * Call this from the main thread during program startup.
  *
  * This function can be called many times.
+ *
+ * .. deprecated:: 1.1.0
+ *    Calling this function is no longer necessary.
  */
+#ifndef BUILDING_LIBDICOM
+#if defined(_MSC_VER)
+__declspec(deprecated("dcm_init() no longer needs to be called"))
+#elif defined(__GNUC__)
+__attribute__((deprecated("dcm_init() no longer needs to be called")))
+#endif
+#endif
 DCM_EXTERN
 void dcm_init(void);
 
