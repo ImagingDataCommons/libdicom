@@ -126,16 +126,14 @@ Data Sets are also automatically destroyed.
 Thread safety
 +++++++++++++
 
-Data Elements are immutable and cannot be modified after creation.
-Data Sets are generally mutable (i.e., Data Elements can be inserted or
-removed), but they can be locked to prevent subsequent modification via
-:c:func:`dcm_dataset_lock()`.  A Data Set is automatically locked when
-retrieved from a Sequence via :c:func:`dcm_sequence_get()` or read from
-a Filehandle via :c:func:`dcm_filehandle_read_metadata()`.  Sequences are
-also mutable (i.e., Data Sets can be appended or removed), but they can be
-locked to prevent subsequent modification via :c:func:`dcm_sequence_lock()`.
-A Sequence is automatically locked when used as a value in a Data Element
-with Value Representation SQ (Sequence of Items).
+By design, libdicom has no dependencies, not even on a threading
+library. This means it can't be threadsafe, since it can't lock any internal
+datastructures. However, there are no global structures, so as long as you
+don't share a `DcmFilehandle` between threads, you're fine.
+
+You can share `DcmFilehandle` between threads if you lock around calls into
+libdicom. The lock only needs to be per-`DcmFilehandle`, you don't need a
+global lock.
 
 Error handling
 ++++++++++++++
