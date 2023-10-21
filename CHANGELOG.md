@@ -3,6 +3,7 @@
 * deprecate `dcm_init()` [bgilbert]
 * improve memory usage [bgilbert]
 * fix docs build with LLVM != 14 [bgilbert]
+* improve thread safety docs [mollyclaretechcyte]
 
 ## 1.0.5, 9/10/23
 
