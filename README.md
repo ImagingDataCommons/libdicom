@@ -1,6 +1,7 @@
 [![Build
 Status](https://github.com/ImagingDataCommons/libdicom/actions/workflows/run_unit_tests.yml/badge.svg)](https://github.com/ImagingDataCommons/libdicom/actions)
 [![Documentation Status](https://readthedocs.org/projects/libdicom/badge/?version=latest)](https://libdicom.readthedocs.io/en/latest/?badge=latest)
+[![Conan Center](https://img.shields.io/conan/v/libdicom)](https://conan.io/center/recipes/libdicom)
 
 # libdicom
 
