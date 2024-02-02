@@ -1026,8 +1026,11 @@ DcmDataSet *dcm_dataset_clone(DcmError **error, const DcmDataSet *dataset);
  * :param dataset: Pointer to Data Set
  * :param element: Pointer to Data Element
  *
- * The object takes over ownership of the memory referenced by `element`
- * and frees it when the object is destroyed or if the insert operation fails.
+ * On success, the dataset takes over ownership of `element`
+ * and frees it when the dataset is destroyed.
+ *
+ * If the insert operation fails, ownership does not pass and the caller is
+ * responsible for freeing `element`.
  *
  * :return: Whether insert operation was successful
  */
@@ -1198,8 +1201,11 @@ DcmSequence *dcm_sequence_create(DcmError **error);
  * :param seq: Pointer to Sequence
  * :param item: Data Set item
  *
- * The object takes over ownership of the memory referenced by `item`
- * and frees it when the object is destroyed or if the append operation fails.
+ * On success, the sequence takes over ownership of `item`
+ * and frees it when the sequence is destroyed.
+ *
+ * If the append fails, ownership does not pass and the caller is
+ * responsible for freeing `item`.
  *
  * :return: Whether append operation was successful
  */

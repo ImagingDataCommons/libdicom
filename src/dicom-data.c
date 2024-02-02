@@ -1391,6 +1391,7 @@ DcmDataSet *dcm_dataset_clone(DcmError **error, const DcmDataSet *dataset)
             return NULL;
         }
         if (!dcm_dataset_insert(error, cloned_dataset, cloned_element)) {
+            dcm_element_destroy(cloned_element);
             dcm_dataset_destroy(cloned_dataset);
             return NULL;
         }
@@ -1435,7 +1436,6 @@ bool dcm_dataset_insert(DcmError **error,
                       "Element already exists",
                       "Inserting Data Element '%08x' into Data Set failed",
                       element->tag);
-        dcm_element_destroy(element);
         return false;
     }
 
@@ -1707,7 +1707,6 @@ DcmDataSet *dcm_sequence_steal(DcmError **error,
     }
 
     DcmDataSet *result = seq_item->dataset;
-    //dcm_dataset_lock(result);
     seq_item->dataset = NULL;
     // this will free the SequenceItem
     utarray_erase(seq->items, index, 1);
