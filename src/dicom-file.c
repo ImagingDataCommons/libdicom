@@ -324,6 +324,12 @@ static bool get_frame_size(DcmError **error,
         !get_tag_int(error, metadata, "Rows", &height)) {
         return false;
     }
+    if (width <= 0 || height <= 0) {
+        dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                      "Frame read failed",
+                      "Value of 'Columns' or 'Rows' is out of range");
+        return false;
+    }
 
     *frame_width = (uint32_t) width;
     *frame_height = (uint32_t) height;

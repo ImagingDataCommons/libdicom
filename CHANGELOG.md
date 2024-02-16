@@ -5,6 +5,7 @@
 * fix docs build with LLVM != 14 [bgilbert]
 * improve thread safety docs [mollyclaretechcyte]
 * fix a double free error and clarify docs on pointer ownership [dtatsis]
+* fix a divide by zero error [voidz0r]
 
 ## 1.0.5, 9/10/23
 
