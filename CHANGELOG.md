@@ -1,5 +1,7 @@
 ## main
 
+* fix build with uthash \< 2.3.0 [bgilbert]
+
 ## 1.1.0, 28/3/24
 
 * deprecate `dcm_init()` [bgilbert]

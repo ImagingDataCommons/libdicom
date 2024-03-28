@@ -26,7 +26,7 @@
 
 #define LOOKUP(table, field, hash, key, key_len, out) do {		\
         unsigned hash_value;						\
-        HASH_FUNCTION(key, key_len, hash_value);			\
+        HASH_VALUE(key, key_len, hash_value);				\
         for (int probe = 0; true; probe++) {				\
             int i = hash ## _dict[(hash_value + probe) % hash ## _len];	\
             if (i == hash ## _empty || probe == LOOKUP_MAX_PROBES) {	\

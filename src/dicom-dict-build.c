@@ -43,7 +43,7 @@ static void make_table(const char *name, const void *items, int count,
         }
         int this_key_len = key_len ? key_len : (int) strlen(KEY(i));
         unsigned hash;
-        HASH_FUNCTION(KEY(i), this_key_len, hash);
+        HASH_VALUE(KEY(i), this_key_len, hash);
         int cell, probe;
         for (probe = 0, cell = hash % table_len;
              probe < MAX_PROBES && table[cell] != EMPTY;
