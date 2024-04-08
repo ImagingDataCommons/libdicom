@@ -1,6 +1,7 @@
 ## main
 
 * fix build with uthash \< 2.3.0 [bgilbert]
+* explicitly fail if macOS universal build is attempted [bgilbert]
 
 ## 1.1.0, 28/3/24
 

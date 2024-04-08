@@ -63,6 +63,13 @@ version_data.set10('DCM_STATIC', get_option('default_library') == 'static')
 
 # dependencies
 cc = meson.get_compiler('c')
+if host_machine.system() == 'darwin' and not cc.has_header('stdio.h')
+  # Certain compiler checks fail with -arch x86_64 -arch arm64.  Detect this
+  # in advance.
+  # https://github.com/mesonbuild/meson/issues/5290
+  # https://github.com/mesonbuild/meson/issues/8206
+  error('Basic environment check failed.  Check compiler flags; building for multiple CPU architectures is not supported.')
+endif
 found_uthash = cc.check_header(
   'utarray.h',
   required : false
