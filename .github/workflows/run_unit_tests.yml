@@ -16,7 +16,7 @@ jobs:
         include:
           - os: ubuntu-latest
             cc: gcc
-          - os: macos-14
+          - os: macos-latest
             cc: clang
           - os: windows-latest
             cc: clang
