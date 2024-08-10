@@ -24,7 +24,7 @@ to add support](https://github.com/ImagingDataCommons/libdicom/issues).
 ## Building from source
 
 ```shell
-cd libdicom-1.0.0
+cd libdicom-1.1.0
 meson setup builddir --buildtype release
 meson compile -C builddir
 meson install -C builddir
@@ -108,7 +108,7 @@ This will print:
 $ ./read-frames.py sm_image.dcm
 opening libdicom ...
 init for libdicom ...
-libdicom version: 1.0.0
+libdicom version: 1.1.0
 frame 1 -> <10x10 pixels, 8 bits, 3 bands, RGB> 300 bytes
 frame 2 -> <10x10 pixels, 8 bits, 3 bands, RGB> 300 bytes
 frame 3 -> <10x10 pixels, 8 bits, 3 bands, RGB> 300 bytes

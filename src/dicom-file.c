@@ -579,6 +579,29 @@ static DcmDataSet *dcm_filehandle_read_file_meta(DcmError **error,
 }
 
 
+static bool dcm_filehandle_set_transfer_syntax(DcmError **error,
+                                               DcmFilehandle *filehandle,
+                                               const char *transfer_syntax_uid)
+{
+    if (filehandle->transfer_syntax_uid) {
+        free(filehandle->transfer_syntax_uid);
+    }
+
+    filehandle->transfer_syntax_uid = dcm_strdup(error, transfer_syntax_uid);
+    if (filehandle->transfer_syntax_uid == NULL) {
+        return false;
+    }
+
+    if (strcmp(filehandle->transfer_syntax_uid, "1.2.840.10008.1.2") == 0) {
+        filehandle->implicit = true;
+    }
+
+    filehandle->desc.transfer_syntax_uid = filehandle->transfer_syntax_uid;
+
+    return true;
+}
+
+
 const DcmDataSet *dcm_filehandle_get_file_meta(DcmError **error,
                                                DcmFilehandle *filehandle)
 {
@@ -610,18 +633,12 @@ const DcmDataSet *dcm_filehandle_get_file_meta(DcmError **error,
             return NULL;
         }
 
-        filehandle->transfer_syntax_uid =
-            dcm_strdup(error, transfer_syntax_uid);
-        if (filehandle->transfer_syntax_uid == NULL) {
+        if (!dcm_filehandle_set_transfer_syntax(error,
+                                                filehandle,
+                                                transfer_syntax_uid)) {
             dcm_dataset_destroy(file_meta);
             return NULL;
         }
-
-        if (strcmp(filehandle->transfer_syntax_uid, "1.2.840.10008.1.2") == 0) {
-            filehandle->implicit = true;
-        }
-
-        filehandle->desc.transfer_syntax_uid = filehandle->transfer_syntax_uid;
 
         filehandle->file_meta = file_meta;
     } else {
@@ -1503,7 +1520,15 @@ static bool print_element_create(DcmError **error,
 {
     DcmFilehandle *filehandle = (DcmFilehandle *) client;
 
-    USED(error);
+    // we must record the transfer syntax in the file meta since we need it
+    // to determine implicit/explicit encoding
+    if (tag == TAG_TRANSFER_SYNTAX_UID &&
+        vr == DCM_VR_UI &&
+        value &&
+        length > 10 &&
+        !dcm_filehandle_set_transfer_syntax(error, filehandle, value)) {
+        return false;
+    }
 
     printf("%*.*s(%04x,%04x) ",
            filehandle->indent * 2,
@@ -1615,8 +1640,7 @@ bool dcm_filehandle_print(DcmError **error,
     dcm_log_info("Read metadata");
     if (!dcm_parse_dataset(error,
                            filehandle->io,
-                           // FIXME we should check transfer syntax for this
-                           false,
+                           filehandle->implicit,
                            &parse,
                            filehandle)) {
         return false;

@@ -2,6 +2,7 @@
 
 * fix build with uthash \< 2.3.0 [bgilbert]
 * explicitly fail if macOS universal build is attempted [bgilbert]
+* better handling of implicit mode in dcm-dump [jcupitt]
 
 ## 1.1.0, 28/3/24
 

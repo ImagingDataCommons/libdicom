@@ -43,6 +43,7 @@ typedef SSIZE_T ssize_t;
 #define MAX(A, B) ((A) > (B) ? (A) : (B))
 #define USED(x) (void)(x)
 
+#define TAG_TRANSFER_SYNTAX_UID                     0x00020010
 #define TAG_DIMENSION_INDEX_VALUES                  0x00209157
 #define TAG_REFERENCED_IMAGE_NAVIGATION_SEQUENCE    0x00480200
 #define TAG_PLANE_POSITION_SLIDE_SEQUENCE           0x0048021a
