@@ -616,12 +616,12 @@ static bool parse_element_body(DcmParseState *state,
             }
             value[length] = '\0';
 
-            if (length > 0) {
-                if (vr != DCM_VR_UI) {
-                    if (isspace(value[length - 1])) {
-                        value[length - 1] = '\0';
-                    }
-                }
+            if (length > 0 &&
+                (vr_class == DCM_VR_CLASS_STRING_SINGLE ||
+                 vr_class == DCM_VR_CLASS_STRING_MULTI) &&
+                vr != DCM_VR_UI &&
+                isspace(value[length - 1])) {
+                value[length - 1] = '\0';
             }
 
             if (size > 0 && state->big_endian) {
