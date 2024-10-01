@@ -833,6 +833,7 @@ const DcmDataSet *dcm_filehandle_get_metadata_subset(DcmError **error,
     static uint32_t stop_tags[] = {
         TAG_REFERENCED_IMAGE_NAVIGATION_SEQUENCE,
         TAG_PER_FRAME_FUNCTIONAL_GROUP_SEQUENCE,
+        TAG_EXTENDED_OFFSET_TABLE,
         TAG_PIXEL_DATA,
         TAG_FLOAT_PIXEL_DATA,
         TAG_DOUBLE_PIXEL_DATA,
