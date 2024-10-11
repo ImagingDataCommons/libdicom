@@ -4,6 +4,7 @@
 * explicitly fail if macOS universal build is attempted [bgilbert]
 * better handling of implicit mode in dcm-dump [jcupitt]
 * better handling of trailing spaces in string values [y-baba-isb]
+* much faster read of files with an EOT but no FGS [pcram-techcyte]
 
 ## 1.1.0, 28/3/24
 
