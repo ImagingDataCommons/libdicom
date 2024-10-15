@@ -45,8 +45,8 @@ void *dcm_calloc(DcmError **error, uint64_t n, uint64_t size)
     void *result = calloc(n == 0 ? 1 : n, size);
     if (!result) {
         dcm_error_set(error, DCM_ERROR_CODE_NOMEM,
-                      "Out of memory",
-                      "Failed to allocate %zd bytes", n * size);
+                      "out of memory",
+                      "failed to allocate %zd bytes", n * size);
         return NULL;
     }
     return result;
@@ -58,8 +58,8 @@ void *dcm_realloc(DcmError **error, void *ptr, uint64_t size)
     void *result = realloc(ptr, size);
     if (!result) {
         dcm_error_set(error, DCM_ERROR_CODE_NOMEM,
-                      "Out of memory",
-                      "Failed to allocate %zd bytes", size);
+                      "out of memory",
+                      "failed to allocate %zd bytes", size);
         return NULL;
     }
     return result;

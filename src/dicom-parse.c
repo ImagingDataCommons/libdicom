@@ -68,8 +68,8 @@ static bool dcm_require(DcmParseState *state,
             return false;
         } else if (bytes_read == 0) {
             dcm_error_set(state->error, DCM_ERROR_CODE_IO,
-                "End of filehandle",
-                "Needed %zd bytes beyond end of filehandle", length);
+                "end of filehandle",
+                "needed %zd bytes beyond end of filehandle", length);
             return false;
         }
 
@@ -267,8 +267,8 @@ static bool parse_element_header(DcmParseState *state,
         *vr = dcm_vr_from_tag(*tag);
         if (*vr == DCM_VR_ERROR) {
             dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
-                          "Reading of Data Element header failed",
-                          "Tag %08x not allowed in implicit mode", *tag);
+                          "reading of data element header failed",
+                          "tag %08x not allowed in implicit mode", *tag);
             return false;
         }
 
@@ -286,8 +286,8 @@ static bool parse_element_header(DcmParseState *state,
 
         if (!dcm_is_valid_vr_for_tag(*vr, *tag)) {
             dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
-                          "Reading of Data Element header failed",
-                          "Tag %08x cannot have VR '%s'", *tag, vr_str);
+                          "reading of data element header failed",
+                          "tag %08x cannot have VR '%s'", *tag, vr_str);
             return false;
         }
 
@@ -308,9 +308,9 @@ static bool parse_element_header(DcmParseState *state,
 
             if (reserved != 0x0000) {
                 dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
-                              "Reading of Data Element header failed",
-                              "Unexpected value for reserved bytes "
-                              "of Data Element %08x with VR '%s'.",
+                              "reading of data element header failed",
+                              "unexpected value for reserved bytes "
+                              "of data element %08x with VR '%s'",
                               tag, vr);
                 return false;
             }
@@ -338,7 +338,7 @@ static bool parse_element_sequence(DcmParseState *state,
 
     int index = 0;
     while (*position < seq_length) {
-        dcm_log_debug("Read Item #%d.", index);
+        dcm_log_debug("read Item #%d", index);
         uint32_t item_tag;
         uint32_t item_length;
         if (!read_tag(state, &item_tag, position) ||
@@ -347,16 +347,16 @@ static bool parse_element_sequence(DcmParseState *state,
         }
 
         if (item_tag == TAG_SQ_DELIM) {
-            dcm_log_debug("Stop reading Data Element. "
-                          "Encountered Sequence Delimination Tag.");
+            dcm_log_debug("stop reading data element -- "
+                          "encountered SequenceDelimination tag");
             break;
         }
 
         if (item_tag != TAG_ITEM) {
             dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
-                          "Reading of Data Element failed",
-                          "Expected tag '%08x' instead of '%08x' "
-                          "for Item #%d",
+                          "reading of data element failed",
+                          "expected tag '%08x' instead of '%08x' "
+                          "for item #%d",
                           TAG_ITEM,
                           item_tag,
                           index);
@@ -364,9 +364,9 @@ static bool parse_element_sequence(DcmParseState *state,
         }
 
         if (item_length == 0xFFFFFFFF) {
-            dcm_log_debug("Item #%d has undefined length.", index);
+            dcm_log_debug("item #%d has undefined length", index);
         } else {
-            dcm_log_debug("Item #%d has defined length %d.",
+            dcm_log_debug("item #%d has defined length %d",
                           index, item_length);
         }
 
@@ -383,8 +383,8 @@ static bool parse_element_sequence(DcmParseState *state,
             }
 
             if (item_tag == TAG_ITEM_DELIM) {
-                dcm_log_debug("Stop reading Item #%d. "
-                              "Encountered Item Delimination Tag.",
+                dcm_log_debug("stop reading Item #%d -- "
+                              "encountered Item Delimination Tag",
                               index);
                 // step over the tag length
                 if (!dcm_seekcur(state, 4, &item_position)) {
@@ -506,22 +506,22 @@ static bool parse_pixeldata(DcmParseState *state,
             uint32_t item_tag;
             uint32_t item_length;
 
-            dcm_log_debug("Read Item #%d.", index);
+            dcm_log_debug("read Item #%d", index);
             if (!read_tag(state, &item_tag, position) ||
                 !read_uint32(state, &item_length, position)) {
                 return false;
             }
 
             if (item_tag == TAG_SQ_DELIM) {
-                dcm_log_debug("Stop reading Data Element. "
-                              "Encountered Sequence Delimination Tag.");
+                dcm_log_debug("stop reading data element -- "
+                              "encountered SequenceDelimination Tag");
                 break;
             }
 
             if (item_tag != TAG_ITEM) {
                 dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
-                              "Reading of Data Element failed",
-                              "Expected tag '%08x' instead of '%08x' "
+                              "reading of data element failed",
+                              "expected tag '%08x' instead of '%08x' "
                               "for Item #%d",
                               TAG_ITEM,
                               item_tag,
@@ -590,8 +590,8 @@ static bool parse_element_body(DcmParseState *state,
                 // all numeric classes have a size
                 if (length % size != 0) {
                     dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
-                                  "Reading of Data Element failed",
-                                  "Bad length for tag '%08x'",
+                                  "reading of data element failed",
+                                  "bad length for tag '%08x'",
                                   tag);
                     return false;
                 }
@@ -650,11 +650,11 @@ static bool parse_element_body(DcmParseState *state,
         case DCM_VR_CLASS_SEQUENCE:
             if (length == 0xFFFFFFFF) {
                 dcm_log_debug("Sequence of Data Element '%08x' "
-                              "has undefined length.",
+                              "has undefined length",
                               tag);
             } else {
                 dcm_log_debug("Sequence of Data Element '%08x' "
-                              "has defined length %d.",
+                              "has defined length %d",
                               tag, length);
             }
 
@@ -672,9 +672,8 @@ static bool parse_element_body(DcmParseState *state,
 
         default:
             dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
-                          "Reading of Data Element failed",
-                          "Data Element '%08x' has unexpected "
-                          "Value Representation", tag);
+                          "reading of data element failed",
+                          "data element '%08x' has unexpected VR", tag);
             return false;
     }
 
@@ -709,7 +708,7 @@ static bool parse_toplevel_dataset(DcmParseState *state,
 
     for (;;) {
         if (dcm_is_eof(state)) {
-            dcm_log_info("Stop reading Data Set. Reached end of filehandle.");
+            dcm_log_info("stop reading Data Set -- reached end of filehandle");
             break;
         }
 
@@ -809,8 +808,8 @@ bool dcm_parse_group(DcmError **error,
     uint16_t group_number = tag >> 16;
     if (element_number != 0x0000 || vr != DCM_VR_UL || length != 4) {
         dcm_error_set(state.error, DCM_ERROR_CODE_PARSE,
-                      "Reading of Group failed",
-                      "Bad Group length element");
+                      "reading of group failed",
+                      "bad group length element");
         return false;
     }
     uint32_t group_length;
@@ -881,7 +880,7 @@ bool dcm_parse_pixeldata_offsets(DcmError **error,
 
     int64_t position = 0;
 
-    dcm_log_debug("Parsing PixelData.");
+    dcm_log_debug("parsing PixelData");
 
     uint32_t tag;
     DcmVR vr;
@@ -895,8 +894,8 @@ bool dcm_parse_pixeldata_offsets(DcmError **error,
         tag != TAG_FLOAT_PIXEL_DATA &&
         tag != TAG_DOUBLE_PIXEL_DATA) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                      "Parsing PixelData failed",
-                      "File pointer not positioned at Pixel Data Element");
+                      "parsing PixelData failed",
+                      "file pointer not positioned at PixelData element");
         return false;
     }
 
@@ -907,14 +906,14 @@ bool dcm_parse_pixeldata_offsets(DcmError **error,
     }
     if (tag != TAG_ITEM) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                      "Reading Basic Offset Table failed",
-                      "Unexpected Tag found for Basic Offset Table Item");
+                      "reading BasicOffsetTable failed",
+                      "unexpected tag found for BasicOffsetTable item");
         return false;
     }
 
     if (length > 0) {
         // There is a non-zero length BOT, use that
-        dcm_log_info("Reading Basic Offset Table.");
+        dcm_log_info("reading Basic Offset Table");
 
         // Read offset values from BOT Item value
         // FIXME .. could do this with a single require to a uint32_t array,
@@ -925,9 +924,9 @@ bool dcm_parse_pixeldata_offsets(DcmError **error,
             }
             if (value == TAG_ITEM) {
                 dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                              "Reading Basic Offset Table failed",
-                              "Encountered unexpected Item Tag "
-                              "in Basic Offset Table");
+                              "reading BasicOffsetTable failed",
+                              "encountered unexpected item tag "
+                              "in BasicOffsetTable");
                 return false;
             }
 
@@ -943,8 +942,8 @@ bool dcm_parse_pixeldata_offsets(DcmError **error,
         }
         if (tag != TAG_ITEM) {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                          "Reading Basic Offset Table failed",
-                          "Basic Offset Table too large");
+                          "reading BasicOffsetTable failed",
+                          "BasicOffsetTable too large");
             return false;
         }
     } else {
@@ -954,7 +953,7 @@ bool dcm_parse_pixeldata_offsets(DcmError **error,
         // we could use our generic parser above ^^ but we have a special loop
         // here as an optimisation (we can skip over the pixel data itself)
 
-        dcm_log_info("Building offset table from pixel data scan.");
+        dcm_log_info("building Offset Table from Pixel Data");
 
         // 0 in the BOT is the offset to the start of frame 1, ie. here
         *first_frame_offset = position;
@@ -968,15 +967,15 @@ bool dcm_parse_pixeldata_offsets(DcmError **error,
 
             if (tag == TAG_SQ_DELIM) {
                 dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                              "Reading Basic Offset Table failed",
-                              "Too few frames in PixelData.");
+                              "reading BasicOffsetTable failed",
+                              "too few frames in PixelData");
                 return false;
             }
 
             if (tag != TAG_ITEM) {
                 dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                              "Building Basic Offset Table failed",
-                              "Frame Item #%d has wrong Tag '%08x'",
+                              "building BasicOffsetTable failed",
+                              "frame Item #%d has wrong tag '%08x'",
                               i + 1,
                               tag);
                 return false;
@@ -997,8 +996,8 @@ bool dcm_parse_pixeldata_offsets(DcmError **error,
         }
         if (tag != TAG_SQ_DELIM) {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                          "Reading Basic Offset Table failed",
-                          "Too many frames in PixelData");
+                          "reading BasicOffsetTable failed",
+                          "too many frames in PixelData");
             return false;
         }
     }
@@ -1030,8 +1029,8 @@ char *dcm_parse_frame(DcmError **error,
 
         if (tag != TAG_ITEM) {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                          "Reading Frame Item failed",
-                          "No Item Tag found for Frame Item");
+                          "reading frame item failed",
+                          "no item tag found for frame item");
             return NULL;
         }
     } else {

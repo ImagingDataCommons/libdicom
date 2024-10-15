@@ -104,8 +104,8 @@ static DcmIO *dcm_io_open_file(DcmError **error, void *client)
 
     if (file->fd == -1) {
         dcm_error_set(error, DCM_ERROR_CODE_IO,
-            "Unable to open filehandle",
-            "Unable to open %s - %s", file->filename, strerror(open_errno));
+            "unable to open filehandle",
+            "unable to open %s - %s", file->filename, strerror(open_errno));
         dcm_io_close_file((DcmIO *)file);
         return NULL;
     }
@@ -130,8 +130,8 @@ static int64_t read_file(DcmError **error, DcmIOFile *file,
 
     if (bytes_read < 0) {
         dcm_error_set(error, DCM_ERROR_CODE_IO,
-            "Unable to read from file",
-            "Unable to read %s - %s", file->filename, strerror(errno));
+            "unable to read from file",
+            "unable to read %s - %s", file->filename, strerror(errno));
     }
 
     return bytes_read;
@@ -217,8 +217,8 @@ static int64_t dcm_io_seek_file(DcmError **error, DcmIO *io,
 
         if (new_offset < 0) {
             dcm_error_set(error, DCM_ERROR_CODE_IO,
-                "Unable to seek file",
-                "Unable to seek %s - %s", file->filename, strerror(errno));
+                "unable to seek file",
+                "unable to seek %s - %s", file->filename, strerror(errno));
         }
     }
 
@@ -230,8 +230,8 @@ static int64_t dcm_io_seek_file(DcmError **error, DcmIO *io,
 
     if (new_offset < 0) {
         dcm_error_set(error, DCM_ERROR_CODE_IO,
-            "Unable to seek file",
-            "Unable to seek %s - %s", file->filename, strerror(errno));
+            "unable to seek file",
+            "unable to seek %s - %s", file->filename, strerror(errno));
     }
 
     /* Empty the buffer, since we may now be at a different position.
@@ -344,8 +344,8 @@ static int64_t dcm_io_seek_memory(DcmError **error, DcmIO *io,
 
         default:
             dcm_error_set(error, DCM_ERROR_CODE_IO,
-                "Unsupported whence",
-                "Whence %d not implemented", whence);
+                "unsupported whence",
+                "whence %d not implemented", whence);
             return -1;
     }
 

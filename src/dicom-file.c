@@ -231,8 +231,8 @@ static bool dcm_require(DcmError **error, DcmFilehandle *filehandle,
             return false;
         } else if (bytes_read == 0) {
             dcm_error_set(error, DCM_ERROR_CODE_IO,
-                "End of filehandle",
-                "Needed %zd bytes beyond end of filehandle", length);
+                "end of filehandle",
+                "needed %zd bytes beyond end of filehandle", length);
             return false;
         }
 
@@ -301,8 +301,8 @@ static bool get_num_frames(DcmError **error,
     uint32_t num_frames = strtol(value, NULL, 10);
     if (num_frames == 0) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                      "Basic Offset Table read failed",
-                      "Value of Data Element 'Number of Frames' is malformed");
+                      "BasicOffsetTable read failed",
+                      "value of NumberOfFrames is malformed");
         return false;
     }
 
@@ -326,8 +326,8 @@ static bool get_frame_size(DcmError **error,
     }
     if (width <= 0 || height <= 0) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                      "Frame read failed",
-                      "Value of 'Columns' or 'Rows' is out of range");
+                      "frame read failed",
+                      "value of Columns or Rows is out of range");
         return false;
     }
 
@@ -508,8 +508,8 @@ static bool parse_preamble(DcmError **error,
 
     if (strcmp(prefix, "DICM") != 0) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                      "Reading of File Meta Information failed",
-                      "Prefix 'DICM' not found.");
+                      "reading of file meta information failed",
+                      "prefix DICM not found");
         return false;
     }
 
@@ -945,8 +945,8 @@ static bool parse_frame_index_sequence_end(DcmError **error,
         if ((filehandle->column_position - 1) % filehandle->frame_width != 0 ||
             (filehandle->row_position - 1) % filehandle->frame_height != 0) {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                          "Reading PerFrameFunctionalGroupsSequence failed",
-                          "Unsupported frame alignment.");
+                          "reading PerFrameFunctionalGroupsSequence failed",
+                          "unsupported frame alignment");
             return false;
         }
 
@@ -1033,7 +1033,7 @@ static bool read_frame_index(DcmError **error,
         .stop = parse_frame_index_stop,
     };
 
-    dcm_log_debug("Reading per frame functional group sequence.");
+    dcm_log_debug("reading PerFrameFunctionalGroupSequence");
 
     filehandle->frame_index = DCM_NEW_ARRAY(error,
                                             filehandle->num_tiles,
@@ -1185,8 +1185,8 @@ bool dcm_filehandle_prepare_read_frame(DcmError **error,
 
         if (filehandle->layout == DCM_LAYOUT_UNKNOWN) {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                          "Reading PixelData failed",
-                          "Unsupported DimensionOrganisationType.");
+                          "reading PixelData failed",
+                          "unsupported DimensionOrganisationType");
             return false;
         }
 
@@ -1237,8 +1237,8 @@ bool dcm_filehandle_prepare_read_frame(DcmError **error,
             filehandle->last_tag != TAG_FLOAT_PIXEL_DATA &&
             filehandle->last_tag != TAG_DOUBLE_PIXEL_DATA) {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                          "Reading PixelData failed",
-                          "Could not determine offset of Pixel Data Element.");
+                          "reading PixelData failed",
+                          "could not determine offset of PixelData element");
             return false;
         }
 
@@ -1288,7 +1288,7 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
                                     DcmFilehandle *filehandle,
                                     uint32_t frame_number)
 {
-    dcm_log_debug("Read frame number #%u.", frame_number);
+    dcm_log_debug("read frame number #%u", frame_number);
 
     if (!dcm_filehandle_prepare_read_frame(error, filehandle)) {
         return NULL;
@@ -1296,14 +1296,14 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
 
     if (frame_number == 0) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                      "Reading Frame Item failed",
-                      "Frame Number must be non-zero");
+                      "reading frame item failed",
+                      "frame number must be non-zero");
         return NULL;
     }
     if (frame_number > filehandle->num_frames) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                      "Reading Frame Item failed",
-                      "Frame Number must be less than %u",
+                      "reading frame item failed",
+                      "frame number must be less than %u",
                       filehandle->num_frames);
         return NULL;
     }
@@ -1358,8 +1358,8 @@ DcmFrame *dcm_filehandle_read_frame_position(DcmError **error,
     if (column >= filehandle->tiles_across ||
         row >= filehandle->tiles_down) {
         dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                      "Reading Frame position failed",
-                      "Column and row must be less than %u, %u",
+                      "reading Frame position failed",
+                      "column and Row must be less than %u, %u",
                       filehandle->tiles_across,
                       filehandle->tiles_down);
         return NULL;
@@ -1370,8 +1370,8 @@ DcmFrame *dcm_filehandle_read_frame_position(DcmError **error,
         index = filehandle->frame_index[index];
         if (index == 0xffffffff) {
             dcm_error_set(error, DCM_ERROR_CODE_MISSING_FRAME,
-                          "No frame",
-                          "No Frame at position (%u, %u)", column, row);
+                          "no frame",
+                          "no frame at position (%u, %u)", column, row);
             return NULL;
         }
     }
