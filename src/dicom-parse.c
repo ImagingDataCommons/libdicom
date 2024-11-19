@@ -21,6 +21,7 @@
 #include "utarray.h"
 
 #include <dicom/dicom.h>
+
 #include "pdicom.h"
 
 
@@ -253,7 +254,7 @@ static bool parse_element(DcmParseState *state,
 
 static bool parse_element_header(DcmParseState *state,
                                  uint32_t *tag,
-                                 DcmVR *vr,
+                                 DcmVRTag *vr_tag,
                                  uint32_t *length,
                                  int64_t *position)
 {
@@ -264,11 +265,11 @@ static bool parse_element_header(DcmParseState *state,
     if (state->implicit) {
         // this can be an ambiguous VR, eg. pixeldata is allowed in implicit
         // mode and has to be disambiguated later from other tags
-        *vr = dcm_vr_from_tag(*tag);
-        if (*vr == DCM_VR_ERROR) {
+        *vr_tag = dcm_vr_tag_from_tag(*tag);
+        if (*vr_tag == DCM_VR_ERROR) {
             dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
                           "reading of data element header failed",
-                          "tag %08x not allowed in implicit mode", *tag);
+                          "tag %08x not allowed in implicit mode", *vr_tag);
             return false;
         }
 
@@ -276,22 +277,28 @@ static bool parse_element_header(DcmParseState *state,
             return false;
         }
     } else {
-        // Value Representation
+        // explicit mode
         char vr_str[3];
         if (!dcm_require(state, vr_str, 2, position)) {
             return false;
         }
         vr_str[2] = '\0';
-        *vr = dcm_dict_vr_from_str(vr_str);
+        DcmVR vr = dcm_dict_vr_from_str(vr_str);
+        if (vr == DCM_VR_ERROR) {
+            dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
+                          "reading of data element header failed",
+                          "unknown VR '%s'", vr_str);
+            return false;
+        }
 
-        if (!dcm_is_valid_vr_for_tag(*vr, *tag)) {
+        if (!dcm_is_valid_vr_for_tag(vr, *tag)) {
             dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
                           "reading of data element header failed",
                           "tag %08x cannot have VR '%s'", *tag, vr_str);
             return false;
         }
 
-        if (dcm_dict_vr_header_length(*vr) == 2) {
+        if (dcm_dict_vr_header_length(vr) == 2) {
             // These VRs have a short length of only two bytes
             uint16_t short_length;
             if (!read_uint16(state, &short_length, position)) {
@@ -311,10 +318,14 @@ static bool parse_element_header(DcmParseState *state,
                               "reading of data element header failed",
                               "unexpected value for reserved bytes "
                               "of data element %08x with VR '%s'",
-                              tag, vr);
+                              tag, vr_str);
                 return false;
             }
         }
+
+        // this will always be a unique VR, but we store as a VRTag for
+        // consistency with the implicit path
+        *vr_tag = (DcmVRTag) vr;
     }
 
     return true;
@@ -557,11 +568,11 @@ static bool parse_pixeldata(DcmParseState *state,
 
 static bool parse_element_body(DcmParseState *state,
                                uint32_t tag,
-                               DcmVR vr,
+                               DcmVRTag vr_tag,
                                uint32_t length,
                                int64_t *position)
 {
-    DcmVRClass vr_class = dcm_dict_vr_class(vr);
+    DcmVRClass vr_class = dcm_dict_vr_class(vr_tag);
     size_t size = dcm_dict_vr_size(vr);
     char *value;
 
@@ -574,7 +585,7 @@ static bool parse_element_body(DcmParseState *state,
     if (tag == TAG_PIXEL_DATA ||
         tag == TAG_FLOAT_PIXEL_DATA ||
         tag == TAG_DOUBLE_PIXEL_DATA) {
-        return parse_pixeldata(state, tag, vr, length, position);
+        return parse_pixeldata(state, tag, vr_tag, length, position);
     }
 
     dcm_log_debug("Read Data Element body '%08x'", tag);
@@ -632,7 +643,7 @@ static bool parse_element_body(DcmParseState *state,
                 !state->parse->element_create(state->error,
                                               state->client,
                                               tag,
-                                              vr,
+                                              vr_tag,
                                               value,
                                               length)) {
                 if (value_free != NULL) {
@@ -661,7 +672,7 @@ static bool parse_element_body(DcmParseState *state,
             int64_t seq_position = 0;
             if (!parse_element_sequence(state,
                                         tag,
-                                        vr,
+                                        vr_tag,
                                         length,
                                         &seq_position)) {
                 return false;
@@ -685,10 +696,10 @@ static bool parse_element(DcmParseState *state,
                           int64_t *position)
 {
     uint32_t tag;
-    DcmVR vr;
+    DcmVRTag vr_tag;
     uint32_t length;
-    if (!parse_element_header(state, &tag, &vr, &length, position) ||
-        !parse_element_body(state, tag, vr, length, position)) {
+    if (!parse_element_header(state, &tag, &vr_tag, &length, position) ||
+        !parse_element_body(state, tag, vr_tag, length, position)) {
         return false;
     }
 
@@ -713,10 +724,11 @@ static bool parse_toplevel_dataset(DcmParseState *state,
         }
 
         uint32_t tag;
-        DcmVR vr;
+        DcmVRTag vr_tag;
         uint32_t length;
         int64_t element_start = 0;
-        if (!parse_element_header(state, &tag, &vr, &length, &element_start)) {
+        if (!parse_element_header(state,
+                &tag, &vr_tag, &length, &element_start)) {
             return false;
         }
 
@@ -799,9 +811,9 @@ bool dcm_parse_group(DcmError **error,
     /* Groups start with (xxxx0000, UL, 4), meaning a 32-bit length value.
      */
     uint32_t tag;
-    DcmVR vr;
+    DcmVRTag vr_tag;
     uint32_t length;
-    if (!parse_element_header(&state, &tag, &vr, &length, &position)) {
+    if (!parse_element_header(&state, &tag, &vr_tag, &length, &position)) {
         return false;
     }
     uint16_t element_number = tag & 0xffff;
@@ -825,7 +837,8 @@ bool dcm_parse_group(DcmError **error,
 
     while (position < group_length) {
         int64_t element_start = 0;
-        if (!parse_element_header(&state, &tag, &vr, &length, &element_start)) {
+        if (!parse_element_header(&state,
+                &tag, &vr_tag, &length, &element_start)) {
             return false;
         }
 
@@ -883,10 +896,10 @@ bool dcm_parse_pixeldata_offsets(DcmError **error,
     dcm_log_debug("parsing PixelData");
 
     uint32_t tag;
-    DcmVR vr;
+    DcmVRTag vr_tag;
     uint32_t length;
     uint32_t value;
-    if (!parse_element_header(&state, &tag, &vr, &length, &position)) {
+    if (!parse_element_header(&state, &tag, &vr_tag, &length, &position)) {
         return false;
     }
 

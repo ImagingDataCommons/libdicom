@@ -530,12 +530,12 @@ uint32_t dcm_dict_tag_from_keyword(const char *keyword);
 /**
  * Find the Value Representation for a tag.
  *
- * This will return DCM_VR_ERROR if the tag is unknown, or does not have a
- * unique Value Representation.
+ * This will return DCM_VR_ERROR if the tag is unknown. If the tag does not
+ * have a unique VR, it will pick a sensible default value.
  *
  * :param tag: Attribute Tag
  *
- * :return: the unique Value Representation for this tag, or DCM_VR_ERROR
+ * :return: the Value Representation for this tag, or DCM_VR_ERROR
  */
 DCM_EXTERN
 DcmVR dcm_vr_from_tag(uint32_t tag);

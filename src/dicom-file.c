@@ -20,6 +20,7 @@
 #include "utarray.h"
 
 #include <dicom/dicom.h>
+
 #include "pdicom.h"
 
 typedef enum _DcmLayout {

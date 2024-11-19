@@ -6,6 +6,8 @@
 typedef SSIZE_T ssize_t;
 #endif
 
+#include "dicom-dict-tables.h"
+
 #ifndef NDEBUG
 #  define DCM_DEBUG_ONLY( ... ) __VA_ARGS__
 #else
@@ -44,6 +46,8 @@ typedef SSIZE_T ssize_t;
 #define USED(x) (void)(x)
 
 #define TAG_TRANSFER_SYNTAX_UID                     0x00020010
+#define TAG_PRIVATE_CREATOR                         0x00090010
+#define TAG_PRIVATE_DATA                            0x00091000
 #define TAG_DIMENSION_INDEX_VALUES                  0x00209157
 #define TAG_REFERENCED_IMAGE_NAVIGATION_SEQUENCE    0x00480200
 #define TAG_PLANE_POSITION_SLIDE_SEQUENCE           0x0048021a
@@ -68,6 +72,7 @@ void dcm_free_string_array(char **strings, int n);
 size_t dcm_dict_vr_size(DcmVR vr);
 uint32_t dcm_dict_vr_capacity(DcmVR vr);
 int dcm_dict_vr_header_length(DcmVR vr);
+DcmVRTag dcm_vr_tag_from_tag(uint32_t tag);
 
 #define DCM_SWITCH_NUMERIC(VR, OPERATION) \
     switch (VR) { \

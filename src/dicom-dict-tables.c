@@ -1,6 +1,6 @@
 #include <dicom/dicom.h>
+
 #include "pdicom.h"
-#include "dicom-dict-tables.h"
 
 /* This ordering must match the enum in dicom.h.
  *
@@ -376,6 +376,7 @@ const struct _DcmAttribute dcm_attribute_table[] = {
     {0X00089459, DCM_VR_TAG_FL, "RecommendedDisplayFrameRateInFloat"},
     {0X00089460, DCM_VR_TAG_CS, "SkipFrameRangeFlag"},
     {0X00090010, DCM_VR_TAG_LO, "PrivateCreator"},
+    {0X00091000, DCM_VR_TAG_OB, "PrivateData"},
     {0X00100010, DCM_VR_TAG_PN, "PatientName"},
     {0X00100020, DCM_VR_TAG_LO, "PatientID"},
     {0X00100021, DCM_VR_TAG_LO, "IssuerOfPatientID"},

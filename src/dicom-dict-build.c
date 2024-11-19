@@ -15,8 +15,8 @@
 #include "uthash.h"
 
 #include <dicom/dicom.h>
+
 #include "pdicom.h"
-#include "dicom-dict-tables.h"
 
 #define EMPTY 0xffffffff
 #define MAX_PROBES 10

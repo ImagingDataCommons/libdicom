@@ -20,9 +20,9 @@
 #include "uthash.h"
 
 #include <dicom/dicom.h>
+
 #include "pdicom.h"
 #include "dicom-dict-lookup.h"
-#include "dicom-dict-tables.h"
 
 #define LOOKUP(table, field, hash, key, key_len, out) do {		\
         unsigned hash_value;						\
@@ -85,9 +85,18 @@ const char *dcm_dict_str_from_vr(DcmVR vr)
 }
 
 
-
 DcmVRClass dcm_dict_vr_class(DcmVR vr)
 {
+    DcmVRTag vr_tag = (DcmVRTag) vr;
+
+    // these are all ints of various sizes and signedness
+    if (vr == DCM_VR_TAG_OB_OW ||
+        vr == DCM_VR_TAG_US_OW ||
+        vr == DCM_VR_TAG_US_SS ||
+        vr == DCM_VR_TAG_US_SS_OW) {
+        return DCM_VR_CLASS_NUMERIC_INTEGER;
+    }
+
     if (vr >= 0 && vr < DCM_VR_LAST) {
         return dcm_vr_table[(int)vr].vr_class;
     }
@@ -137,6 +146,20 @@ static const struct _DcmAttribute *attribute_from_tag(uint32_t tag)
         tag = 0x00080000;
     }
 
+    // private creator elements are (gggg, 0010 - 00ff) where gggg is odd
+    if ((tag & (1 << 16)) &&
+        (tag & 0xffff) >= 0x0010 &&
+        (tag & 0xffff) <= 0x00ff) {
+        tag = TAG_PRIVATE_CREATOR;
+    }
+
+    // private data elements are (gggg, 1000 - ffff) where gggg is odd
+    if ((tag & (1 << 16)) &&
+        (tag & 0xffff) >= 0x1000 &&
+        (tag & 0xffff) <= 0xffff) {
+        tag = TAG_PRIVATE_DATA;
+    }
+
     LOOKUP(dcm_attribute_table, tag,
            dcm_attribute_from_tag, &tag, sizeof(tag),
            attribute);
@@ -148,12 +171,23 @@ static const struct _DcmAttribute *attribute_from_tag(uint32_t tag)
 // this will also fail for unknown or retired public tags
 bool dcm_is_public_tag(uint32_t tag)
 {
-    return attribute_from_tag(tag) != NULL;
+    return !dcm_is_private_tag(tag) &&
+        attribute_from_tag(tag) != NULL;
 }
 
 
 bool dcm_is_private_tag(uint32_t tag)
 {
+    uint16_t group_number = tag >> 16;
+
+    // the spec says groups 1, 3, 5, 7 are not allowed
+    if (group_number == 0x1 ||
+        group_number == 0x3 ||
+        group_number == 0x5 ||
+        group_number == 0x7) {
+        return false;
+    }
+
     return tag & (1 << 16);
 }
 
@@ -167,7 +201,8 @@ bool dcm_is_valid_tag(uint32_t tag)
 }
 
 
-DcmVR dcm_vr_from_tag(uint32_t tag)
+// the set of possible VRs for this tag
+DcmVRTag dcm_vr_tag_from_tag(uint32_t tag)
 {
     const struct _DcmAttribute *attribute;
 
@@ -175,7 +210,31 @@ DcmVR dcm_vr_from_tag(uint32_t tag)
         return DCM_VR_ERROR;
     }
 
-    return (DcmVR) attribute->vr_tag;
+    return attribute->vr_tag;
+}
+
+
+// pick a default VR for this tag
+DcmVR dcm_vr_from_tag(uint32_t tag)
+{
+    DcmVRTag vr_tag = dcm_vr_tag_from_tag(tag);
+
+    switch (vr_tag) {
+        case DCM_VR_TAG_OB_OW:
+            return DCM_VR_OB;
+
+        case DCM_VR_TAG_US_OW:
+            return DCM_VR_US;
+
+        case DCM_VR_TAG_US_SS:
+            return DCM_VR_US;
+
+        case DCM_VR_TAG_US_SS_OW:
+            return DCM_VR_US;
+
+        default:
+            return vr_tag;
+    }
 }
 
 
