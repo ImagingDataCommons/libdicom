@@ -1388,7 +1388,7 @@ bool dcm_filehandle_get_frame_number(DcmError **error,
     int64_t index = column + row * filehandle->tiles_across;
     if (filehandle->layout == DCM_LAYOUT_SPARSE) {
         index = filehandle->frame_index[index];
-        if (index == -1) {
+        if (index == 0xffffffff) {
             dcm_error_set(error, DCM_ERROR_CODE_MISSING_FRAME,
                           "no frame",
                           "no frame at position (%u, %u)", column, row);
@@ -1406,7 +1406,8 @@ bool dcm_filehandle_get_frame_number(DcmError **error,
     }
 
     // frame numbers are from 1
-    *frame_number = index + 1;
+    if (frame_number)
+        *frame_number = index + 1;
 
     return true;
 }
