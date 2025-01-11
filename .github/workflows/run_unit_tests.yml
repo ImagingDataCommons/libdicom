@@ -78,6 +78,10 @@ jobs:
         DEBUG_DICT=1 meson compile -C builddir
         $sudo meson install -C builddir
 
+    - name: Rebuild the shared library cache
+        if: startsWith(matrix.os, 'ubuntu')
+        run: sudo ldconfig
+
     - name: Run unit tests
       # Don't run tests for private copy of Check
       run: meson test -C builddir --suite libdicom
