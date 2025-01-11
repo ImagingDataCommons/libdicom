@@ -9,6 +9,7 @@
 * much faster read of files with an EOT but no FGS [pcram-techcyte]
 * add `dcm_filehandle_get_frame_number()` [jcupitt]
 * add DICOM catenation support [jcupitt]
+* improve handling of unknown and private tags [jcupitt]
 
 ## 1.1.0, 28/3/24
 
