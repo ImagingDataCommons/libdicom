@@ -324,7 +324,8 @@ static bool get_frame_offset(DcmError **error,
         value = 0;
     }
 
-    *frame_offset = value;
+    // it's a uint32 in the DICOM file
+    *frame_offset = (uint32_t) value;
 
     return true;
 }
@@ -1405,9 +1406,9 @@ bool dcm_filehandle_get_frame_number(DcmError **error,
         }
     }
 
-    // frame numbers are from 1
+    // frame numbers are from 1, and are always uint32
     if (frame_number)
-        *frame_number = index + 1;
+        *frame_number = (uint32_t) (index + 1);
 
     return true;
 }
