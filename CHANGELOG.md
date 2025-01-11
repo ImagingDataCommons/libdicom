@@ -5,6 +5,8 @@
 * better handling of implicit mode in dcm-dump [jcupitt]
 * better handling of trailing spaces in string values [y-baba-isb]
 * much faster read of files with an EOT but no FGS [pcram-techcyte]
+* add `dcm_filehandle_get_frame_number()` [jcupitt]
+* add DICOM catenation support [jcupitt]
 
 ## 1.1.0, 28/3/24
 

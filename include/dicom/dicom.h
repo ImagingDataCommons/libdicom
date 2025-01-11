@@ -1767,7 +1767,7 @@ bool dcm_filehandle_prepare_read_frame(DcmError **error,
  *
  * :param error: Pointer to error object
  * :param filehandle: File
- * :param index: One-based frame number
+ * :param frame_number: One-based frame number
  *
  * :return: Frame
  */
@@ -1775,6 +1775,28 @@ DCM_EXTERN
 DcmFrame *dcm_filehandle_read_frame(DcmError **error,
                                     DcmFilehandle *filehandle,
                                     uint32_t frame_number);
+
+/**
+ * Get the frame number at a position.
+ *
+ * Given a tile row and column, get the number of the frame that should be
+ * displayed at that position, taking into account any frame-positioning
+ * metadata.
+ *
+ * :param error: Pointer to error object
+ * :param filehandle: File
+ * :param column: Column number, from 0
+ * :param row: Row number, from 0
+ * :param frame_number: Return one-based frame number
+ *
+ * :return: true on success, false for no frame available
+ */
+DCM_EXTERN
+bool dcm_filehandle_get_frame_number(DcmError **error,
+                                     DcmFilehandle *filehandle,
+                                     uint32_t column,
+                                     uint32_t row,
+                                     uint32_t *frame_number);
 
 /**
  * Read the frame at a position in a File.

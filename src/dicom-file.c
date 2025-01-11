@@ -52,6 +52,7 @@ struct _DcmFilehandle {
     uint32_t frame_width;
     uint32_t frame_height;
     uint32_t num_frames;
+    uint32_t frame_offset;
     struct PixelDescription desc;
     DcmLayout layout;
 
@@ -308,6 +309,24 @@ static bool get_num_frames(DcmError **error,
     }
 
     *number_of_frames = num_frames;
+
+    return true;
+}
+
+
+static bool get_frame_offset(DcmError **error,
+                             const DcmDataSet *metadata,
+                             uint32_t *frame_offset)
+{
+    // optional, defaults to 0
+    int64_t value;
+    if (!get_tag_int(error,
+        metadata, "ConcatenationFrameOffsetNumber", &value)) {
+        value = 0;
+    }
+
+    // it's a uint32 in the DICOM file
+    *frame_offset = (uint32_t) value;
 
     return true;
 }
@@ -868,6 +887,7 @@ const DcmDataSet *dcm_filehandle_get_metadata_subset(DcmError **error,
                            &filehandle->frame_width,
                            &filehandle->frame_height) ||
             !get_num_frames(error, meta, &filehandle->num_frames) ||
+            !get_frame_offset(error, meta, &filehandle->frame_offset) ||
             !get_tiles(error, meta,
                 &filehandle->tiles_across, &filehandle->tiles_down) ||
             !set_pixel_description(error, meta, &filehandle->desc)) {
@@ -1345,15 +1365,16 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
 }
 
 
-DcmFrame *dcm_filehandle_read_frame_position(DcmError **error,
-                                             DcmFilehandle *filehandle,
-                                             uint32_t column,
-                                             uint32_t row)
+bool dcm_filehandle_get_frame_number(DcmError **error,
+                                     DcmFilehandle *filehandle,
+                                     uint32_t column,
+                                     uint32_t row,
+                                     uint32_t *frame_number)
 {
-    dcm_log_debug("Read frame position (%u, %u)", column, row);
+    dcm_log_debug("Get frame number at (%u, %u)", column, row);
 
     if (!dcm_filehandle_prepare_read_frame(error, filehandle)) {
-        return NULL;
+        return false;
     }
 
     if (column >= filehandle->tiles_across ||
@@ -1363,22 +1384,51 @@ DcmFrame *dcm_filehandle_read_frame_position(DcmError **error,
                       "column and Row must be less than %u, %u",
                       filehandle->tiles_across,
                       filehandle->tiles_down);
-        return NULL;
+        return false;
     }
 
-    uint32_t index = column + row * filehandle->tiles_across;
+    int64_t index = column + row * filehandle->tiles_across;
     if (filehandle->layout == DCM_LAYOUT_SPARSE) {
         index = filehandle->frame_index[index];
         if (index == 0xffffffff) {
             dcm_error_set(error, DCM_ERROR_CODE_MISSING_FRAME,
                           "no frame",
                           "no frame at position (%u, %u)", column, row);
-            return NULL;
+            return false;
+        }
+    } else {
+        // subtract the start of this file, for catenation support
+        index -= filehandle->frame_offset;
+        if (index < 0 || index >= (int64_t) filehandle->num_frames) {
+            dcm_error_set(error, DCM_ERROR_CODE_MISSING_FRAME,
+                          "no frame",
+                          "no frame at position (%u, %u)", column, row);
+            return false;
         }
     }
 
-    // read_frame() numbers from 1
-    return dcm_filehandle_read_frame(error, filehandle, index + 1);
+    // frame numbers are from 1, and are always uint32
+    if (frame_number)
+        *frame_number = (uint32_t) (index + 1);
+
+    return true;
+}
+
+
+DcmFrame *dcm_filehandle_read_frame_position(DcmError **error,
+                                             DcmFilehandle *filehandle,
+                                             uint32_t column,
+                                             uint32_t row)
+{
+    dcm_log_debug("Read frame position (%u, %u)", column, row);
+
+    uint32_t frame_number;
+    if (!dcm_filehandle_get_frame_number(error,
+            filehandle, column, row, &frame_number)) {
+        return NULL;
+    }
+
+    return dcm_filehandle_read_frame(error, filehandle, frame_number);
 }
 
 
