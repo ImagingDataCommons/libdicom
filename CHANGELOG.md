@@ -1,5 +1,7 @@
 ## main
 
+## 1.2.0, 11/01/2025
+
 * fix build with uthash \< 2.3.0 [bgilbert]
 * explicitly fail if macOS universal build is attempted [bgilbert]
 * better handling of implicit mode in dcm-dump [jcupitt]
