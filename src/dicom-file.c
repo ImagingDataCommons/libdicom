@@ -317,9 +317,11 @@ static bool get_frame_offset(DcmError **error,
                              const DcmDataSet *metadata,
                              uint32_t *frame_offset)
 {
+    (void) error;
+
     // optional, defaults to 0
     int64_t value;
-    if (!get_tag_int(error,
+    if (!get_tag_int(NULL,
         metadata, "ConcatenationFrameOffsetNumber", &value)) {
         value = 0;
     }
@@ -749,12 +751,16 @@ static bool set_pixel_description(DcmError **error,
     }
     desc->pixel_representation = (uint16_t) value;
 
-    element = dcm_dataset_get(error, metadata, 0x00280006);
-    if (element == NULL ||
-        !dcm_element_get_value_integer(error, element, 0, &value)) {
-        return false;
+    // required if samples per pixel > 1, defaults to 0 (interleaved)
+    desc->planar_configuration = 0;
+    if (desc->samples_per_pixel > 1) {
+        element = dcm_dataset_get(error, metadata, 0x00280006);
+        if (element == NULL ||
+            !dcm_element_get_value_integer(error, element, 0, &value)) {
+            return false;
+        }
+        desc->planar_configuration = (uint16_t) value;
     }
-    desc->planar_configuration = (uint16_t) value;
 
     element = dcm_dataset_get(error, metadata, 0x00280004);
     if (element == NULL ||
