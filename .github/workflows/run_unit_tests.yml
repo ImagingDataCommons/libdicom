@@ -16,6 +16,8 @@ jobs:
         include:
           - os: ubuntu-latest
             cc: gcc
+          - os: ubuntu-24.04-arm
+            cc: gcc
           - os: macos-latest
             cc: clang
           - os: windows-latest
