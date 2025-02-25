@@ -1,5 +1,7 @@
 ## main
 
+- fix /0 from crafted file [xz0x]
+
 ## 1.2.0, 11/01/2025
 
 * fix build with uthash \< 2.3.0 [bgilbert]
