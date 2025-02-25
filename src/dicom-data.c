@@ -939,7 +939,8 @@ bool dcm_element_set_value(DcmError **error,
         case DCM_VR_CLASS_NUMERIC_DECIMAL:
         case DCM_VR_CLASS_NUMERIC_INTEGER:
             size = dcm_dict_vr_size(element->vr);
-            if (length % size != 0) {
+            if (size > 0 &&
+                length % size != 0) {
                 dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                               "reading of data element failed",
                               "bad byte length for numeric type");
@@ -1249,7 +1250,8 @@ char *dcm_element_value_to_string(const DcmElement *element)
                 for (i = 0; i < n; i++) {
                     result = dcm_printf_append(result, "%02x",
                                                ((unsigned char *) val)[i]);
-                    if (i % size == size - 1) {
+                    if (size > 0 &&
+                        i % size == size - 1) {
                         result = dcm_printf_append(result, " ");
                     }
                 }

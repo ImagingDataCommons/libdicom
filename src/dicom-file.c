@@ -383,6 +383,13 @@ static bool get_tiles(DcmError **error,
     height = frame_width;
     (void) get_tag_int(NULL, metadata, "TotalPixelMatrixRows", &height);
 
+    if (width <= 0 || height <= 0) {
+        dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                      "frame read failed",
+                      "value of TotalPixelMatrixColumns or TotalPixelMatrixRows is out of range");
+        return false;
+    }
+
     *tiles_across = (uint32_t) width / frame_width + !!(width % frame_width);
     *tiles_down = (uint32_t) height / frame_height + !!(height % frame_height);
 
@@ -1643,7 +1650,8 @@ static bool print_pixeldata_create(DcmError **error,
     for (uint32_t i = 0; i < n; i++) {
         printf("%02x", value[i] & 0xff);
 
-        if (i % size == size - 1) {
+        if (size > 0 &&
+            i % size == size - 1) {
             printf(" ");
         }
     }

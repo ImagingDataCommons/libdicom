@@ -154,7 +154,9 @@ static bool is_big_endian(void)
 static void byteswap(char *data, size_t length, size_t size)
 {
     // only swap if the data is "swappable"
-    if (size > 0 && length >= size && length % size == 0) {
+    if (size > 0 &&
+        length >= size &&
+        length % size == 0) {
         size_t n_elements = length / size;
 
         switch (size) {
@@ -460,7 +462,8 @@ static bool parse_pixeldata_item(DcmParseState *state,
 
     // native (not encapsulated) pixeldata is always little-endian and needs
     // byteswapping on big-endian machines
-    if (length != 0xffffffff && state->big_endian) {
+    if (length != 0xffffffff &&
+        state->big_endian) {
         byteswap(value, item_length, dcm_dict_vr_size(vr));
     }
 
@@ -588,7 +591,8 @@ static bool parse_element_body(DcmParseState *state,
             if (vr_class == DCM_VR_CLASS_NUMERIC_DECIMAL ||
                 vr_class == DCM_VR_CLASS_NUMERIC_INTEGER) {
                 // all numeric classes have a size
-                if (length % size != 0) {
+                if (size > 0 &&
+                    length % size != 0) {
                     dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
                                   "reading of data element failed",
                                   "bad length for tag '%08x'",
