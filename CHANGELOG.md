@@ -10,6 +10,7 @@
 * add `dcm_filehandle_get_frame_number()` [jcupitt]
 * add DICOM catenation support [jcupitt]
 * fix GCC compiler warning [bgilbert]
+- fix /0 from crafted file [xz0x]
 
 ## 1.1.0, 28/3/24
 
