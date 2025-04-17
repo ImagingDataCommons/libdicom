@@ -68,7 +68,7 @@ typedef enum _DcmVRTag {
 struct _DcmAttribute {
     uint32_t tag;
     DcmVRTag vr_tag;
-    char keyword[63];
+    char keyword[64];
 };
 
 extern const struct _DcmAttribute dcm_attribute_table[];
