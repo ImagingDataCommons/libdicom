@@ -1,5 +1,7 @@
 ## main
 
+* fix one-byte overread into struct padding [bgilbert]
+
 ## 1.2.0, 09/04/2025
 
 * fix build with uthash \< 2.3.0 [bgilbert]
