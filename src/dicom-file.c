@@ -296,7 +296,8 @@ static bool get_num_frames(DcmError **error,
 {
     const char *value;
     if (!get_tag_str(error, metadata, "NumberOfFrames", &value)) {
-        return false;
+        *number_of_frames = 1;
+        return true;
     }
 
     uint32_t num_frames = strtol(value, NULL, 10);
