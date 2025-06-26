@@ -1813,13 +1813,6 @@ DcmFrame *dcm_frame_create(DcmError **error,
         return NULL;
     }
 
-    if (bits_stored != 1 && bits_stored % 8 != 0) {
-        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
-                      "constructing frame item failed",
-                      "wrong number of bits stored");
-        return NULL;
-    }
-
     if (pixel_representation != 0 && pixel_representation != 1) {
         dcm_error_set(error, DCM_ERROR_CODE_INVALID,
                       "constructing frame item failed",
