@@ -966,7 +966,6 @@ bool dcm_parse_pixeldata_offsets(DcmError **error,
                           "failed to read tag");
             return false;
         }
-        position = 0;
         // all fragments belong to the only frame
         if ( num_frames == 1 )
         {
@@ -977,9 +976,11 @@ bool dcm_parse_pixeldata_offsets(DcmError **error,
         {
             // 1 fragment shall contain 1 frame
             int num_fragments = 0;
+            offsets[num_fragments] = 0; // by definition the first fragment is at offset 0
             while( tag != TAG_SQ_DELIM )
             {
-                if ( tag != TAG_ITEM && !read_uint32(&state, &length, &position))
+                num_fragments++;
+                if ( tag != TAG_ITEM || !read_uint32(&state, &length, &position))
                 {
                     dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                                   "building BasicOffsetTable failed",
@@ -987,8 +988,7 @@ bool dcm_parse_pixeldata_offsets(DcmError **error,
                     return false;
                 }
                 dcm_seekcur(&state, length, &position);
-                offsets[num_fragments] = position - 8;
-                num_fragments++;
+                offsets[num_fragments] = offsets[num_fragments-1] +8 + length;
                 if (!read_tag(&state, &tag, &position))
                 {
                     dcm_error_set(error, DCM_ERROR_CODE_PARSE,
