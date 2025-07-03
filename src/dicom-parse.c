@@ -1046,7 +1046,7 @@ char *dcm_parse_frame(DcmError **error,
         .big_endian = is_big_endian(),
     };
 
-    const uint8_t bytes_per_pixel = (desc->bits_allocated+7)/8;
+    const uint8_t bytes_per_pixel = desc->bits_allocated/8;
     *length = desc->rows * desc->columns * desc->samples_per_pixel * bytes_per_pixel;
 
     char *value = DCM_MALLOC(error, *length);
