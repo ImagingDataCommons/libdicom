@@ -767,6 +767,45 @@ START_TEST(test_file_sm_image_file_meta_memory)
 }
 END_TEST
 
+START_TEST(test_file_ct_brain_single)
+{
+    const uint32_t frame_number = 1;
+    const uint32_t frame_length = 524288; // 512 x 512 x 16 bits stored
+
+    char *file_path = fixture_path("data/test_files/ct_brain_single.dcm");
+    DcmFilehandle *filehandle =
+        dcm_filehandle_create_from_file(NULL, file_path);
+    free(file_path);
+    ck_assert_ptr_nonnull(filehandle);
+
+    const DcmDataSet *metadata =
+        dcm_filehandle_get_metadata_subset(NULL, filehandle);
+    ck_assert_ptr_nonnull(metadata);
+    ck_assert_ptr_null(dcm_dataset_get(NULL, metadata, 0x00280008)); // NumberOfFrames should not be present
+
+    ck_assert_int_ne(dcm_filehandle_prepare_read_frame(NULL, filehandle), 0);
+
+    DcmFrame *frame = dcm_filehandle_read_frame(NULL,
+                                                filehandle,
+                                                frame_number);
+    ck_assert_uint_eq(dcm_frame_get_number(frame), frame_number);
+    ck_assert_uint_eq(dcm_frame_get_rows(frame), 512);
+    ck_assert_uint_eq(dcm_frame_get_columns(frame), 512);
+    ck_assert_uint_eq(dcm_frame_get_samples_per_pixel(frame), 1);
+    ck_assert_uint_eq(dcm_frame_get_bits_allocated(frame), 16);
+    ck_assert_uint_eq(dcm_frame_get_bits_stored(frame), 16);
+    ck_assert_uint_eq(dcm_frame_get_high_bit(frame), 15);
+    ck_assert_uint_eq(dcm_frame_get_pixel_representation(frame), 1);
+    ck_assert_uint_eq(dcm_frame_get_planar_configuration(frame), 0);
+    ck_assert_str_eq(dcm_frame_get_photometric_interpretation(frame), "MONOCHROME2");
+    ck_assert_str_eq(dcm_frame_get_transfer_syntax_uid(frame),
+                     "1.2.840.10008.1.2.1");
+    ck_assert_uint_eq(dcm_frame_get_length(frame), frame_length);
+
+    dcm_frame_destroy(frame);
+    dcm_filehandle_destroy(filehandle);
+}
+END_TEST
 
 static Suite *create_main_suite(void)
 {
@@ -846,12 +885,24 @@ static Suite *create_file_suite(void)
     return suite;
 }
 
+static Suite *create_single_frame_suite(void)
+{
+    Suite *suite = suite_create("single_frame");
+
+    TCase *frame_case = tcase_create("ct_brain_frame");
+    tcase_add_test(frame_case, test_file_ct_brain_single);
+    suite_add_tcase(suite, frame_case);
+
+    return suite;
+}
+
 
 int main(void)
 {
     SRunner *runner = srunner_create(create_main_suite());
     srunner_add_suite(runner, create_data_suite());
     srunner_add_suite(runner, create_file_suite());
+    srunner_add_suite(runner, create_single_frame_suite());
     srunner_run_all(runner, CK_VERBOSE);
     int number_failed = srunner_ntests_failed(runner);
     srunner_free(runner);
