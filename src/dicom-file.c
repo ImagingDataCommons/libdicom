@@ -743,6 +743,18 @@ static bool set_pixel_description(DcmError **error,
         !dcm_element_get_value_integer(error, element, 0, &value)) {
         return false;
     }
+    if (value == 1) {
+        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
+                      "reading frame item failed",
+                      "1-bit pixel storage (Bits Allocated == 1) not implemented");
+        return false;
+    }
+    if (value % 8 != 0) {
+        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
+                      "reading frame item failed",
+                      "BitsAllocated must be a multiple of 8");
+        return false;
+    }
     desc->bits_allocated = (uint16_t) value;
 
     element = dcm_dataset_get(error, metadata, 0x00280101);
