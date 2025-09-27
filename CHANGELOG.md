@@ -1,6 +1,7 @@
 ## main
 
 * fix one-byte overread into struct padding [bgilbert]
+* support single-frame DICOM images and allow BitsStored > 8 [tokyovigilante]
 
 ## 1.2.0, 09/04/2025
 

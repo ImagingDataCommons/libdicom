@@ -1038,7 +1038,8 @@ char *dcm_parse_frame(DcmError **error,
             return NULL;
         }
     } else {
-        *length = desc->rows * desc->columns * desc->samples_per_pixel;
+        *length = desc->rows * desc->columns * desc->samples_per_pixel *
+            (desc->bits_allocated / 8);
     }
 
     char *value = DCM_MALLOC(error, *length);
