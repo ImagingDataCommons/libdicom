@@ -1301,6 +1301,7 @@ bool dcm_filehandle_prepare_read_frame(DcmError **error,
                     filehandle->offset_table[i] = i *
                                                   filehandle->desc.rows *
                                                   filehandle->desc.columns *
+                                                  (filehandle->desc.bits_allocated / 8) *
                                                   filehandle->desc.samples_per_pixel;
                 }
 
