@@ -296,7 +296,8 @@ static bool get_num_frames(DcmError **error,
 {
     const char *value;
     if (!get_tag_str(error, metadata, "NumberOfFrames", &value)) {
-        return false;
+        *number_of_frames = 1;
+        return true;
     }
 
     uint32_t num_frames = strtol(value, NULL, 10);
@@ -740,6 +741,18 @@ static bool set_pixel_description(DcmError **error,
     element = dcm_dataset_get(error, metadata, 0x00280100);
     if (element == NULL ||
         !dcm_element_get_value_integer(error, element, 0, &value)) {
+        return false;
+    }
+    if (value == 1) {
+        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
+                      "reading frame item failed",
+                      "1-bit pixel storage (Bits Allocated == 1) not implemented");
+        return false;
+    }
+    if (value % 8 != 0) {
+        dcm_error_set(error, DCM_ERROR_CODE_INVALID,
+                      "reading frame item failed",
+                      "BitsAllocated must be a multiple of 8");
         return false;
     }
     desc->bits_allocated = (uint16_t) value;
@@ -1300,8 +1313,8 @@ bool dcm_filehandle_prepare_read_frame(DcmError **error,
                     filehandle->offset_table[i] = i *
                                                   filehandle->desc.rows *
                                                   filehandle->desc.columns *
-                                                  filehandle->desc.samples_per_pixel *
-                                                  (filehandle->desc.bits_allocated/8);
+                                                  (filehandle->desc.bits_allocated / 8) *
+                                                  filehandle->desc.samples_per_pixel;
                 }
 
                 filehandle->first_frame_offset = 12;

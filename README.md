@@ -72,7 +72,7 @@ int main() {
         return 1;
     }
 
-    printf("NumerOfFrames == %s\n", num_frames);
+    printf("NumberOfFrames == %s\n", num_frames);
 
     dcm_filehandle_destroy(filehandle);
 
