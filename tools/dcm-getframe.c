@@ -11,7 +11,7 @@
 
 
 static const char usage[] = "usage: "
-    "dcm-getframe [-v] [-V] [-h] [-o OUTPUT-FILE] FILE_PATH FRAME_NUMBER";
+    "dcm-getframe [-hviw] [-o OUTPUT-FILE] FILE_PATH FRAME_NUMBER";
 
 
 int main(int argc, char *argv[])
@@ -19,8 +19,7 @@ int main(int argc, char *argv[])
     char *output_file = NULL;
 
     int c;
-
-    while ((c = dcm_getopt(argc, argv, "h?Vvo:")) != -1) {
+    while ((c = dcm_getopt(argc, argv, "h?vViwo:")) != -1) {
         switch (c) {
             case 'h':
             case '?':
@@ -32,7 +31,12 @@ int main(int argc, char *argv[])
                 return EXIT_SUCCESS;
 
             case 'V':
+            case 'i':
                 dcm_log_set_level(DCM_LOG_INFO);
+                break;
+
+            case 'w':
+                dcm_log_set_level(DCM_LOG_WARNING);
                 break;
 
             case 'o':

@@ -4,7 +4,7 @@
 dcm-getframe \- print a frame from a DICOM PS3.10 file to standard output
 
 .SH SYNOPSIS
-.BR "dcm-getframe " [ -v "]
+.BR "dcm-getframe " [ -hViw "]
 .IR file
 .IR frame-number
 
@@ -12,10 +12,6 @@ dcm-getframe \- print a frame from a DICOM PS3.10 file to standard output
 Print a frame from a DICOM PS3.10 file to standard output.
 
 .SH OPTIONS
-.TP
-.B -o OUTPUT-FILENAME
-Write frame to OUTPUT-FILENAME. By default, the frame will be written to
-stdout.
 
 .TP
 .B -h
@@ -26,8 +22,17 @@ Display help message (usage summary) and exit.
 Display version and exit.
 
 .TP
-.B -v
-Increase logging verbosity to INFO.
+.B -o OUTPUT-FILENAME
+Write frame to OUTPUT-FILENAME. By default, the frame will be written to
+stdout.
+
+.TP
+.B -i
+Show info messages.
+
+.TP
+.B -w
+Show warning messages.
 
 .SH EXIT STATUS
 .B dcm-getframe

@@ -55,6 +55,11 @@ using a standard C type (e.g,. VR ``"US"`` has type ``uint16_t`` and VR
 ``"UI"`` has type ``char *``) and additional value constraints may be
 checked at runtime (e.g., the maximal capacity of a character string).
 
+When reading DICOM files, a warning will be issued for character strings which
+are too long, but they will still be passed unmodified to the caller. Readers
+must not crash if strings are longer than the maximum value in the DICOM
+specification.
+
 The VR must be appropriate for the tag. Use :c:func:`dcm_vr_from_tag()` to
 find the set of allowed VRs for a tag. Use :c:func:`dcm_is_valid_vr_for_tag()`
 to check if a VR is allowed for a tag.

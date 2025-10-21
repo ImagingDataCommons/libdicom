@@ -4,13 +4,14 @@
 dcm-dump \- print metadata content of DICOM PS3.10 file to standard output
 
 .SH SYNOPSIS
-.BR "dcm-dump " [ -v "]
+.BR "dcm-dump " [ -hViw "]
 .IR file
 
 .SH DESCRIPTION
 Print metadata content of DICOM PS3.10 file to standard output.
 
 .SH OPTIONS
+
 .TP
 .B -h
 Display help message (usage summary) and exit.
@@ -20,8 +21,12 @@ Display help message (usage summary) and exit.
 Display version and exit.
 
 .TP
-.B -v
-Increase logging verbosity to INFO.
+.B -i
+Show info messages.
+
+.TP
+.B -w
+Show warning messages.
 
 .SH EXIT STATUS
 .B dcm-dump
