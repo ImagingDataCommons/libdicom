@@ -7,26 +7,30 @@
 #include <dicom/dicom.h>
 
 
-static const char usage[] = "usage: dcm-dump [-v] [-V] [-h] FILE_PATH ...";
+static const char usage[] = "usage: dcm-dump [-hViw] FILE_PATH ...";
 
 
 int main(int argc, char *argv[])
 {
-    int i, c;
-
-    while ((c = dcm_getopt(argc, argv, "h?Vv")) != -1) {
+    int c;
+    while ((c = dcm_getopt(argc, argv, "h?Vviw")) != -1) {
         switch (c) {
             case 'h':
             case '?':
                 printf("%s\n", usage);
                 return EXIT_SUCCESS;
 
-            case 'v':
+            case 'V':
                 printf("%s\n", dcm_get_version());
                 return EXIT_SUCCESS;
 
-            case 'V':
+            case 'v':
+            case 'i':
                 dcm_log_set_level(DCM_LOG_INFO);
+                break;
+
+            case 'w':
+                dcm_log_set_level(DCM_LOG_WARNING);
                 break;
 
             case '#':
@@ -35,7 +39,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    for (i = dcm_optind; i < argc; i++) {
+    for (int i = dcm_optind; i < argc; i++) {
         DcmError *error = NULL;
         DcmFilehandle *filehandle = NULL;
 
@@ -45,8 +49,8 @@ int main(int argc, char *argv[])
             dcm_error_print(error);
             dcm_error_clear(&error);
             return EXIT_FAILURE;
-        }  
-        
+        }
+
         if (!dcm_filehandle_print(&error, filehandle)) {
             dcm_error_print(error);
             dcm_error_clear(&error);
