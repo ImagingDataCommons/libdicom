@@ -1,5 +1,6 @@
 ## main
 
+* add support for encapsulated pixel data reading [weanti]
 * fix one-byte overread into struct padding [bgilbert]
 * support single-frame DICOM images and allow BitsStored > 8 [tokyovigilante]
 * fix error handling for string values over max length [arngaillard]
