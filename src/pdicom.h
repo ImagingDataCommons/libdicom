@@ -169,7 +169,7 @@ char *dcm_parse_frame(DcmError **error,
                       uint32_t *length);
 
 char *dcm_parse_encapsulated_frame(DcmError **error,
-                      DcmIO *io,
-                      bool implicit,
-                      int64_t frame_end_offset,
-                      uint32_t* length);
+                                   DcmIO *io,
+                                   bool implicit,
+                                   int64_t frame_end_offset,
+                                   uint32_t* length);

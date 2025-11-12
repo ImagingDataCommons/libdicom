@@ -908,7 +908,7 @@ START_TEST(test_encapsulated_defined_BOT_2_to_2)
     const char expected_data1[] = 
         { 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7 };
     ck_assert_mem_eq( expected_data1, data1, sizeof(expected_data1) );
-    /*frame = dcm_filehandle_read_frame(NULL,
+    frame = dcm_filehandle_read_frame(NULL,
                             filehandle,
                             2);
     ck_assert_ptr_nonnull( frame );
@@ -917,7 +917,7 @@ START_TEST(test_encapsulated_defined_BOT_2_to_2)
     const char* data2 = dcm_frame_get_value( frame );
     const char expected_data2[] = 
         { 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf };
-    ck_assert_mem_eq( expected_data2, data2, sizeof(expected_data2) );*/
+    ck_assert_mem_eq( expected_data2, data2, sizeof(expected_data2) );
 }
 END_TEST
 
