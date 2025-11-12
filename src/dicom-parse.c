@@ -955,12 +955,10 @@ bool dcm_parse_pixeldata_offsets(DcmError **error,
         // each frame
 
         dcm_log_info("building Offset Table from Pixel Data");
-	// by definition the first offset is 0
-	offsets[0] = 0;
 
         // 0 in the BOT is the offset to the start of frame 1, ie. here
         *first_frame_offset = position;
-	for (int i = 1; i < num_frames; i++) {
+	for (int i = 0; i < num_frames; i++) {
             if (!read_tag(&state, &tag, &position) ||
                 !read_uint32(&state, &length, &position)) {
                 return false;
@@ -983,12 +981,24 @@ bool dcm_parse_pixeldata_offsets(DcmError **error,
             }
             
             // step back to the start of the item for this frame
-            offsets[i] = position - 8;
+            offsets[i] = position - *first_frame_offset - 8;
             
             // and seek forward over the value
             if (!dcm_seekcur(&state, length, &position)) {
                 return false;
             }
+        }
+
+        // in case multiple frames 1:1 frame to fragment mapping is assumed,
+        // therefore the next thing should be the end of sequence tag
+        if (!read_tag(&state, &tag, &position)) {
+            return false;
+        }
+        if (num_frames != 1 && tag != TAG_SQ_DELIM) {
+            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                          "reading BasicOffsetTable failed",
+                          "too many frames in PixelData");
+            return false;
         }
     }
 
