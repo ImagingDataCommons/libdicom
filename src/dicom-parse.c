@@ -1043,10 +1043,10 @@ char *dcm_parse_frame(DcmError **error,
 /* Read encapsulated frame. Return NULL in case of error.
 */
 char *dcm_parse_encapsulated_frame(DcmError **error,
-				   DcmIO *io,
-				   bool implicit,
-				   int64_t frame_end_offset,
-				   uint32_t* length)
+                                   DcmIO *io,
+                                   bool implicit,
+                                   int64_t frame_end_offset,
+                                   uint32_t* length)
 {
     DcmParseState state = {
         .error = error,
