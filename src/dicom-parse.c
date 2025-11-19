@@ -961,8 +961,6 @@ bool dcm_parse_pixeldata_offsets(DcmError **error,
 
         // 0 in the BOT is the offset to the start of frame 1, ie. here
         *first_frame_offset = position;
-
-        position = 0;
         for (int i = 0; i < num_frames; i++) {
             if (!read_tag(&state, &tag, &position) ||
                 !read_uint32(&state, &length, &position)) {
@@ -975,7 +973,7 @@ bool dcm_parse_pixeldata_offsets(DcmError **error,
                               "too few frames in PixelData");
                 return false;
             }
-
+         
             if (tag != TAG_ITEM) {
                 dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                               "building BasicOffsetTable failed",
@@ -984,21 +982,22 @@ bool dcm_parse_pixeldata_offsets(DcmError **error,
                               tag);
                 return false;
             }
-
+            
             // step back to the start of the item for this frame
-            offsets[i] = position - 8;
-
+            offsets[i] = position - *first_frame_offset - 8;
+            
             // and seek forward over the value
             if (!dcm_seekcur(&state, length, &position)) {
                 return false;
             }
         }
 
-        // the next thing should be the end of sequence tag
+        // in case multiple frames 1:1 frame to fragment mapping is assumed,
+        // therefore the next thing should be the end of sequence tag
         if (!read_tag(&state, &tag, &position)) {
             return false;
         }
-        if (tag != TAG_SQ_DELIM) {
+        if (num_frames != 1 && tag != TAG_SQ_DELIM) {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                           "reading BasicOffsetTable failed",
                           "too many frames in PixelData");
@@ -1008,6 +1007,7 @@ bool dcm_parse_pixeldata_offsets(DcmError **error,
 
     return true;
 }
+
 
 char *dcm_parse_frame(DcmError **error,
                       DcmIO *io,
@@ -1022,34 +1022,95 @@ char *dcm_parse_frame(DcmError **error,
         .big_endian = is_big_endian(),
     };
 
-    int64_t position = 0;
+    *length =   desc->rows *
+                desc->columns *
+                desc->samples_per_pixel *
+                (desc->bits_allocated / 8);
 
-    if (dcm_is_encapsulated_transfer_syntax(desc->transfer_syntax_uid)) {
-        uint32_t tag;
-        if (!read_tag(&state, &tag, &position) ||
-            !read_uint32(&state, length, &position)) {
+    char *value = DCM_MALLOC(error, *length);
+    if (value == NULL) {
+        return NULL;
+    }
+    int64_t position = 0;
+    if (!dcm_require(&state, value, *length, &position)) {
+        free(value);
+        return NULL;
+    }
+
+    return value;
+}
+
+/* Read encapsulated frame. Return NULL in case of error.
+*/
+char *dcm_parse_encapsulated_frame(DcmError **error,
+                                   DcmIO *io,
+                                   bool implicit,
+                                   int64_t frame_end_offset,
+                                   uint32_t* length)
+{
+    DcmParseState state = {
+        .error = error,
+        .io = io,
+        .implicit = implicit,
+        .big_endian = is_big_endian(),
+    };
+
+    int64_t position = 0;
+    *length = 0;
+    uint32_t tag;
+    uint32_t fragment_length = 0;
+    uint64_t frame_length = 0;
+
+    // first determine the total length of bytes to be read
+    while (position < frame_end_offset) {
+        if (!read_tag(&state, &tag, &position)) {
             return NULL;
         }
-
+        if (tag == TAG_SQ_DELIM) {
+            break;
+        }
         if (tag != TAG_ITEM) {
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                           "reading frame item failed",
                           "no item tag found for frame item");
             return NULL;
         }
-    } else {
-        *length = desc->rows * desc->columns * desc->samples_per_pixel *
-            (desc->bits_allocated / 8);
+        if (!read_uint32(&state, &fragment_length, &position)) {
+            return NULL;
+        }
+        dcm_seekcur(&state, fragment_length, &position);
+        frame_length += fragment_length;
+    }
+    if (frame_length > 0xFFFFFFFF) {
+        dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                      "invalid frame size",
+                      "frame size exceeds 4GB" );
+        return NULL;
     }
 
-    char *value = DCM_MALLOC(error, *length);
+    char *value = DCM_MALLOC(error, frame_length);
     if (value == NULL) {
         return NULL;
     }
-    if (!dcm_require(&state, value, *length, &position)) {
-        free(value);
-        return NULL;
+    // if frame end is unknown/undefined then update it
+    if (frame_end_offset == 0xFFFFFFFF) {
+        frame_end_offset = position;
     }
+    // reposition to the beginning of encapsulated pixel data
+    dcm_seekcur(&state, -position, &position);
 
+    fragment_length = 0;
+    char* fragment = value;
+    position = 0;
+    while (position < frame_end_offset) {
+        read_tag(&state, &tag, &position);
+        read_uint32(&state, &fragment_length, &position);
+        if (!dcm_require(&state, fragment, fragment_length, &position)) {
+            free(value);
+            return NULL;
+        }
+        fragment += fragment_length;
+    }
+    *length = (uint32_t) frame_length;
     return value;
 }

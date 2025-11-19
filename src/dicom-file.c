@@ -1365,12 +1365,25 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
         return NULL;
     }
 
-    uint32_t length;
-    char *frame_data = dcm_parse_frame(error,
-                                       filehandle->io,
-                                       filehandle->implicit,
-                                       &filehandle->desc,
-                                       &length);
+    const char *syntax = dcm_filehandle_get_transfer_syntax_uid(filehandle);
+    uint32_t length = 0;
+    char* frame_data = NULL;
+    if (dcm_is_encapsulated_transfer_syntax(syntax)) {
+        int64_t frame_end_offset = frame_number < filehandle->num_frames ? 
+                                    filehandle->offset_table[i + 1] : 0xFFFFFFFF;
+        frame_data = dcm_parse_encapsulated_frame(error,
+                                                  filehandle->io,
+                                                  filehandle->implicit,
+                                                  frame_end_offset,
+                                                  &length );
+    } else {
+        frame_data = dcm_parse_frame(error,
+                                     filehandle->io,
+                                     filehandle->implicit,
+                                     &filehandle->desc,
+                                     &length);
+    }
+
     if (frame_data == NULL) {
         return NULL;
     }

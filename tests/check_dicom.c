@@ -807,6 +807,121 @@ START_TEST(test_file_ct_brain_single)
 }
 END_TEST
 
+
+START_TEST(test_encapsulated_empty_BOT_1_to_1)
+{
+    char *file_path = fixture_path("data/test_files/generated_encapsulated_empty_bot_1_to_1.dcm");
+    DcmFilehandle *filehandle = 
+        dcm_filehandle_create_from_file(NULL, file_path);
+    free( file_path );
+    ck_assert_ptr_nonnull(filehandle);
+    DcmFrame* frame = dcm_filehandle_read_frame(NULL,
+                            filehandle,
+                            1);
+    ck_assert_ptr_nonnull( frame );
+    uint32_t frame_length = dcm_frame_get_length( frame );
+    ck_assert_uint_eq( frame_length, 8 );
+    const char* data = dcm_frame_get_value( frame );
+    const char expected_data[] = { 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7 };
+    ck_assert_mem_eq( expected_data, data, sizeof(expected_data) );
+}
+END_TEST
+
+
+START_TEST(test_encapsulated_empty_BOT_2_to_1)
+{
+    char *file_path = fixture_path("data/test_files/generated_encapsulated_empty_bot_2_to_1.dcm");
+    DcmFilehandle *filehandle = 
+        dcm_filehandle_create_from_file(NULL, file_path);
+    free( file_path );
+    ck_assert_ptr_nonnull(filehandle);
+    DcmFrame* frame = dcm_filehandle_read_frame(NULL,
+                            filehandle,
+                            1);
+    ck_assert_ptr_nonnull( frame );
+    uint32_t frame_length = dcm_frame_get_length( frame );
+    ck_assert_uint_eq( frame_length, 16 );
+    const char* data = dcm_frame_get_value( frame );
+    const char expected_data[] = { 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8,
+                    0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf };
+    ck_assert_mem_eq( expected_data, data, sizeof(expected_data) );
+}
+END_TEST
+
+
+START_TEST(test_encapsulated_defined_BOT_1_to_1)
+{
+    char *file_path = fixture_path("data/test_files/generated_encapsulated_defined_bot_1_to_1.dcm");
+    DcmFilehandle *filehandle = 
+        dcm_filehandle_create_from_file(NULL, file_path);
+    free( file_path );
+    ck_assert_ptr_nonnull(filehandle);
+    DcmFrame* frame = dcm_filehandle_read_frame(NULL,
+                            filehandle,
+                            1);
+    ck_assert_ptr_nonnull( frame );
+    uint32_t frame_length = dcm_frame_get_length( frame );
+    ck_assert_uint_eq( frame_length, 8 );
+    const char* data = dcm_frame_get_value( frame );
+    const char expected_data[] = 
+        { 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7 };
+    ck_assert_mem_eq( expected_data, data, sizeof(expected_data) );
+}
+END_TEST
+
+
+START_TEST(test_encapsulated_defined_BOT_2_to_1)
+{
+    char *file_path = fixture_path("data/test_files/generated_encapsulated_defined_bot_2_to_1.dcm");
+    DcmFilehandle *filehandle = 
+        dcm_filehandle_create_from_file(NULL, file_path);
+    free( file_path );
+    ck_assert_ptr_nonnull(filehandle);
+    DcmFrame* frame = dcm_filehandle_read_frame(NULL,
+                            filehandle,
+                            1);
+    ck_assert_ptr_nonnull( frame );
+    uint32_t frame_length = dcm_frame_get_length( frame );
+    ck_assert_uint_eq( frame_length, 16 );
+    const char* data = dcm_frame_get_value( frame );
+    const char expected_data[] = 
+        { 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf };
+    ck_assert_mem_eq( expected_data, data, sizeof(expected_data) );
+}
+END_TEST
+
+
+START_TEST(test_encapsulated_defined_BOT_2_to_2)
+{
+    char *file_path = fixture_path("data/test_files/generated_encapsulated_defined_bot_2_to_2.dcm");
+    DcmFilehandle *filehandle = 
+        dcm_filehandle_create_from_file(NULL, file_path);
+    free( file_path );
+    ck_assert_ptr_nonnull(filehandle);
+    DcmFrame* frame = dcm_filehandle_read_frame(NULL,
+                            filehandle,
+                            1);
+    ck_assert_ptr_nonnull( frame );
+    uint32_t frame_length = dcm_frame_get_length( frame );
+    ck_assert_uint_eq( frame_length, 8 );
+    const char* data1 = dcm_frame_get_value( frame );
+    const char expected_data1[] = 
+        { 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7 };
+    ck_assert_mem_eq( expected_data1, data1, sizeof(expected_data1) );
+    frame = dcm_filehandle_read_frame(NULL,
+                            filehandle,
+                            2);
+    ck_assert_ptr_nonnull( frame );
+    frame_length = dcm_frame_get_length( frame );
+    ck_assert_uint_eq( frame_length, 8 );
+    const char* data2 = dcm_frame_get_value( frame );
+    const char expected_data2[] = 
+        { 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf };
+    ck_assert_mem_eq( expected_data2, data2, sizeof(expected_data2) );
+}
+END_TEST
+
+
 static Suite *create_main_suite(void)
 {
     Suite *suite = suite_create("main");
@@ -896,6 +1011,32 @@ static Suite *create_single_frame_suite(void)
     return suite;
 }
 
+static Suite *create_parse_suite(void)
+{
+    Suite *suite = suite_create("parse");
+
+    TCase *encapsulated_case1 = tcase_create("empty_BOT_1_to_1");
+    tcase_add_test(encapsulated_case1, test_encapsulated_empty_BOT_1_to_1);
+    suite_add_tcase(suite, encapsulated_case1);
+
+    TCase *encapsulated_case2 = tcase_create("empty_BOT_2_to_1");
+    tcase_add_test(encapsulated_case2, test_encapsulated_empty_BOT_2_to_1);
+    suite_add_tcase(suite, encapsulated_case2);
+
+    TCase *encapsulated_case3 = tcase_create("defined_BOT_1_to_1");
+    tcase_add_test(encapsulated_case3, test_encapsulated_defined_BOT_1_to_1);
+    suite_add_tcase(suite, encapsulated_case3);
+
+    TCase *encapsulated_case4 = tcase_create("defined_BOT_2_to_1");
+    tcase_add_test(encapsulated_case4, test_encapsulated_defined_BOT_2_to_1);
+    suite_add_tcase(suite, encapsulated_case4);
+
+    TCase *encapsulated_case5 = tcase_create("defined_BOT_2_to_2");
+    tcase_add_test(encapsulated_case5, test_encapsulated_defined_BOT_2_to_2);
+    suite_add_tcase(suite, encapsulated_case5);
+
+    return suite;
+}
 
 int main(void)
 {
@@ -903,6 +1044,7 @@ int main(void)
     srunner_add_suite(runner, create_data_suite());
     srunner_add_suite(runner, create_file_suite());
     srunner_add_suite(runner, create_single_frame_suite());
+    srunner_add_suite(runner, create_parse_suite());
     srunner_run_all(runner, CK_VERBOSE);
     int number_failed = srunner_ntests_failed(runner);
     srunner_free(runner);
