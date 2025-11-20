@@ -340,14 +340,12 @@ bool dcm_element_get_value_string(DcmError **error,
 static bool element_check_capacity(DcmError **error,
                                    DcmElement *element, uint32_t capacity)
 {
-    uint32_t i;
-
     bool was_assigned = element->assigned;
 
     // we have to turn on "assigned" for this func so we can read out values
     element->assigned = true;
 
-    for (i = 0; i < element->vm; i++) {
+    for (uint32_t i = 0; i < element->vm; i++) {
         const char *value;
         if (!dcm_element_get_value_string(error, element, i, &value)) {
             element->assigned = was_assigned;
@@ -402,9 +400,9 @@ static bool dcm_element_validate(DcmError **error, DcmElement *element)
     if (vr_class == DCM_VR_CLASS_STRING_MULTI ||
         vr_class == DCM_VR_CLASS_STRING_SINGLE) {
         uint32_t capacity = dcm_dict_vr_capacity(element->vr);
-        if (!element_check_capacity(error, element, capacity)) {
-            return false;
-        }
+
+        // this only checks and issues a warning, it does not set error
+        (void) element_check_capacity(error, element, capacity);
     }
 
     element->assigned = true;
