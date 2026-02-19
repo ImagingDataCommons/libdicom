@@ -973,7 +973,7 @@ bool dcm_parse_pixeldata_offsets(DcmError **error,
                               "too few frames in PixelData");
                 return false;
             }
-         
+
             if (tag != TAG_ITEM) {
                 dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                               "building BasicOffsetTable failed",
@@ -982,10 +982,10 @@ bool dcm_parse_pixeldata_offsets(DcmError **error,
                               tag);
                 return false;
             }
-            
+
             // step back to the start of the item for this frame
             offsets[i] = position - *first_frame_offset - 8;
-            
+
             // and seek forward over the value
             if (!dcm_seekcur(&state, length, &position)) {
                 return false;
@@ -1041,7 +1041,7 @@ char *dcm_parse_frame(DcmError **error,
 }
 
 /* Read encapsulated frame. Return NULL in case of error.
-*/
+ */
 char *dcm_parse_encapsulated_frame(DcmError **error,
                                    DcmIO *io,
                                    bool implicit,
@@ -1103,14 +1103,20 @@ char *dcm_parse_encapsulated_frame(DcmError **error,
     char* fragment = value;
     position = 0;
     while (position < frame_end_offset) {
-        read_tag(&state, &tag, &position);
-        read_uint32(&state, &fragment_length, &position);
-        if (!dcm_require(&state, fragment, fragment_length, &position)) {
+        if (!read_tag(&state, &tag, &position)) {
+            return NULL;
+        }
+        if (tag == TAG_SQ_DELIM) {
+            break;
+        }
+        if (!read_uint32(&state, &fragment_length, &position) ||
+            !dcm_require(&state, fragment, fragment_length, &position)) {
             free(value);
             return NULL;
         }
         fragment += fragment_length;
     }
     *length = (uint32_t) frame_length;
+
     return value;
 }

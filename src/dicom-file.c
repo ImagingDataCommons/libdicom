@@ -1369,8 +1369,8 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
     uint32_t length = 0;
     char* frame_data = NULL;
     if (dcm_is_encapsulated_transfer_syntax(syntax)) {
-        int64_t frame_end_offset = frame_number < filehandle->num_frames ? 
-                                    filehandle->offset_table[i + 1] : 0xFFFFFFFF;
+        int64_t frame_end_offset = frame_number < filehandle->num_frames ?
+                                   filehandle->offset_table[i + 1] : 0xFFFFFFFF;
         frame_data = dcm_parse_encapsulated_frame(error,
                                                   filehandle->io,
                                                   filehandle->implicit,
