@@ -9,7 +9,7 @@ project(
     'buildtype=debugoptimized',
   ],
   license : 'MIT',
-  meson_version : '>=0.50',
+  meson_version : '>=0.55',
   version : '1.2.0'
 )
 if not meson.is_subproject()
@@ -82,10 +82,7 @@ if found_uthash
 else
   # fall back to dependency() rather than subproject() so
   # --wrap-mode=nofallback works
-  uthash = dependency(
-    'uthash',
-    fallback : ['uthash', 'uthash_dep'],
-  )
+  uthash = dependency('uthash')
 endif
 if get_option('tests')
   check = dependency(
@@ -93,7 +90,6 @@ if get_option('tests')
     default_options : [
       'warning_level=0',
     ],
-    fallback : ['check', 'check_dep'],
     version : '>=0.9.6',
   )
 endif
@@ -195,9 +191,7 @@ libdicom_dep = declare_dependency(
   include_directories : [library_includes, include_directories('.')],
   link_with : libdicom,
 )
-if meson.version().version_compare('>=0.54')
-  meson.override_dependency('libdicom', libdicom_dep)
-endif
+meson.override_dependency('libdicom', libdicom_dep)
 
 # tools
 executable(
