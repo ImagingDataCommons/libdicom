@@ -1,0 +1,4 @@
+kwargs_force_multiline = true
+sort_files = true
+use_editor_config = true
+wide_colon = true

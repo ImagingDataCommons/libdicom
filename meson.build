@@ -9,13 +9,11 @@ project(
     'buildtype=debugoptimized',
   ],
   license : 'MIT',
-  meson_version : '>=0.50',
-  version : '1.2.0'
+  meson_version : '>=0.55',
+  version : '1.2.0',
 )
 if not meson.is_subproject()
-  meson.add_dist_script(
-    'scripts/dist.py'
-  )
+  meson.add_dist_script('scripts/dist.py')
 endif
 
 # project version
@@ -46,7 +44,7 @@ abi_version = '@0@.@1@.@2@'.format(
 )
 darwin_library_versions = [
   abi_version_major + 1,
-  '@0@.@1@'.format(abi_version_major + 1, abi_version_minor)
+  '@0@.@1@'.format(abi_version_major + 1, abi_version_minor),
 ]
 
 # ready to be pasted into source files
@@ -68,24 +66,23 @@ if host_machine.system() == 'darwin' and not cc.has_header('stdio.h')
   # in advance.
   # https://github.com/mesonbuild/meson/issues/5290
   # https://github.com/mesonbuild/meson/issues/8206
-  error('Basic environment check failed.  Check compiler flags; building for multiple CPU architectures is not supported.')
+  error(
+    'Basic environment check failed.  Check compiler flags; building for multiple CPU architectures is not supported.',
+  )
 endif
 found_uthash = cc.check_header(
   'utarray.h',
-  required : false
+  required : false,
 ) and cc.check_header(
   'uthash.h',
-  required : false
+  required : false,
 )
 if found_uthash
   uthash = declare_dependency()
 else
   # fall back to dependency() rather than subproject() so
   # --wrap-mode=nofallback works
-  uthash = dependency(
-    'uthash',
-    fallback : ['uthash', 'uthash_dep'],
-  )
+  uthash = dependency('uthash')
 endif
 if get_option('tests')
   check = dependency(
@@ -93,7 +90,6 @@ if get_option('tests')
     default_options : [
       'warning_level=0',
     ],
-    fallback : ['check', 'check_dep'],
     version : '>=0.9.6',
   )
 endif
@@ -109,10 +105,10 @@ cfg.set_quoted(
 )
 
 if cc.has_header('io.h')
-    cfg.set('HAVE_IO_H', '1')
+  cfg.set('HAVE_IO_H', '1')
 endif
 if cc.has_header('unistd.h')
-    cfg.set('HAVE_UNISTD_H', '1')
+  cfg.set('HAVE_UNISTD_H', '1')
 endif
 
 configure_file(
@@ -134,9 +130,9 @@ add_project_arguments(
 
 # include
 version_header = configure_file(
-    input : 'include/dicom/version.h.in',
-    output : 'version.h',
-    configuration : version_data,
+  input : 'include/dicom/version.h.in',
+  output : 'version.h',
+  configuration : version_data,
 )
 
 install_headers(
@@ -150,7 +146,7 @@ library_includes = include_directories('include')
 library_options = ['-DBUILDING_LIBDICOM']
 dict_build = executable(
   'dicom-dict-build',
-  ['src/dicom-dict-build.c', 'src/dicom-dict-tables.c'],
+  files('src/dicom-dict-build.c', 'src/dicom-dict-tables.c'),
   dependencies : [uthash],
   include_directories : library_includes,
   native : true,
@@ -160,17 +156,16 @@ dict_lookup = custom_target(
   command : [dict_build, '@OUTPUT@'],
   output : ['dicom-dict-lookup.c', 'dicom-dict-lookup.h'],
 )
-library_sources = [
-  dict_lookup,
-  'src/getopt.c',
-  'src/dicom.c',
-  'src/dicom-io.c',
+library_sources = [dict_lookup] + files(
   'src/dicom-data.c',
-  'src/dicom-dict.c',
   'src/dicom-dict-tables.c',
+  'src/dicom-dict.c',
   'src/dicom-file.c',
+  'src/dicom-io.c',
   'src/dicom-parse.c',
-]
+  'src/dicom.c',
+  'src/getopt.c',
+)
 libdicom = library(
   'dicom',
   library_sources,
@@ -179,7 +174,7 @@ libdicom = library(
   version : abi_version,
   darwin_versions : darwin_library_versions,
   include_directories : library_includes,
-  gnu_symbol_visibility: 'hidden',
+  gnu_symbol_visibility : 'hidden',
   install : true,
 )
 import('pkgconfig').generate(
@@ -195,9 +190,7 @@ libdicom_dep = declare_dependency(
   include_directories : [library_includes, include_directories('.')],
   link_with : libdicom,
 )
-if meson.version().version_compare('>=0.54')
-  meson.override_dependency('libdicom', libdicom_dep)
-endif
+meson.override_dependency('libdicom', libdicom_dep)
 
 # tools
 executable(
@@ -233,7 +226,7 @@ subdir('doc/env/bin')
 custom_target(
   'html',
   command : [sphinx_build, '@SOURCE_ROOT@/doc/source', '@OUTPUT@'],
-  input : [
+  input : files(
     'doc/source/api.rst',
     'doc/source/conf.py',
     'doc/source/contributing.rst',
@@ -243,7 +236,7 @@ custom_target(
     'doc/source/tools.rst',
     'doc/source/usage.rst',
     'include/dicom/dicom.h',
-  ],
+  ),
   output : 'html',
 )
 
@@ -253,6 +246,7 @@ if get_option('tests')
     'check_dicom',
     'tests/check_dicom.c',
     dependencies : [check, libdicom_dep],
+    build_by_default : false,
   )
   test('check_dicom', check_dicom)
 endif

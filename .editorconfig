@@ -13,3 +13,9 @@ indent_size = 4
 [*.py]
 indent_style = space
 indent_size = 4
+
+[meson.build]
+indent_size = 2
+
+[meson_options.txt]
+indent_size = 2
