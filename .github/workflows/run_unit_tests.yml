@@ -50,7 +50,11 @@ jobs:
 
     - name: Install build and test dependencies (Windows)
       if: startsWith(matrix.os, 'windows')
-      run: pip install meson ninja
+      run: |
+        # remove broken pkg-config that causes Meson warnings
+        del 'C:\\Strawberry\\perl\\bin\\pkg-config'
+        del 'C:\\Strawberry\\perl\\bin\\pkg-config.BAT'
+        pip install meson ninja
 
     - name: Build and install library
       shell: bash
@@ -76,7 +80,7 @@ jobs:
             esac
             ;;
         esac
-        meson setup builddir --werror $setup_args
+        meson setup builddir --fatal-meson-warnings --werror $setup_args
         DEBUG_DICT=1 meson compile -C builddir
         $sudo meson install -C builddir
 
