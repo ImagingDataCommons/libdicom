@@ -1,5 +1,6 @@
 tags
 # Subprojects
+/subprojects/.wraplock
 /subprojects/packagecache
 /subprojects/check-*
 /subprojects/uthash-*
