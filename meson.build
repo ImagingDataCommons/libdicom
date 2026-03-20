@@ -146,7 +146,7 @@ library_includes = include_directories('include')
 library_options = ['-DBUILDING_LIBDICOM']
 dict_build = executable(
   'dicom-dict-build',
-  ['src/dicom-dict-build.c', 'src/dicom-dict-tables.c'],
+  files('src/dicom-dict-build.c', 'src/dicom-dict-tables.c'),
   dependencies : [uthash],
   include_directories : library_includes,
   native : true,
@@ -156,17 +156,16 @@ dict_lookup = custom_target(
   command : [dict_build, '@OUTPUT@'],
   output : ['dicom-dict-lookup.c', 'dicom-dict-lookup.h'],
 )
-library_sources = [
-  dict_lookup,
-  'src/getopt.c',
-  'src/dicom.c',
-  'src/dicom-io.c',
+library_sources = [dict_lookup] + files(
   'src/dicom-data.c',
-  'src/dicom-dict.c',
   'src/dicom-dict-tables.c',
+  'src/dicom-dict.c',
   'src/dicom-file.c',
+  'src/dicom-io.c',
   'src/dicom-parse.c',
-]
+  'src/dicom.c',
+  'src/getopt.c',
+)
 libdicom = library(
   'dicom',
   library_sources,
@@ -227,7 +226,7 @@ subdir('doc/env/bin')
 custom_target(
   'html',
   command : [sphinx_build, '@SOURCE_ROOT@/doc/source', '@OUTPUT@'],
-  input : [
+  input : files(
     'doc/source/api.rst',
     'doc/source/conf.py',
     'doc/source/contributing.rst',
@@ -237,7 +236,7 @@ custom_target(
     'doc/source/tools.rst',
     'doc/source/usage.rst',
     'include/dicom/dicom.h',
-  ],
+  ),
   output : 'html',
 )
 
