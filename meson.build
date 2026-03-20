@@ -246,6 +246,7 @@ if get_option('tests')
     'check_dicom',
     'tests/check_dicom.c',
     dependencies : [check, libdicom_dep],
+    build_by_default : false,
   )
   test('check_dicom', check_dicom)
 endif
