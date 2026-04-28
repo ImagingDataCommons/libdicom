@@ -1,10 +1,10 @@
-## main
+## 1.2.1, 28/04/2026
 
 * add support for encapsulated pixel data reading [weanti]
 * fix one-byte overread into struct padding [bgilbert]
 * support single-frame DICOM images and allow BitsStored > 8 [tokyovigilante]
 * fix error handling for string values over max length [arngaillard]
-* add `-w` (show warnings) to dcm-dump and dcm-getframe
+* add `-w` (show warnings) to dcm-dump and dcm-getframe [jcupitt]
 * reduce seeks on file io [rvause]
 
 ## 1.2.0, 09/04/2025
