@@ -5,6 +5,7 @@
 * support single-frame DICOM images and allow BitsStored > 8 [tokyovigilante]
 * fix error handling for string values over max length [arngaillard]
 * add `-w` (show warnings) to dcm-dump and dcm-getframe
+* reduce seeks on file io [rvause]
 
 ## 1.2.0, 09/04/2025
 
@@ -55,4 +56,3 @@
 ## 1.0.0, 2/10/23
 
 * first release!
-

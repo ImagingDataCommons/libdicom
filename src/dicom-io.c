@@ -46,6 +46,7 @@ typedef struct _DcmIOFile {
     char input_buffer[BUFFER_SIZE];
     int64_t bytes_in_buffer;
     int64_t read_point;
+    int64_t offset;
 } DcmIOFile;
 
 
@@ -154,6 +155,7 @@ static int64_t refill(DcmError **error, DcmIOFile *file)
 
     file->read_point = 0;
     file->bytes_in_buffer = bytes_read;
+    file->offset += bytes_read;
 
     return bytes_read;
 }
@@ -202,42 +204,62 @@ static int64_t dcm_io_seek_file(DcmError **error, DcmIO *io,
 {
     DcmIOFile *file = (DcmIOFile *) io;
 
-    /* We've read ahead by some number of buffered bytes, so first undo that,
-     * then do the seek from the true position.
+    /* Translate the request to an absolute target. The logical position the
+     * caller perceives is offset - bytes_in_buffer + read_point.
      */
-    int64_t new_offset;
+    int64_t logical_pos = file->offset - file->bytes_in_buffer +
+                          file->read_point;
+    int64_t target;
 
-    int64_t bytes_ahead = file->bytes_in_buffer - file->read_point;
-    if (bytes_ahead > 0) {
-#ifdef _WIN32
-        new_offset = _lseeki64(file->fd, -bytes_ahead, SEEK_CUR);
-#else
-        new_offset = lseek(file->fd, -bytes_ahead, SEEK_CUR);
-#endif
+    switch (whence) {
+        case SEEK_SET:
+            target = offset;
+            break;
+        case SEEK_CUR:
+            target = logical_pos + offset;
+            break;
+        case SEEK_END:
+        default:
+            target = -1;
+            break;
+    }
 
-        if (new_offset < 0) {
-            dcm_error_set(error, DCM_ERROR_CODE_IO,
-                "unable to seek file",
-                "unable to seek %s - %s", file->filename, strerror(errno));
+    /* If we know the absolute target and it falls within the
+     * currently-buffered window (offset - bytes_in_buffer, offset), we can
+     * skip the seek entirely.
+     */
+    if (target >= 0) {
+        int64_t buffer_base = file->offset - file->bytes_in_buffer;
+        if (target >= buffer_base && target <= file->offset) {
+            file->read_point = target - buffer_base;
+            return target;
         }
     }
 
+    /* For SEEK_SET / SEEK_CUR we always use SEEK_SET with the resulting
+     * absolute target.
+     */
+    int64_t new_offset;
+    int seek_whence = (target >= 0) ? SEEK_SET : whence;
+    int64_t seek_offset = (target >= 0) ? target : offset;
 #ifdef _WIN32
-    new_offset = _lseeki64(file->fd, offset, whence);
+    new_offset = _lseeki64(file->fd, seek_offset, seek_whence);
 #else
-    new_offset = lseek(file->fd, offset, whence);
+    new_offset = lseek(file->fd, seek_offset, seek_whence);
 #endif
 
     if (new_offset < 0) {
         dcm_error_set(error, DCM_ERROR_CODE_IO,
             "unable to seek file",
             "unable to seek %s - %s", file->filename, strerror(errno));
+        return new_offset;
     }
 
-    /* Empty the buffer, since we may now be at a different position.
+    /* Empty the buffer; the next read will refill it from the new position.
      */
     file->bytes_in_buffer = 0;
     file->read_point = 0;
+    file->offset = new_offset;
 
     return new_offset;
 }
@@ -399,4 +421,3 @@ int64_t dcm_io_seek(DcmError **error,
 {
     return io->methods->seek(error, io, offset, whence);
 }
-

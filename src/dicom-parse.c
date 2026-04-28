@@ -1060,10 +1060,11 @@ char *dcm_parse_encapsulated_frame(DcmError **error,
     uint32_t tag;
     uint32_t fragment_length = 0;
     uint64_t frame_length = 0;
+    char *value = NULL;
 
-    // first determine the total length of bytes to be read
     while (position < frame_end_offset) {
         if (!read_tag(&state, &tag, &position)) {
+            free(value);
             return NULL;
         }
         if (tag == TAG_SQ_DELIM) {
@@ -1073,49 +1074,37 @@ char *dcm_parse_encapsulated_frame(DcmError **error,
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                           "reading frame item failed",
                           "no item tag found for frame item");
-            return NULL;
-        }
-        if (!read_uint32(&state, &fragment_length, &position)) {
-            return NULL;
-        }
-        dcm_seekcur(&state, fragment_length, &position);
-        frame_length += fragment_length;
-    }
-    if (frame_length > 0xFFFFFFFF) {
-        dcm_error_set(error, DCM_ERROR_CODE_PARSE,
-                      "invalid frame size",
-                      "frame size exceeds 4GB" );
-        return NULL;
-    }
-
-    char *value = DCM_MALLOC(error, frame_length);
-    if (value == NULL) {
-        return NULL;
-    }
-    // if frame end is unknown/undefined then update it
-    if (frame_end_offset == 0xFFFFFFFF) {
-        frame_end_offset = position;
-    }
-    // reposition to the beginning of encapsulated pixel data
-    dcm_seekcur(&state, -position, &position);
-
-    fragment_length = 0;
-    char* fragment = value;
-    position = 0;
-    while (position < frame_end_offset) {
-        if (!read_tag(&state, &tag, &position)) {
-            return NULL;
-        }
-        if (tag == TAG_SQ_DELIM) {
-            break;
-        }
-        if (!read_uint32(&state, &fragment_length, &position) ||
-            !dcm_require(&state, fragment, fragment_length, &position)) {
             free(value);
             return NULL;
         }
-        fragment += fragment_length;
+        if (!read_uint32(&state, &fragment_length, &position)) {
+            free(value);
+            return NULL;
+        }
+        if (frame_length + fragment_length > 0xFFFFFFFF) {
+            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                          "invalid frame size",
+                          "frame size exceeds 4GB");
+            free(value);
+            return NULL;
+        }
+
+        char *new_value = (char *) dcm_realloc(error, value,
+                                               frame_length + fragment_length);
+        if (new_value == NULL) {
+            free(value);
+            return NULL;
+        }
+        value = new_value;
+
+        if (!dcm_require(&state, value + frame_length, fragment_length,
+                         &position)) {
+            free(value);
+            return NULL;
+        }
+        frame_length += fragment_length;
     }
+
     *length = (uint32_t) frame_length;
 
     return value;
