@@ -219,6 +219,8 @@ static DcmError *dcm_error_newf(DcmErrorCode code,
 }
 
 
+static bool should_log(DcmLogLevel level);
+
 void dcm_error_set(DcmError **error, DcmErrorCode code,
     const char *summary, const char *format, ...)
 {
@@ -233,7 +235,7 @@ void dcm_error_set(DcmError **error, DcmErrorCode code,
         va_start(ap, format);
         *error = dcm_error_newf(code, summary, format, ap);
         va_end(ap);
-    } else {
+    } else if (should_log(DCM_LOG_DEBUG)) {
         /* Log to DEBUG so messages don't get completely lost.
          */
         va_list(ap);
