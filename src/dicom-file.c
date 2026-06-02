@@ -1431,18 +1431,16 @@ bool dcm_filehandle_get_frame_number(DcmError **error,
     if (filehandle->layout == DCM_LAYOUT_SPARSE) {
         index = filehandle->frame_index[index];
         if (index == 0xffffffff) {
-            dcm_error_set(error, DCM_ERROR_CODE_MISSING_FRAME,
-                          "no frame",
-                          "no frame at position (%u, %u)", column, row);
+            // we might return this error hundreds of thousands of times;
+            // avoid allocating each time
+            dcm_error_set_static(error, &DCM_STATIC_ERROR_MISSING_FRAME);
             return false;
         }
     } else {
         // subtract the start of this file, for catenation support
         index -= filehandle->frame_offset;
         if (index < 0 || index >= (int64_t) filehandle->num_frames) {
-            dcm_error_set(error, DCM_ERROR_CODE_MISSING_FRAME,
-                          "no frame",
-                          "no frame at position (%u, %u)", column, row);
+            dcm_error_set_static(error, &DCM_STATIC_ERROR_MISSING_FRAME);
             return false;
         }
     }

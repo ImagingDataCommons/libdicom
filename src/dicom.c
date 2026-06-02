@@ -186,11 +186,19 @@ struct _DcmError {
     DcmErrorCode code;
     char *summary;
     char *message;
+    bool is_static;
+};
+
+const DcmError DCM_STATIC_ERROR_MISSING_FRAME = {
+    .code = DCM_ERROR_CODE_MISSING_FRAME,
+    .summary = "no frame",
+    .message = "no frame at this position",
+    .is_static = true,
 };
 
 static void dcm_error_free(DcmError *error)
 {
-    if (error) {
+    if (error && !error->is_static) {
         free(error->summary);
         error->summary = NULL;
         free(error->message);
@@ -249,6 +257,18 @@ void dcm_error_set(DcmError **error, DcmErrorCode code,
 
         dcm_error_free(local_error);
     }
+}
+
+
+void dcm_error_set_static(DcmError **error, const DcmError *static_error) {
+    if (!static_error->is_static) {
+        dcm_log_critical("DcmError is not static");
+    } else if (error && *error) {
+        dcm_log_critical("DcmError set twice");
+    } else if (error) {
+        *error = (DcmError *) static_error;
+    }
+    /* otherwise don't log; we're in a fast path */
 }
 
 

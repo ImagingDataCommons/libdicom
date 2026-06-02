@@ -65,6 +65,9 @@ char *dcm_printf_append(char *str, const char *format, ...);
 
 void dcm_free_string_array(char **strings, int n);
 
+extern const DcmError DCM_STATIC_ERROR_MISSING_FRAME;
+void dcm_error_set_static(DcmError **error, const DcmError *static_error);
+
 size_t dcm_dict_vr_size(DcmVR vr);
 uint32_t dcm_dict_vr_capacity(DcmVR vr);
 int dcm_dict_vr_header_length(DcmVR vr);
