@@ -1778,11 +1778,41 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
                                     uint32_t frame_number);
 
 /**
+ * Find the frame number at a position.
+ *
+ * Given a tile row and column, find the number of the frame that should be
+ * displayed at that position, taking into account any frame-positioning
+ * metadata.
+ *
+ * If no frame is available at that position, set frame_number to 0.
+ *
+ * :param error: Pointer to error object
+ * :param filehandle: File
+ * :param column: Column number, from 0
+ * :param row: Row number, from 0
+ * :param frame_number: Return one-based frame number, or 0 for no frame
+ *
+ * :return: true on success, false for error
+ */
+DCM_EXTERN
+bool dcm_filehandle_find_frame_number(DcmError **error,
+                                      DcmFilehandle *filehandle,
+                                      uint32_t column,
+                                      uint32_t row,
+                                      uint32_t *frame_number);
+
+/**
  * Get the frame number at a position.
+ *
+ * Note: this function is deprecated, please use
+ * :c:func:`dcm_filehandle_find_frame_number()` instead.
  *
  * Given a tile row and column, get the number of the frame that should be
  * displayed at that position, taking into account any frame-positioning
  * metadata.
+ *
+ * If no frame is available, return false and set the error
+ * :c:enum:`DCM_ERROR_CODE_MISSING_FRAME`.
  *
  * :param error: Pointer to error object
  * :param filehandle: File
@@ -1790,7 +1820,7 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
  * :param row: Row number, from 0
  * :param frame_number: Return one-based frame number
  *
- * :return: true on success, false for no frame available
+ * :return: true on success, false for error or no frame available
  */
 DCM_EXTERN
 bool dcm_filehandle_get_frame_number(DcmError **error,

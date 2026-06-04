@@ -1,3 +1,8 @@
+## 1.3.0, date tbd
+
+* add dcm_filehandle_find_frame_number(), deprecate
+  dcm_filehandle_get_frame_number() [jcupitt]
+
 ## 1.2.1, 28/04/2026
 
 * add support for encapsulated pixel data reading [weanti]
