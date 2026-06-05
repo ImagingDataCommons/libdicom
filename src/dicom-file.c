@@ -1432,24 +1432,20 @@ bool dcm_filehandle_find_frame_number(DcmError **error,
         index = filehandle->frame_index[index];
         if (index == 0xffffffff) {
             // missing frame
-            if (frame_number)
-                *frame_number = 0;
+            *frame_number = 0;
         }
         else {
-            if (frame_number)
-                *frame_number = (uint32_t) (index + 1);
+            *frame_number = (uint32_t) (index + 1);
         }
     } else {
         // subtract the start of this file, for catenation support
         index -= filehandle->frame_offset;
         if (index < 0 || index >= (int64_t) filehandle->num_frames) {
             // missing frame
-            if (frame_number)
-                *frame_number = 0;
+            *frame_number = 0;
         }
         else {
-            if (frame_number)
-                *frame_number = (uint32_t) (index + 1);
+            *frame_number = (uint32_t) (index + 1);
         }
     }
 
@@ -1465,18 +1461,21 @@ bool dcm_filehandle_get_frame_number(DcmError **error,
                                      uint32_t row,
                                      uint32_t *frame_number)
 {
-    if (!dcm_filehandle_find_frame_number(error, filehandle,
-                                          column, row, frame_number)) {
+    uint32_t n;
+
+    if (!dcm_filehandle_find_frame_number(error, filehandle, column, row, &n)) {
         return false;
     }
 
-    if (frame_number &&
-        *frame_number == 0) {
+    if (n == 0) {
         dcm_error_set(error, DCM_ERROR_CODE_MISSING_FRAME,
                       "no frame",
                       "no frame at position (%u, %u)", column, row);
         return false;
     }
+
+    if (*frame_number)
+        *frame_number = n;
 
     return true;
 }

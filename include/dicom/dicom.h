@@ -1790,8 +1790,6 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
  *
  * If no frame is available at that position, set frame_number to 0.
  *
- * frame_number may be NULL.
- *
  * :param error: Pointer to error object
  * :param filehandle: File
  * :param column: Column number, from 0
@@ -1819,6 +1817,8 @@ bool dcm_filehandle_find_frame_number(DcmError **error,
  *
  * If no frame is available, return false and set the error
  * :c:enum:`DCM_ERROR_CODE_MISSING_FRAME`.
+ *
+ * frame_number may be NULL.
  *
  * :param error: Pointer to error object
  * :param filehandle: File
