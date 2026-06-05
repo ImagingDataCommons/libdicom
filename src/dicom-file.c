@@ -1474,7 +1474,7 @@ bool dcm_filehandle_get_frame_number(DcmError **error,
         return false;
     }
 
-    if (*frame_number)
+    if (frame_number)
         *frame_number = n;
 
     return true;
