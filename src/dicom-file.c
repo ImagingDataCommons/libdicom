@@ -1470,7 +1470,8 @@ bool dcm_filehandle_get_frame_number(DcmError **error,
         return false;
     }
 
-    if (*frame_number == 0) {
+    if (frame_number &&
+        *frame_number == 0) {
         dcm_error_set(error, DCM_ERROR_CODE_MISSING_FRAME,
                       "no frame",
                       "no frame at position (%u, %u)", column, row);
