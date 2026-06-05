@@ -20,6 +20,16 @@
 #define DCM_EXTERN __attribute__((visibility("default"))) extern
 #endif
 
+#ifndef BUILDING_LIBDICOM
+#if defined(_MSC_VER)
+#define DCM_DEPRECATED(MSG) __declspec(deprecated(MSG))
+#elif defined(__GNUC__)
+#define DCM_DEPRECATED(MSG) __attribute__((deprecated(MSG)))
+#endif
+#else
+#define DCM_DEPRECATED(MSG)
+#endif
+
 /**
  * Maximum number of characters in values with Value Representation AE.
  */
@@ -124,13 +134,7 @@ typedef struct _DcmSequence DcmSequence;
  * .. deprecated:: 1.1.0
  *    Calling this function is no longer necessary.
  */
-#ifndef BUILDING_LIBDICOM
-#if defined(_MSC_VER)
-__declspec(deprecated("dcm_init() no longer needs to be called"))
-#elif defined(__GNUC__)
-__attribute__((deprecated("dcm_init() no longer needs to be called")))
-#endif
-#endif
+DCM_DEPRECATED("dcm_init() no longer needs to be called")
 DCM_EXTERN
 void dcm_init(void);
 
@@ -1778,11 +1782,43 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
                                     uint32_t frame_number);
 
 /**
+ * Find the frame number at a position.
+ *
+ * Given a tile row and column, find the number of the frame that should be
+ * displayed at that position, taking into account any frame-positioning
+ * metadata.
+ *
+ * If no frame is available at that position, set frame_number to 0.
+ *
+ * :param error: Pointer to error object
+ * :param filehandle: File
+ * :param column: Column number, from 0
+ * :param row: Row number, from 0
+ * :param frame_number: Return one-based frame number, or 0 for no frame
+ *
+ * :return: true on success, false for error
+ */
+DCM_EXTERN
+bool dcm_filehandle_find_frame_number(DcmError **error,
+                                      DcmFilehandle *filehandle,
+                                      uint32_t column,
+                                      uint32_t row,
+                                      uint32_t *frame_number);
+
+/**
  * Get the frame number at a position.
+ *
+ * Note: this function is deprecated, please use
+ * :c:func:`dcm_filehandle_find_frame_number()` instead.
  *
  * Given a tile row and column, get the number of the frame that should be
  * displayed at that position, taking into account any frame-positioning
  * metadata.
+ *
+ * If no frame is available, return false and set the error
+ * :c:enum:`DCM_ERROR_CODE_MISSING_FRAME`.
+ *
+ * frame_number may be NULL.
  *
  * :param error: Pointer to error object
  * :param filehandle: File
@@ -1790,8 +1826,9 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
  * :param row: Row number, from 0
  * :param frame_number: Return one-based frame number
  *
- * :return: true on success, false for no frame available
+ * :return: true on success, false for error or no frame available
  */
+DCM_DEPRECATED("deprecated for dcm_filehandle_find_frame_number()")
 DCM_EXTERN
 bool dcm_filehandle_get_frame_number(DcmError **error,
                                      DcmFilehandle *filehandle,

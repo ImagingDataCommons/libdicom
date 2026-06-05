@@ -1405,13 +1405,13 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
 }
 
 
-bool dcm_filehandle_get_frame_number(DcmError **error,
-                                     DcmFilehandle *filehandle,
-                                     uint32_t column,
-                                     uint32_t row,
-                                     uint32_t *frame_number)
+bool dcm_filehandle_find_frame_number(DcmError **error,
+                                      DcmFilehandle *filehandle,
+                                      uint32_t column,
+                                      uint32_t row,
+                                      uint32_t *frame_number)
 {
-    dcm_log_debug("Get frame number at (%u, %u)", column, row);
+    dcm_log_debug("Find frame number for tile (%u, %u)", column, row);
 
     if (!dcm_filehandle_prepare_read_frame(error, filehandle)) {
         return false;
@@ -1431,25 +1431,51 @@ bool dcm_filehandle_get_frame_number(DcmError **error,
     if (filehandle->layout == DCM_LAYOUT_SPARSE) {
         index = filehandle->frame_index[index];
         if (index == 0xffffffff) {
-            dcm_error_set(error, DCM_ERROR_CODE_MISSING_FRAME,
-                          "no frame",
-                          "no frame at position (%u, %u)", column, row);
-            return false;
+            // missing frame
+            *frame_number = 0;
+        }
+        else {
+            *frame_number = (uint32_t) (index + 1);
         }
     } else {
         // subtract the start of this file, for catenation support
         index -= filehandle->frame_offset;
         if (index < 0 || index >= (int64_t) filehandle->num_frames) {
-            dcm_error_set(error, DCM_ERROR_CODE_MISSING_FRAME,
-                          "no frame",
-                          "no frame at position (%u, %u)", column, row);
-            return false;
+            // missing frame
+            *frame_number = 0;
+        }
+        else {
+            *frame_number = (uint32_t) (index + 1);
         }
     }
 
-    // frame numbers are from 1, and are always uint32
+    return true;
+}
+
+
+/* Deprecated function, only here for compatibility with libdicom 1.2.
+ */
+bool dcm_filehandle_get_frame_number(DcmError **error,
+                                     DcmFilehandle *filehandle,
+                                     uint32_t column,
+                                     uint32_t row,
+                                     uint32_t *frame_number)
+{
+    uint32_t n;
+
+    if (!dcm_filehandle_find_frame_number(error, filehandle, column, row, &n)) {
+        return false;
+    }
+
+    if (n == 0) {
+        dcm_error_set(error, DCM_ERROR_CODE_MISSING_FRAME,
+                      "no frame",
+                      "no frame at position (%u, %u)", column, row);
+        return false;
+    }
+
     if (frame_number)
-        *frame_number = (uint32_t) (index + 1);
+        *frame_number = n;
 
     return true;
 }
@@ -1463,9 +1489,16 @@ DcmFrame *dcm_filehandle_read_frame_position(DcmError **error,
     dcm_log_debug("Read frame position (%u, %u)", column, row);
 
     uint32_t frame_number;
-    if (!dcm_filehandle_get_frame_number(error,
-            filehandle, column, row, &frame_number)) {
+    if (!dcm_filehandle_find_frame_number(error, filehandle,
+                                          column, row, &frame_number)) {
         return NULL;
+    }
+
+    if (frame_number == 0) {
+        dcm_error_set(error, DCM_ERROR_CODE_MISSING_FRAME,
+                      "no frame",
+                      "no frame at position (%u, %u)", column, row);
+        return false;
     }
 
     return dcm_filehandle_read_frame(error, filehandle, frame_number);

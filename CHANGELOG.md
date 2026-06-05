@@ -1,3 +1,10 @@
+## 1.3.0, date tbd
+
+* add dcm_filehandle_find_frame_number(), deprecate
+  dcm_filehandle_get_frame_number() [jcupitt]
+* add DCM_DEPRECATED() macro [jcupitt]
+* don't format ignored errors for debug log if logging is disabled [bgilbert]
+
 ## 1.2.1, 28/04/2026
 
 * add support for encapsulated pixel data reading [weanti]
