@@ -1432,20 +1432,24 @@ bool dcm_filehandle_find_frame_number(DcmError **error,
         index = filehandle->frame_index[index];
         if (index == 0xffffffff) {
             // missing frame
-            *frame_number = 0;
+            if (frame_number)
+                *frame_number = 0;
         }
         else {
-            *frame_number = (uint32_t) (index + 1);
+            if (frame_number)
+                *frame_number = (uint32_t) (index + 1);
         }
     } else {
         // subtract the start of this file, for catenation support
         index -= filehandle->frame_offset;
         if (index < 0 || index >= (int64_t) filehandle->num_frames) {
             // missing frame
-            *frame_number = 0;
+            if (frame_number)
+                *frame_number = 0;
         }
         else {
-            *frame_number = (uint32_t) (index + 1);
+            if (frame_number)
+                *frame_number = (uint32_t) (index + 1);
         }
     }
 
@@ -1453,8 +1457,7 @@ bool dcm_filehandle_find_frame_number(DcmError **error,
 }
 
 
-/* Deprecated function, only here for compatibility with libdicom 1.2 and
- * earlier.
+/* Deprecated function, only here for compatibility with libdicom 1.2.
  */
 bool dcm_filehandle_get_frame_number(DcmError **error,
                                      DcmFilehandle *filehandle,

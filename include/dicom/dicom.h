@@ -20,6 +20,16 @@
 #define DCM_EXTERN __attribute__((visibility("default"))) extern
 #endif
 
+#ifndef BUILDING_LIBDICOM
+#if defined(_MSC_VER)
+#define DCM_DEPRECATED(MSG) __declspec(deprecated(MSG))
+#elif defined(__GNUC__)
+#define DCM_DEPRECATED(MSG) __attribute__((deprecated(MSG)))
+#endif
+#else
+#define DCM_DEPRECATED(MSG)
+#endif
+
 /**
  * Maximum number of characters in values with Value Representation AE.
  */
@@ -124,13 +134,7 @@ typedef struct _DcmSequence DcmSequence;
  * .. deprecated:: 1.1.0
  *    Calling this function is no longer necessary.
  */
-#ifndef BUILDING_LIBDICOM
-#if defined(_MSC_VER)
-__declspec(deprecated("dcm_init() no longer needs to be called"))
-#elif defined(__GNUC__)
-__attribute__((deprecated("dcm_init() no longer needs to be called")))
-#endif
-#endif
+DCM_DEPRECATED("dcm_init() no longer needs to be called")
 DCM_EXTERN
 void dcm_init(void);
 
@@ -1786,6 +1790,8 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
  *
  * If no frame is available at that position, set frame_number to 0.
  *
+ * frame_number may be NULL.
+ *
  * :param error: Pointer to error object
  * :param filehandle: File
  * :param column: Column number, from 0
@@ -1822,6 +1828,7 @@ bool dcm_filehandle_find_frame_number(DcmError **error,
  *
  * :return: true on success, false for error or no frame available
  */
+DCM_DEPRECATED("deprecated for dcm_filehandle_find_frame_number()")
 DCM_EXTERN
 bool dcm_filehandle_get_frame_number(DcmError **error,
                                      DcmFilehandle *filehandle,
