@@ -14,8 +14,8 @@ languages like Python](https://github.com/jcupitt/pylibdicom).
 ![A DICOM WSI being viewed via OpenSlide 4.0](data/vipsdisp.png)
 
 libdicom returns compressed frame data, not RGB pixel arrays. OpenSlide 4.0
-uses libdicom to implement DICOM support and is a better choice if you want
-to process image files.
+and later use libdicom to implement DICOM support and is a better choice
+if you want to process image files.
 
 libdicom aims to support most popular DICOM WSI variants. If you have a
 sample file which does not work well, please [open an issue and we'll try
@@ -24,7 +24,7 @@ to add support](https://github.com/ImagingDataCommons/libdicom/issues).
 ## Building from source
 
 ```shell
-cd libdicom-1.1.0
+cd libdicom-1.3.0
 meson setup builddir --buildtype release
 meson compile -C builddir
 meson install -C builddir
