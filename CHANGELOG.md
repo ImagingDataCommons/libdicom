@@ -1,4 +1,4 @@
-## 1.3.0, date tbd
+## 1.3.0, 06/06/2036
 
 * add dcm_filehandle_find_frame_number(), deprecate
   dcm_filehandle_get_frame_number() [jcupitt]
