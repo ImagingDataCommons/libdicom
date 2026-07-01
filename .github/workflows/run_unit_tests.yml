@@ -25,7 +25,7 @@ jobs:
           - os: windows-latest
             cc: cl
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
 
     - name: Install build and test dependencies (Linux)
       if: startsWith(matrix.os, 'ubuntu')
