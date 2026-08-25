@@ -94,6 +94,31 @@ static bool dcm_seekcur(DcmParseState *state, int64_t offset, int64_t *position)
 }
 
 
+/* Bytes left in a seekable source, or -1 if the source cannot report it.
+ *
+ * Used to reject element lengths that cannot possibly be satisfied before
+ * allocating a buffer for them.
+ */
+static int64_t dcm_remaining(DcmParseState *state)
+{
+    int64_t here = dcm_io_seek(NULL, state->io, 0, SEEK_CUR);
+    if (here < 0) {
+        return -1;
+    }
+
+    int64_t end = dcm_io_seek(NULL, state->io, 0, SEEK_END);
+    if (end < 0) {
+        return -1;
+    }
+
+    if (dcm_io_seek(NULL, state->io, here, SEEK_SET) < 0) {
+        return -1;
+    }
+
+    return end - here;
+}
+
+
 static bool dcm_is_eof(DcmParseState *state)
 {
     bool eof = true;
@@ -603,6 +628,20 @@ static bool parse_element_body(DcmParseState *state,
 
             // read to a static char buffer, if possible
             if ((int64_t) length + 1 >= INPUT_BUFFER_SIZE) {
+                /* Don't allocate for a length the source cannot supply: a
+                 * ~180 byte file declaring a 4GB element would otherwise
+                 * make us try to allocate 4GB before the read fails.
+                 */
+                int64_t remaining = dcm_remaining(state);
+                if (remaining >= 0 && (int64_t) length > remaining) {
+                    dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
+                                  "reading of data element failed",
+                                  "tag '%08x' declares %u bytes, "
+                                  "but only %zd remain",
+                                  tag, length, remaining);
+                    return false;
+                }
+
                 value = value_free = DCM_MALLOC(state->error,
                                                 (size_t) length + 1);
                 if (value == NULL) {
