@@ -9,3 +9,15 @@ option(
   value : true,
   description : 'build tests',
 )
+option(
+  'fuzzers',
+  type : 'boolean',
+  value : false,
+  description : 'build libFuzzer fuzz targets (requires a clang toolchain)',
+)
+option(
+  'fuzzing_engine',
+  type : 'string',
+  value : '',
+  description : 'link flag for an external fuzzing engine (OSS-Fuzz: $LIB_FUZZING_ENGINE)',
+)
