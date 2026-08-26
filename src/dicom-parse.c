@@ -15,6 +15,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -91,6 +92,31 @@ static bool dcm_seekcur(DcmParseState *state, int64_t offset, int64_t *position)
     *position += offset;
 
     return true;
+}
+
+
+/* Bytes left in a seekable source, or -1 if the source cannot report it.
+ *
+ * Used to reject element lengths that cannot possibly be satisfied before
+ * allocating a buffer for them.
+ */
+static int64_t dcm_remaining(DcmParseState *state)
+{
+    int64_t here = dcm_io_seek(NULL, state->io, 0, SEEK_CUR);
+    if (here < 0) {
+        return -1;
+    }
+
+    int64_t end = dcm_io_seek(NULL, state->io, 0, SEEK_END);
+    if (end < 0) {
+        return -1;
+    }
+
+    if (dcm_io_seek(NULL, state->io, here, SEEK_SET) < 0) {
+        return -1;
+    }
+
+    return end - here;
 }
 
 
@@ -445,6 +471,18 @@ static bool parse_pixeldata_item(DcmParseState *state,
 
     // read to our stack buffer, if possible
     if (item_length > INPUT_BUFFER_SIZE) {
+        /* As in parse_element_body(): don't allocate for an item length
+         * the source cannot supply.
+         */
+        int64_t remaining = dcm_remaining(state);
+        if (remaining >= 0 && (int64_t) item_length > remaining) {
+            dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
+                          "reading of PixelData item failed",
+                          "item declares %u bytes, but only %zd remain",
+                          item_length, remaining);
+            return false;
+        }
+
         value = value_free = DCM_MALLOC(state->error, item_length);
         if (value_free == NULL) {
             return false;
@@ -603,6 +641,20 @@ static bool parse_element_body(DcmParseState *state,
 
             // read to a static char buffer, if possible
             if ((int64_t) length + 1 >= INPUT_BUFFER_SIZE) {
+                /* Don't allocate for a length the source cannot supply: a
+                 * ~180 byte file declaring a 4GB element would otherwise
+                 * make us try to allocate 4GB before the read fails.
+                 */
+                int64_t remaining = dcm_remaining(state);
+                if (remaining >= 0 && (int64_t) length > remaining) {
+                    dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
+                                  "reading of data element failed",
+                                  "tag '%08x' declares %u bytes, "
+                                  "but only %zd remain",
+                                  tag, length, remaining);
+                    return false;
+                }
+
                 value = value_free = DCM_MALLOC(state->error,
                                                 (size_t) length + 1);
                 if (value == NULL) {
@@ -1022,10 +1074,37 @@ char *dcm_parse_frame(DcmError **error,
         .big_endian = is_big_endian(),
     };
 
-    *length =   desc->rows *
-                desc->columns *
-                desc->samples_per_pixel *
-                (desc->bits_allocated / 8);
+    /* Compute in 64 bits: rows, columns and samples_per_pixel are all
+     * uint16_t, so they promote to int and the product overflows *signed*
+     * arithmetic (undefined behaviour) long before it overflows uint32_t.
+     * 65535 x 65535 x 4 x 8 does not fit in 32 bits either, so the result
+     * has to be range-checked, not just widened.
+     */
+    uint64_t frame_length = (uint64_t) desc->rows *
+                            (uint64_t) desc->columns *
+                            (uint64_t) desc->samples_per_pixel *
+                            (uint64_t) (desc->bits_allocated / 8);
+    if (frame_length == 0 || frame_length > UINT32_MAX) {
+        dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                      "reading frame failed",
+                      "implausible frame size from image description "
+                      "(%u x %u, %u samples, %u bits)",
+                      desc->rows, desc->columns,
+                      desc->samples_per_pixel, desc->bits_allocated);
+        return NULL;
+    }
+
+    /* And don't allocate for more than the source can supply. */
+    int64_t frame_remaining = dcm_remaining(&state);
+    if (frame_remaining >= 0 && (int64_t) frame_length > frame_remaining) {
+        dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                      "reading frame failed",
+                      "frame needs %llu bytes, but only %zd remain",
+                      (unsigned long long) frame_length, frame_remaining);
+        return NULL;
+    }
+
+    *length = (uint32_t) frame_length;
 
     char *value = DCM_MALLOC(error, *length);
     if (value == NULL) {
@@ -1085,6 +1164,20 @@ char *dcm_parse_encapsulated_frame(DcmError **error,
             dcm_error_set(error, DCM_ERROR_CODE_PARSE,
                           "invalid frame size",
                           "frame size exceeds 4GB");
+            free(value);
+            return NULL;
+        }
+
+        /* Don't grow the buffer past what the source can actually supply:
+         * a few hundred bytes declaring a fragment of nearly 4GB would
+         * otherwise reallocate 4GB before the read fails.
+         */
+        int64_t frame_remaining = dcm_remaining(&state);
+        if (frame_remaining >= 0 && (int64_t) fragment_length > frame_remaining) {
+            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                          "reading frame item failed",
+                          "fragment declares %u bytes, but only %zd remain",
+                          fragment_length, frame_remaining);
             free(value);
             return NULL;
         }
