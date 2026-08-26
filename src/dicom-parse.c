@@ -15,6 +15,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -1073,10 +1074,37 @@ char *dcm_parse_frame(DcmError **error,
         .big_endian = is_big_endian(),
     };
 
-    *length =   desc->rows *
-                desc->columns *
-                desc->samples_per_pixel *
-                (desc->bits_allocated / 8);
+    /* Compute in 64 bits: rows, columns and samples_per_pixel are all
+     * uint16_t, so they promote to int and the product overflows *signed*
+     * arithmetic (undefined behaviour) long before it overflows uint32_t.
+     * 65535 x 65535 x 4 x 8 does not fit in 32 bits either, so the result
+     * has to be range-checked, not just widened.
+     */
+    uint64_t frame_length = (uint64_t) desc->rows *
+                            (uint64_t) desc->columns *
+                            (uint64_t) desc->samples_per_pixel *
+                            (uint64_t) (desc->bits_allocated / 8);
+    if (frame_length == 0 || frame_length > UINT32_MAX) {
+        dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                      "reading frame failed",
+                      "implausible frame size from image description "
+                      "(%u x %u, %u samples, %u bits)",
+                      desc->rows, desc->columns,
+                      desc->samples_per_pixel, desc->bits_allocated);
+        return NULL;
+    }
+
+    /* And don't allocate for more than the source can supply. */
+    int64_t frame_remaining = dcm_remaining(&state);
+    if (frame_remaining >= 0 && (int64_t) frame_length > frame_remaining) {
+        dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                      "reading frame failed",
+                      "frame needs %llu bytes, but only %zd remain",
+                      (unsigned long long) frame_length, frame_remaining);
+        return NULL;
+    }
+
+    *length = (uint32_t) frame_length;
 
     char *value = DCM_MALLOC(error, *length);
     if (value == NULL) {
