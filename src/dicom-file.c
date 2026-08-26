@@ -295,7 +295,13 @@ static bool get_num_frames(DcmError **error,
                            uint32_t *number_of_frames)
 {
     const char *value;
-    if (!get_tag_str(error, metadata, "NumberOfFrames", &value)) {
+    /* NumberOfFrames is optional -- pass NULL for error, since a missing
+     * tag is not a failure here. Passing error would leave a stale error
+     * object behind: it is never returned to the caller (so it leaks), and
+     * dcm_error_set() refuses to overwrite an error that is already set, so
+     * every later failure in this call chain would be silently discarded.
+     */
+    if (!get_tag_str(NULL, metadata, "NumberOfFrames", &value)) {
         *number_of_frames = 1;
         return true;
     }

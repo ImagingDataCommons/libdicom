@@ -1,0 +1,88 @@
+# libFuzzer dictionary for DICOM (PS3.10 file format).
+# Preamble magic, VR codes, item/sequence delimiters, common tags and
+# transfer syntax UIDs -- the tokens a mutator will not discover on its own.
+
+magic_dicm="DICM"
+
+# Value Representations (PS3.5 6.2)
+vr_ae="AE"
+vr_as="AS"
+vr_at="AT"
+vr_cs="CS"
+vr_da="DA"
+vr_ds="DS"
+vr_dt="DT"
+vr_fl="FL"
+vr_fd="FD"
+vr_is="IS"
+vr_lo="LO"
+vr_lt="LT"
+vr_ob="OB"
+vr_od="OD"
+vr_of="OF"
+vr_ol="OL"
+vr_ow="OW"
+vr_pn="PN"
+vr_sh="SH"
+vr_sl="SL"
+vr_sq="SQ"
+vr_ss="SS"
+vr_st="ST"
+vr_tm="TM"
+vr_uc="UC"
+vr_ui="UI"
+vr_ul="UL"
+vr_un="UN"
+vr_ur="UR"
+vr_us="US"
+vr_ut="UT"
+
+# Item and sequence delimitation (FFFE,E000 / E00D / E0DD), little endian
+item_start="\xfe\xff\x00\xe0"
+item_delim="\xfe\xff\x0d\xe0"
+sq_delim="\xfe\xff\xdd\xe0"
+
+# Undefined length
+undef_len="\xff\xff\xff\xff"
+
+# File meta group (0002,xxxx)
+tag_meta_grouplen="\x02\x00\x00\x00"
+tag_meta_version="\x02\x00\x01\x00"
+tag_media_sop_class="\x02\x00\x02\x00"
+tag_media_sop_inst="\x02\x00\x03\x00"
+tag_transfer_syntax="\x02\x00\x10\x00"
+
+# Image description tags (0028,xxxx)
+tag_samples_per_pixel="\x28\x00\x02\x00"
+tag_photometric="\x28\x00\x04\x00"
+tag_number_of_frames="\x28\x00\x08\x00"
+tag_rows="\x28\x00\x10\x00"
+tag_columns="\x28\x00\x11\x00"
+tag_bits_allocated="\x28\x00\x00\x01"
+tag_bits_stored="\x28\x00\x01\x01"
+tag_pixel_repr="\x28\x00\x03\x01"
+
+# Pixel data (7FE0,0010) and float variants
+tag_pixel_data="\xe0\x7f\x10\x00"
+tag_float_pixel_data="\xe0\x7f\x08\x00"
+tag_double_pixel_data="\xe0\x7f\x09\x00"
+
+# Per-frame functional groups / offset table
+tag_perframe_fg="\x37\x52\x11\x91"
+
+# Transfer syntax UIDs
+ts_implicit_le="1.2.840.10008.1.2"
+ts_explicit_le="1.2.840.10008.1.2.1"
+ts_explicit_be="1.2.840.10008.1.2.2"
+ts_deflated="1.2.840.10008.1.2.1.99"
+ts_jpeg_baseline="1.2.840.10008.1.2.4.50"
+ts_jpeg_lossless="1.2.840.10008.1.2.4.70"
+ts_jpeg_ls="1.2.840.10008.1.2.4.80"
+ts_jpeg2000="1.2.840.10008.1.2.4.90"
+ts_jpeg2000_lossy="1.2.840.10008.1.2.4.91"
+ts_rle="1.2.840.10008.1.2.5"
+
+# Photometric interpretations
+pi_mono2="MONOCHROME2"
+pi_rgb="RGB"
+pi_ybr_full_422="YBR_FULL_422"

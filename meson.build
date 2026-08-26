@@ -192,6 +192,10 @@ libdicom_dep = declare_dependency(
 )
 meson.override_dependency('libdicom', libdicom_dep)
 
+if get_option('fuzzers')
+  subdir('fuzz')
+endif
+
 # tools
 executable(
   'dcm-dump',
