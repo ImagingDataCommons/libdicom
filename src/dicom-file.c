@@ -1389,19 +1389,30 @@ DcmFrame *dcm_filehandle_read_frame(DcmError **error,
         return NULL;
     }
 
-    return dcm_frame_create(error,
-                            frame_number,
-                            frame_data,
-                            length,
-                            filehandle->desc.rows,
-                            filehandle->desc.columns,
-                            filehandle->desc.samples_per_pixel,
-                            filehandle->desc.bits_allocated,
-                            filehandle->desc.bits_stored,
-                            filehandle->desc.pixel_representation,
-                            filehandle->desc.planar_configuration,
-                            filehandle->desc.photometric_interpretation,
-                            filehandle->desc.transfer_syntax_uid);
+    /* dcm_frame_create() only takes ownership of frame_data once it has
+     * accepted the pixel description, so free it ourselves if it rejects
+     * the frame -- otherwise a file with, say, an out of range
+     * PixelRepresentation leaks the whole decoded frame on every call.
+     */
+    DcmFrame *frame = dcm_frame_create(error,
+                                       frame_number,
+                                       frame_data,
+                                       length,
+                                       filehandle->desc.rows,
+                                       filehandle->desc.columns,
+                                       filehandle->desc.samples_per_pixel,
+                                       filehandle->desc.bits_allocated,
+                                       filehandle->desc.bits_stored,
+                                       filehandle->desc.pixel_representation,
+                                       filehandle->desc.planar_configuration,
+                                       filehandle->desc.photometric_interpretation,
+                                       filehandle->desc.transfer_syntax_uid);
+    if (frame == NULL) {
+        free(frame_data);
+        return NULL;
+    }
+
+    return frame;
 }
 
 
