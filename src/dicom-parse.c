@@ -1128,6 +1128,20 @@ char *dcm_parse_encapsulated_frame(DcmError **error,
             return NULL;
         }
 
+        /* Don't grow the buffer past what the source can actually supply:
+         * a few hundred bytes declaring a fragment of nearly 4GB would
+         * otherwise reallocate 4GB before the read fails.
+         */
+        int64_t frame_remaining = dcm_remaining(&state);
+        if (frame_remaining >= 0 && (int64_t) fragment_length > frame_remaining) {
+            dcm_error_set(error, DCM_ERROR_CODE_PARSE,
+                          "reading frame item failed",
+                          "fragment declares %u bytes, but only %zd remain",
+                          fragment_length, frame_remaining);
+            free(value);
+            return NULL;
+        }
+
         char *new_value = (char *) dcm_realloc(error, value,
                                                frame_length + fragment_length);
         if (new_value == NULL) {
