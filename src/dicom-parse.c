@@ -470,6 +470,18 @@ static bool parse_pixeldata_item(DcmParseState *state,
 
     // read to our stack buffer, if possible
     if (item_length > INPUT_BUFFER_SIZE) {
+        /* As in parse_element_body(): don't allocate for an item length
+         * the source cannot supply.
+         */
+        int64_t remaining = dcm_remaining(state);
+        if (remaining >= 0 && (int64_t) item_length > remaining) {
+            dcm_error_set(state->error, DCM_ERROR_CODE_PARSE,
+                          "reading of PixelData item failed",
+                          "item declares %u bytes, but only %zd remain",
+                          item_length, remaining);
+            return false;
+        }
+
         value = value_free = DCM_MALLOC(state->error, item_length);
         if (value_free == NULL) {
             return false;
